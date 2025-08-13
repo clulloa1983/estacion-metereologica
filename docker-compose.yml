@@ -1,0 +1,71 @@
+services:
+  influxdb:
+    image: influxdb:2.7
+    container_name: weather_influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=weather123
+      - DOCKER_INFLUXDB_INIT_ORG=weather-station
+      - DOCKER_INFLUXDB_INIT_BUCKET=weather-data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=weather-station-token-12345
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    networks:
+      - weather-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: weather_grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana123
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - weather-network
+    depends_on:
+      - influxdb
+
+  redis:
+    image: redis:7-alpine
+    container_name: weather_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - weather-network
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: weather_mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config
+      - ./docker/mosquitto/data:/mosquitto/data
+      - ./docker/mosquitto/log:/mosquitto/log
+    networks:
+      - weather-network
+
+volumes:
+  influxdb-data:
+  influxdb-config:
+  grafana-data:
+  redis-data:
+
+networks:
+  weather-network:
+    driver: bridge
