@@ -60,6 +60,11 @@ cd frontend
 # Install dependencies
 npm install
 
+# Create environment configuration
+cp .env.example .env.local
+# OR create .env.local with:
+# NEXT_PUBLIC_API_URL=http://localhost:5001/api
+
 # Development mode with hot reload
 npm run dev
 
@@ -71,20 +76,29 @@ npm start
 ```
 
 ### Service Access Points
-- **Frontend Dashboard**: http://localhost:3002 (React/Next.js)
+- **Frontend Dashboard**: http://localhost:3002 (React/Next.js, auto-assigns port if busy)
 - **Backend API**: http://localhost:5001/api
 - **InfluxDB UI**: http://localhost:8086 (admin/weather123)
 - **Grafana Dashboard**: http://localhost:3000 (admin/grafana123) 
-- **MQTT Broker**: localhost:1883
+- **MQTT Broker**: localhost:1883 (WebSocket: 9001)
 
 ### Port Configuration
 The system uses the following ports:
-- **Frontend (Next.js)**: 3002 (auto-assigned if 3000 is busy)
+- **Frontend (Next.js)**: 3002+ (auto-assigns available port if 3000/3002 busy)
 - **Backend API**: 5001 (configurable via PORT env var)
-- **Grafana**: 3000
-- **InfluxDB**: 8086
-- **MQTT**: 1883
-- **Redis**: 6379
+- **Grafana**: 3000 (Docker service)
+- **InfluxDB**: 8086 (Docker service)
+- **MQTT**: 1883 (Docker service, WebSocket: 9001)
+- **Redis**: 6379 (Docker service)
+
+### Docker Services Port Mapping
+```yaml
+# From docker-compose.yml
+influxdb: 8086:8086
+grafana: 3000:3000  
+redis: 6379:6379
+mosquitto: 1883:1883, 9001:9001
+```
 
 ## Architecture & Data Flow
 
@@ -189,8 +203,11 @@ Alert rules are defined in `ALERT_RULES` array in `alertService.js`. Each rule s
 - MQTT broker configuration
 - Rate limiting and logging preferences
 
-**Frontend** uses environment variables:
-- `NEXT_PUBLIC_API_URL` - Backend API URL (defaults to http://localhost:5001/api)
+**Frontend** requires `.env.local` file with:
+- `NEXT_PUBLIC_API_URL=http://localhost:5001/api` - Backend API URL (required for API calls)
+- `NODE_ENV=development` - Environment mode
+
+**IMPORTANT**: Frontend MUST have `.env.local` file or API calls will fail with "Failed to fetch" errors.
 
 Default Docker services are pre-configured with development credentials. Change these for production deployment.
 
@@ -214,9 +231,11 @@ This creates the real-time pipeline from hardware sensors through to database st
 
 ### Port Conflicts Resolution
 If ports are in use:
-1. **Check running processes**: `netstat -ano | findstr :5001`
-2. **Kill conflicting process**: `taskkill /F /PID <process_id>`
-3. **Or change port**: Update `PORT` in `backend/.env` and `API_BASE_URL` in `frontend/src/services/weatherService.ts`
+1. **Check running processes**: `netstat -ano | findstr :5001` (backend) or `netstat -ano | findstr :3002` (frontend)
+2. **Kill conflicting process**: `cmd /c "taskkill /F /PID <process_id>"`
+3. **Or change port**: Update `PORT` in `backend/.env` and `NEXT_PUBLIC_API_URL` in `frontend/.env.local`
+
+**Frontend Port Auto-Assignment**: Next.js automatically assigns available ports (3002, 3003, etc.) if default ports are busy. Check console output for actual port used.
 
 ### Dashboard Development
 - **Historical Charts**: Default shows last 30 minutes (`timeRange=30m`)
@@ -225,7 +244,9 @@ If ports are in use:
 - **Chart.js**: Used for time-series data visualization
 
 ### Common Gotchas
-1. **Timestamp Issues**: Arduino sends `millis()` not real timestamps - backend handles this automatically
-2. **Port Mismatches**: Ensure frontend `weatherService.ts` points to correct backend port
-3. **Data Persistence**: Always call `flushWrites()` after `writeWeatherData()`
-4. **CORS Issues**: Backend enables CORS for frontend development
+1. **Missing .env.local**: Frontend MUST have `.env.local` with `NEXT_PUBLIC_API_URL` or API calls fail
+2. **Timestamp Issues**: Arduino sends `millis()` not real timestamps - backend handles this automatically
+3. **Port Mismatches**: Frontend auto-assigns ports, check console for actual port used
+4. **Data Persistence**: Always call `flushWrites()` after `writeWeatherData()`
+5. **CORS Issues**: Backend enables CORS for frontend development
+6. **Docker Port Conflicts**: Grafana (3000) may conflict with Next.js default port
