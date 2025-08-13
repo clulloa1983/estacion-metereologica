@@ -250,6 +250,8 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={selectedTab} onChange={handleTabChange}>
+            <Tab label="Temperatura" />
+            <Tab label="Humedad" />
             <Tab label="Calidad del Aire" />
             <Tab label="Memoria y Uptime" />
             <Tab label="Señal" />
@@ -259,11 +261,29 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
 
         <TabPanel value={selectedTab} index={0}>
           <Box sx={{ height: 400 }}>
-            <Line data={airQualityData} options={airQualityOptions} />
+            <Line 
+              data={prepareChartData('temperature', 'Temperatura (°C)', '#f44336')} 
+              options={chartOptions} 
+            />
           </Box>
         </TabPanel>
 
         <TabPanel value={selectedTab} index={1}>
+          <Box sx={{ height: 400 }}>
+            <Line 
+              data={prepareChartData('humidity', 'Humedad (%)', '#2196f3')} 
+              options={chartOptions} 
+            />
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={selectedTab} index={2}>
+          <Box sx={{ height: 400 }}>
+            <Line data={airQualityData} options={airQualityOptions} />
+          </Box>
+        </TabPanel>
+
+        <TabPanel value={selectedTab} index={3}>
           <Box sx={{ height: 400 }}>
             <Line 
               data={prepareChartData('free_heap', 'Memoria Libre (bytes)', '#ff9800')} 
@@ -272,13 +292,13 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
           </Box>
         </TabPanel>
 
-        <TabPanel value={selectedTab} index={2}>
+        <TabPanel value={selectedTab} index={4}>
           <Box sx={{ height: 400 }}>
             <Line data={signalData} options={chartOptions} />
           </Box>
         </TabPanel>
 
-        <TabPanel value={selectedTab} index={3}>
+        <TabPanel value={selectedTab} index={5}>
           <Box sx={{ height: 400 }}>
             <Line 
               data={prepareChartData('rainfall', 'Precipitación (mm)', '#3f51b5')} 
