@@ -16,36 +16,12 @@ const writeWeatherData = (stationId, data) => {
   const point = new Point('weather')
     .tag('station_id', stationId);
 
-  // Handle timestamp - if it's a very large number (microseconds), convert to milliseconds
-  if (data.timestamp) {
-    let timestamp = data.timestamp;
-    if (typeof timestamp === 'number' && !isNaN(timestamp)) {
-      // If timestamp is too large (microseconds), convert to milliseconds
-      if (timestamp > 9999999999999) {
-        timestamp = Math.floor(timestamp / 1000);
-      }
-      // Validate the resulting timestamp is reasonable
-      if (timestamp > 0 && timestamp < 9999999999999) {
-        point.timestamp(new Date(timestamp));
-      } else {
-        point.timestamp(new Date());
-      }
-    } else if (typeof timestamp === 'string') {
-      const parsedDate = new Date(timestamp);
-      if (!isNaN(parsedDate.getTime())) {
-        point.timestamp(parsedDate);
-      } else {
-        point.timestamp(new Date());
-      }
-    } else {
-      point.timestamp(new Date());
-    }
-  } else {
-    point.timestamp(new Date());
-  }
+  // Always use current timestamp - Arduino timestamp is millis since boot, not Unix timestamp
+  point.timestamp(new Date());
 
-  Object.entries(data.measurements || data).forEach(([key, value]) => {
-    if (key !== 'timestamp' && typeof value === 'number' && !isNaN(value)) {
+  // Add all numeric fields except metadata
+  Object.entries(data).forEach(([key, value]) => {
+    if (key !== 'timestamp' && key !== 'station_id' && typeof value === 'number' && !isNaN(value)) {
       point.floatField(key, value);
     }
   });

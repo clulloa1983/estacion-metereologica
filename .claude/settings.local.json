@@ -8,7 +8,11 @@
       "Bash(cp:*)",
       "Bash(curl:*)",
       "Bash(npm init:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(git add:*)",
+      "Bash(docker exec:*)",
+      "Bash(cmd /c:*)",
+      "Bash(netsh interface portproxy:*)"
     ],
     "deny": [],
     "ask": []

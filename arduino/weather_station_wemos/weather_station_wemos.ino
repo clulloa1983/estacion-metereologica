@@ -7,8 +7,8 @@
 #include <BH1750.h>
 
 // Pin definitions for WEMOS D1 R2
-#define DHT_PIN D4        // GPIO2 - DHT22 sensor
-#define RAIN_PIN D5       // GPIO14 - MH-RD rain sensor
+#define DHT_PIN D5        // GPIO14 - DHT22 sensor
+#define RAIN_PIN D4       // GPIO2 - MH-RD rain sensor
 #define MQ7_PIN A0        // Analog pin for MQ7 CO sensor
 #define MQ135_PIN D6      // GPIO12 - MQ135 air quality (digital)
 #define DSM501A_PIN D7    // GPIO13 - DSM501A dust sensor
@@ -95,6 +95,7 @@ void setup() {
   // Setup MQTT
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(mqttCallback);
+  client.setBufferSize(512); // Increase MQTT buffer size
 
   // Initialize dust sensor timing
   starttime = millis();
@@ -160,15 +161,15 @@ void initializeSensors() {
   sensors.bh1750_available = lightMeter.begin();
   Serial.println(sensors.bh1750_available ? "✓ BH1750 detected" : "✗ BH1750 not found");
 
-  // Test rain sensor (always assume available if connected)
-  sensors.mh_rd_available = true;
-  Serial.println("✓ MH-RD rain sensor assumed available");
+  // Test rain sensor (only if needed for this test)
+  sensors.mh_rd_available = false;
+  Serial.println("✗ MH-RD rain sensor disabled for testing");
 
-  // Test analog sensors (always assume available)
-  sensors.mq7_available = true;
-  sensors.mq135_available = true;
-  sensors.dsm501a_available = true;
-  Serial.println("✓ Analog sensors (MQ7, MQ135, DSM501A) assumed available");
+  // Test analog sensors (disable for initial testing)
+  sensors.mq7_available = false;
+  sensors.mq135_available = false;
+  sensors.dsm501a_available = false;
+  Serial.println("✗ Analog sensors (MQ7, MQ135, DSM501A) disabled for testing");
 }
 
 void printAvailableSensors() {
@@ -232,8 +233,8 @@ void reconnectMQTT() {
 void readAndSendData() {
   Serial.println("Reading sensors...");
   
-  // Create JSON document
-  StaticJsonDocument<1024> doc;
+  // Create JSON document (reduced size for testing)
+  StaticJsonDocument<512> doc;
   doc["station_id"] = station_id;
   doc["timestamp"] = getTimestamp();
 
