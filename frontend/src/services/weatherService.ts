@@ -31,7 +31,10 @@ class WeatherService {
       throw new Error('Failed to fetch latest data');
     }
     const result = await response.json();
-    return result.data || {};
+    return {
+      ...(result.data || {}),
+      station_id: result.station_id || stationId
+    };
   }
 
   async getHistoricalData(
