@@ -59,8 +59,8 @@ interface WeatherMapProps {
 
 // Configuración por defecto de ubicación (se puede hacer configurable)
 const DEFAULT_COORDINATES = {
-  lat: -34.6037,  // Buenos Aires, Argentina - cambiar según tu ubicación
-  lng: -58.3816,
+  lat: -33.443897,  // Santiago, Chile
+  lng: -70.660126,
 };
 
 const WeatherMap: React.FC<WeatherMapProps> = ({ stationId, currentData }) => {
