@@ -106,6 +106,23 @@ const SystemStatus: React.FC<SystemStatusProps> = ({ data }) => {
     return `Hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
   };
 
+  const getActiveSensorsCount = () => {
+    if (!data) return { active: 0, total: 7 };
+    
+    const sensors = [
+      data.temperature !== undefined && data.temperature !== null,
+      data.humidity !== undefined && data.humidity !== null,
+      data.pressure !== undefined && data.pressure !== null,
+      data.wind_speed !== undefined && data.wind_speed !== null,
+      data.wind_direction !== undefined && data.wind_direction !== null,
+      data.rainfall !== undefined && data.rainfall !== null,
+      data.pm25 !== undefined && data.pm25 !== null
+    ];
+    
+    const activeSensors = sensors.filter(Boolean).length;
+    return { active: activeSensors, total: 7 };
+  };
+
   const connectionStatus = getLastUpdateStatus();
 
   return (
@@ -208,7 +225,7 @@ const SystemStatus: React.FC<SystemStatusProps> = ({ data }) => {
             Resumen del sistema:
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            • Sensores activos: {data ? '7/7' : '0/7'}<br />
+            • Sensores activos: {data ? `${getActiveSensorsCount().active}/${getActiveSensorsCount().total}` : '0/7'}<br />
             • Frecuencia de medición: 1 minuto<br />
             • Uptime estimado: {connectionStatus.status === 'online' ? '99.5%' : 'N/A'}
           </Typography>
