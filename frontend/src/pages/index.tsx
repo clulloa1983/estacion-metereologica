@@ -30,6 +30,18 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [socketConnected, setSocketConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  
+  const getConnectionStatus = () => {
+    if (!currentData?.timestamp) return { connected: false, text: 'Sin conexión' };
+    
+    const lastUpdate = new Date(currentData.timestamp);
+    const now = new Date();
+    const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
+    
+    if (diffMinutes < 2) return { connected: true, text: 'Tiempo Real' };
+    if (diffMinutes < 10) return { connected: true, text: 'Conexión lenta' };
+    return { connected: false, text: 'Sin conexión en vivo' };
+  };
 
   useEffect(() => {
     const fetchLatestData = async () => {
@@ -95,9 +107,9 @@ export default function Dashboard() {
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
             <Chip
-              icon={socketConnected ? <Wifi /> : <WifiOff />}
-              label={socketConnected ? 'Tiempo Real' : 'Sin conexión en vivo'}
-              color={socketConnected ? 'success' : 'default'}
+              icon={getConnectionStatus().connected ? <Wifi /> : <WifiOff />}
+              label={getConnectionStatus().text}
+              color={getConnectionStatus().connected ? 'success' : 'default'}
               variant="outlined"
               size="small"
               sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
