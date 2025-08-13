@@ -87,8 +87,26 @@ class MQTTService {
 
   async handleWeatherData(stationId, data) {
     try {
+      // Validate timestamp - if it's not a valid ISO string or epoch timestamp, use server time
+      let timestamp;
+      if (data.timestamp) {
+        // Check if timestamp is a valid ISO string or a reasonable epoch timestamp
+        const parsedTime = new Date(data.timestamp);
+        const isValidDate = !isNaN(parsedTime.getTime());
+        const isReasonableTimestamp = typeof data.timestamp === 'string' && data.timestamp.includes('-');
+        
+        if (isValidDate && isReasonableTimestamp) {
+          timestamp = data.timestamp;
+        } else {
+          // Invalid timestamp (likely millis() from Arduino), use server time
+          timestamp = new Date().toISOString();
+        }
+      } else {
+        timestamp = new Date().toISOString();
+      }
+
       const weatherData = {
-        timestamp: data.timestamp || new Date().toISOString(),
+        timestamp,
         ...data
       };
 
@@ -105,8 +123,26 @@ class MQTTService {
 
   async handleStatusData(stationId, data) {
     try {
+      // Validate timestamp - if it's not a valid ISO string or epoch timestamp, use server time
+      let timestamp;
+      if (data.timestamp) {
+        // Check if timestamp is a valid ISO string or a reasonable epoch timestamp
+        const parsedTime = new Date(data.timestamp);
+        const isValidDate = !isNaN(parsedTime.getTime());
+        const isReasonableTimestamp = typeof data.timestamp === 'string' && data.timestamp.includes('-');
+        
+        if (isValidDate && isReasonableTimestamp) {
+          timestamp = data.timestamp;
+        } else {
+          // Invalid timestamp (likely millis() from Arduino), use server time
+          timestamp = new Date().toISOString();
+        }
+      } else {
+        timestamp = new Date().toISOString();
+      }
+
       const statusData = {
-        timestamp: data.timestamp || new Date().toISOString(),
+        timestamp,
         battery_voltage: data.battery_voltage,
         signal_strength: data.signal_strength,
         uptime: data.uptime,

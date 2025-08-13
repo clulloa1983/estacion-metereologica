@@ -5,8 +5,26 @@ const receiveWeatherData = async (req, res) => {
   try {
     const { station_id, ...data } = req.body;
     
+    // Validate timestamp - if it's not a valid ISO string, use server time
+    let timestamp;
+    if (data.timestamp) {
+      // Check if timestamp is a valid ISO string or a reasonable epoch timestamp
+      const parsedTime = new Date(data.timestamp);
+      const isValidDate = !isNaN(parsedTime.getTime());
+      const isReasonableTimestamp = typeof data.timestamp === 'string' && data.timestamp.includes('-');
+      
+      if (isValidDate && isReasonableTimestamp) {
+        timestamp = data.timestamp;
+      } else {
+        // Invalid timestamp (likely millis() from Arduino), use server time
+        timestamp = new Date().toISOString();
+      }
+    } else {
+      timestamp = new Date().toISOString();
+    }
+    
     const weatherData = {
-      timestamp: data.timestamp || new Date().toISOString(),
+      timestamp,
       ...data
     };
 
@@ -32,11 +50,17 @@ const receiveWeatherData = async (req, res) => {
 const getWeatherData = async (req, res) => {
   try {
     const { stationId } = req.params;
-    const { start, end, limit = 100, aggregation } = req.query;
+    const { start, end, limit = 500, aggregation, timeRange } = req.query;
+    
+    // Map timeRange to start parameter if timeRange is provided
+    let actualStart = start;
+    if (timeRange && !start) {
+      actualStart = `-${timeRange}`;
+    }
 
     let query = `
       from(bucket: "${bucket}")
-        |> range(start: ${start || '-24h'}, stop: ${end || 'now()'})
+        |> range(start: ${actualStart || '-24h'}, stop: ${end || 'now()'})
         |> filter(fn: (r) => r._measurement == "weather")
         |> filter(fn: (r) => r.station_id == "${stationId}")
     `;
@@ -48,8 +72,21 @@ const getWeatherData = async (req, res) => {
       `;
     }
 
+    // For time ranges > 6h, sample data to avoid too many points
+    const timeRangeValue = actualStart || '-24h';
+    const isLongRange = timeRangeValue.includes('d') || 
+                       (timeRangeValue.includes('h') && parseInt(timeRangeValue.replace('-', '').replace('h', '')) > 6);
+    
+    if (isLongRange && !aggregation) {
+      query += `
+        |> aggregateWindow(every: 10m, fn: mean, createEmpty: false)
+      `;
+    }
+
     query += `
+      |> sort(columns: ["_time"], desc: true)
       |> limit(n: ${parseInt(limit)})
+      |> sort(columns: ["_time"], desc: false)
       |> yield(name: "mean")
     `;
 

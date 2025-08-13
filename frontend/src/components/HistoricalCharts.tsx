@@ -68,10 +68,11 @@ function TabPanel(props: TabPanelProps) {
 const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
   const [data, setData] = useState<WeatherDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('24h');
+  const [timeRange, setTimeRange] = useState('30m');
   const [selectedTab, setSelectedTab] = useState(0);
 
   const timeRangeOptions = [
+    { value: '30m', label: 'Últimos 30 minutos' },
     { value: '1h', label: 'Última hora' },
     { value: '6h', label: 'Últimas 6 horas' },
     { value: '24h', label: 'Último día' },
@@ -95,6 +96,13 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
     };
 
     fetchData();
+
+    // Configurar actualizaci贸n autom谩tica cada 30 segundos
+    const interval = setInterval(() => {
+      fetchData();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [stationId, timeRange]);
 
   const prepareChartData = (parameter: string, label: string, color: string) => {

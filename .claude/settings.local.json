@@ -12,7 +12,8 @@
       "Bash(git add:*)",
       "Bash(docker exec:*)",
       "Bash(cmd /c:*)",
-      "Bash(netsh interface portproxy:*)"
+      "Bash(netsh interface portproxy:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []
