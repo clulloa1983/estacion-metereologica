@@ -53,12 +53,36 @@ const getWeatherData = async (req, res) => {
       |> yield(name: "mean")
     `;
 
-    const data = await queryWeatherData(query);
+    const rawData = await queryWeatherData(query);
+    
+    // Transformar datos de InfluxDB al formato esperado por el frontend
+    const transformedData = [];
+    const dataByTime = {};
+    
+    // Agrupar datos por timestamp
+    rawData.forEach(row => {
+      const time = row._time;
+      if (!dataByTime[time]) {
+        dataByTime[time] = {
+          timestamp: time,
+          station_id: row.station_id
+        };
+      }
+      dataByTime[time][row._field] = row._value;
+    });
+    
+    // Convertir a array
+    Object.values(dataByTime).forEach(record => {
+      transformedData.push(record);
+    });
+    
+    // Ordenar por timestamp
+    transformedData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
     res.json({
       success: true,
-      data: data,
-      count: data.length
+      data: transformedData,
+      count: transformedData.length
     });
   } catch (error) {
     logger.error('Error querying weather data:', error);

@@ -25,7 +25,10 @@ const querySchema = Joi.object({
   aggregation: Joi.string().valid('5m', 'hourly', 'daily').optional(),
   severity: Joi.string().valid('LOW', 'MEDIUM', 'HIGH', 'CRITICAL').optional(),
   acknowledged: Joi.string().valid('true', 'false').optional(),
-  format: Joi.string().valid('json', 'csv').optional()
+  format: Joi.string().valid('json', 'csv').optional(),
+  timeRange: Joi.string().optional(),
+  parameters: Joi.string().optional(),
+  stationId: Joi.string().optional()
 });
 
 const alertSchema = Joi.object({
