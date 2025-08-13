@@ -19,23 +19,24 @@ import {
 } from '@mui/icons-material';
 import dynamic from 'next/dynamic';
 
-// Cargar Leaflet dinámicamente para evitar problemas de SSR
-const MapContainer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
-);
-const TileLayer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Popup),
-  { ssr: false }
-);
+// Cargar todo el mapa dinámicamente para evitar problemas de SSR
+const DynamicMap = dynamic(() => import('./WeatherMapClient'), { 
+  ssr: false,
+  loading: () => (
+    <Box sx={{ 
+      height: 400, 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      backgroundColor: 'background.default',
+      borderRadius: 1
+    }}>
+      <Typography color="text.secondary">
+        Cargando mapa...
+      </Typography>
+    </Box>
+  )
+});
 
 interface WeatherData {
   station_id: string;
@@ -64,13 +65,11 @@ const DEFAULT_COORDINATES = {
 };
 
 const WeatherMap: React.FC<WeatherMapProps> = ({ stationId, currentData }) => {
-  const [mapLoaded, setMapLoaded] = useState(false);
   const [stationCoordinates, setStationCoordinates] = useState(DEFAULT_COORDINATES);
   
   useEffect(() => {
     // Aquí podrías cargar las coordenadas desde una API o configuración
     // Por ahora usamos coordenadas por defecto
-    setMapLoaded(true);
   }, [stationId]);
 
   const getWindDirectionText = (degrees: number): string => {
@@ -92,29 +91,7 @@ const WeatherMap: React.FC<WeatherMapProps> = ({ stationId, currentData }) => {
     return '#f44336';
   };
 
-  if (!mapLoaded) {
-    return (
-      <Card>
-        <CardContent>
-          <Typography variant="h5" component="h2" gutterBottom>
-            Ubicación de la Estación
-          </Typography>
-          <Box sx={{ 
-            height: 400, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            backgroundColor: 'background.default',
-            borderRadius: 1
-          }}>
-            <Typography color="text.secondary">
-              Cargando mapa...
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  }
+
 
   return (
     <Card>
@@ -173,57 +150,12 @@ const WeatherMap: React.FC<WeatherMapProps> = ({ stationId, currentData }) => {
         </Paper>
 
         {/* Mapa */}
-        <Box sx={{ height: 350, width: '100%', position: 'relative' }}>
-          <MapContainer
-            center={[stationCoordinates.lat, stationCoordinates.lng]}
-            zoom={15}
-            style={{ height: '100%', width: '100%', borderRadius: '8px' }}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            
-            <Marker position={[stationCoordinates.lat, stationCoordinates.lng]}>
-              <Popup>
-                <div style={{ minWidth: '200px' }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    <strong>Estación Meteorológica</strong>
-                  </Typography>
-                  <Typography variant="body2" gutterBottom>
-                    ID: {stationId}
-                  </Typography>
-                  
-                  {currentData && (
-                    <div>
-                      <Typography variant="body2" style={{ marginBottom: '8px' }}>
-                        <strong>Condiciones actuales:</strong>
-                      </Typography>
-                      <Typography variant="body2">
-                        🌡️ Temperatura: {currentData?.temperature?.toFixed(1) ?? 'N/A'}°C
-                      </Typography>
-                      <Typography variant="body2">
-                        💧 Humedad: {currentData?.humidity?.toFixed(0) ?? 'N/A'}%
-                      </Typography>
-                      <Typography variant="body2">
-                        🌀 Presión: {currentData?.pressure?.toFixed(1) ?? 'N/A'} hPa
-                      </Typography>
-                      <Typography variant="body2">
-                        💨 Viento: {currentData?.wind_speed?.toFixed(1) ?? 'N/A'} km/h ({currentData?.wind_direction ? getWindDirectionText(currentData.wind_direction) : 'N/A'})
-                      </Typography>
-                      <Typography variant="body2">
-                        🌧️ Lluvia: {currentData?.rainfall?.toFixed(1) ?? 'N/A'} mm
-                      </Typography>
-                      
-                      <Typography variant="caption" color="text.secondary" style={{ marginTop: '8px', display: 'block' }}>
-                        Última actualización: {currentData?.timestamp ? new Date(currentData.timestamp).toLocaleString() : 'N/A'}
-                      </Typography>
-                    </div>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
-          </MapContainer>
+        <Box sx={{ height: 400, width: '100%', position: 'relative' }}>
+          <DynamicMap 
+            coordinates={stationCoordinates}
+            stationId={stationId}
+            currentData={currentData}
+          />
         </Box>
 
         {/* Información adicional del mapa */}
@@ -237,5 +169,6 @@ const WeatherMap: React.FC<WeatherMapProps> = ({ stationId, currentData }) => {
     </Card>
   );
 };
+
 
 export default WeatherMap;

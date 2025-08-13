@@ -11,10 +11,10 @@
       "static/chunks/_pages-dir-browser_node_modules_next_dist_pages__error_js.js"
     ]
   },
-  "components\\WeatherMap.tsx -> react-leaflet": {
-    "id": "components\\WeatherMap.tsx -> react-leaflet",
+  "components\\WeatherMap.tsx -> ./WeatherMapClient": {
+    "id": "components\\WeatherMap.tsx -> ./WeatherMapClient",
     "files": [
-      "static/chunks/_pages-dir-browser_node_modules_react-leaflet_lib_index_js.js"
+      "static/chunks/_pages-dir-browser_src_components_WeatherMapClient_tsx.js"
     ]
   }
 }

@@ -8,6 +8,8 @@ This is an IoT Weather Station system with Arduino/ESP32 hardware sensors that c
 
 **Architecture Flow**: Arduino/ESP32 → MQTT → Backend API → InfluxDB → Frontend Dashboard + Grafana
 
+**Current Status**: The system is actively running with real-time data collection. Backend API is functional and receiving sensor data from WEMOS_STATION_001. Frontend dashboard is operational but has some rendering issues with the map component.
+
 ## System Components
 
 1. **Hardware**: Arduino/ESP32 with sensors (DHT22, BMP280, etc.)
@@ -76,11 +78,15 @@ npm start
 ```
 
 ### Service Access Points
-- **Frontend Dashboard**: http://localhost:3002 (React/Next.js, auto-assigns port if busy)
-- **Backend API**: http://localhost:5001/api
+- **Frontend Dashboard**: http://localhost:3002 (React/Next.js with TypeScript)
+- **Backend API**: http://localhost:5001/api (Node.js/Express)
 - **InfluxDB UI**: http://localhost:8086 (admin/weather123)
 - **Grafana Dashboard**: http://localhost:3000 (admin/grafana123) 
 - **MQTT Broker**: localhost:1883 (WebSocket: 9001)
+
+**Current Port Status**: 
+- Backend is running on port 5001 and actively processing MQTT data
+- Frontend is running on port 3002 with some compilation warnings
 
 ### Port Configuration
 The system uses the following ports:
@@ -117,11 +123,18 @@ Data points use `station_id` as primary tag for device identification.
 
 ### Backend Services Architecture
 
+**Main Server** (`src/index.js`):
+- Express.js server with middleware for security, logging, and rate limiting
+- Health check endpoint at `/health`
+- Graceful shutdown handling for SIGTERM/SIGINT
+- Currently running on port 5001 (default port 5000)
+
 **MQTTService** (`src/services/mqttService.js`): 
 - Handles MQTT broker connection and message routing
 - Processes incoming sensor data and forwards to InfluxDB
 - Validates timestamps from Arduino (handles millis() vs real timestamps)
 - Manages device status monitoring
+- Currently receiving data from WEMOS_STATION_001
 
 **AlertService** (`src/services/alertService.js`):
 - Evaluates sensor data against predefined thresholds
@@ -132,30 +145,56 @@ Data points use `station_id` as primary tag for device identification.
 - Provides `writeWeatherData()` and `writeAlert()` functions
 - Uses Flux query language for data retrieval
 - Handles time-series data with automatic field type detection
+- Automatically converts Arduino millis() timestamps to server time
 
 ### Frontend Architecture
 
 **React/Next.js Dashboard** (`frontend/src/`):
+- **Technology Stack**: Next.js 15.4.6, React 19.1.1, TypeScript 5.9.2, Material-UI 7.3.1
 - **Pages**: Main dashboard page (`pages/index.tsx`)
 - **Components**: Modular UI components for different dashboard sections
   - `CurrentMeasurements.tsx`: Real-time sensor readings display
   - `HistoricalCharts.tsx`: Time-series data visualization with Chart.js
   - `SystemStatus.tsx`: Device status and connectivity monitoring
   - `AlertsPanel.tsx`: Alert management interface
-  - `WeatherMap.tsx`: Geographic data visualization
+  - `WeatherMap.tsx`: Geographic data visualization (currently has rendering issues)
+  - `WeatherMapClient.tsx`: Client-side map component (referenced but may be missing)
 - **Services**: API communication layer
-  - `weatherService.ts`: Backend API client
+  - `weatherService.ts`: Backend API client with TypeScript interfaces
   - `socketService.ts`: WebSocket communication (placeholder)
+
+**Known Frontend Issues**:
+- WeatherMap component has syntax errors and missing WeatherMapClient import
+- Material-UI Grid deprecation warnings (xs, sm, md, lg props removed)
+- viewport meta tag warnings in _document.tsx
+- Leaflet SSR issues with "window is not defined" error
 
 ### API Endpoints Structure
 - **Weather Data**: `/api/weather/*` - CRUD operations for sensor data
-  - `GET /api/weather/data/:stationId/latest` - Current readings
-  - `GET /api/weather/data/:stationId?timeRange=30m` - Historical data
-  - `POST /api/weather/data` - Receive sensor data
+  - `GET /api/weather/data/:stationId/latest` - Current readings (actively used)
+  - `GET /api/weather/data/:stationId?timeRange=30m` - Historical data (actively used)
+  - `GET /api/weather/data/:stationId/summary` - Statistical summaries
+  - `GET /api/weather/stations` - List all stations
+  - `POST /api/weather/data` - Receive sensor data (MQTT integration)
+  - `GET /api/weather/export/:stationId` - Data export in CSV/JSON
 - **Alerts**: `/api/alerts/*` - Alert management and querying
-- **Export**: `/api/weather/export/:stationId` - Data export in CSV/JSON
+  - `GET /api/alerts/:stationId` - Station-specific alerts (actively used)
+  - `GET /api/alerts/summary/:stationId` - Alert summary statistics (actively used)
+  - `POST /api/alerts` - Create new alert
+  - `PUT /api/alerts/:alertId/acknowledge` - Acknowledge alert
+- **Health**: `/health` - API health check
 
 ## Arduino/ESP32 Integration
+
+### Current Station Status
+- **WEMOS_STATION_001**: Currently active and sending data every ~60 seconds
+- **Data Flow**: Arduino → MQTT → Backend → InfluxDB (working properly)
+- **Sensor Data**: Temperature, humidity, pressure, wind speed/direction, rainfall
+
+### Hardware Files Location
+- **Arduino Code**: `arduino/weather_station_wemos/weather_station_wemos.ino`
+- **Documentation**: `arduino/weather_station_wemos/README.md`
+- **Sensor Guide**: `arduino/sensores-microcontroladores.md`
 
 ### Sensor Configuration
 The ESP32 code handles multiple sensors with interrupt-based wind/rain measurement:
@@ -198,7 +237,7 @@ Alert rules are defined in `ALERT_RULES` array in `alertService.js`. Each rule s
 ### Environment Configuration
 
 **Backend** requires `.env` file with:
-- `PORT=5001` - Backend server port
+- `PORT=5001` - Backend server port (currently active)
 - InfluxDB connection details (URL, token, org, bucket)
 - MQTT broker configuration
 - Rate limiting and logging preferences
@@ -209,7 +248,11 @@ Alert rules are defined in `ALERT_RULES` array in `alertService.js`. Each rule s
 
 **IMPORTANT**: Frontend MUST have `.env.local` file or API calls will fail with "Failed to fetch" errors.
 
-Default Docker services are pre-configured with development credentials. Change these for production deployment.
+**Docker Services Configuration**:
+- All services defined in `docker-compose.yml`
+- Default development credentials (change for production)
+- Network: `weather-network` bridge for service communication
+- Volumes: Persistent data storage for InfluxDB, Grafana, Redis, and MQTT
 
 ## Key Integration Points
 
@@ -223,11 +266,25 @@ This creates the real-time pipeline from hardware sensors through to database st
 
 ## Common Development Tasks
 
+### System Status Check
+- **Backend Health**: `curl http://localhost:5001/health`
+- **Latest Data**: `curl http://localhost:5001/api/weather/data/WEMOS_STATION_001/latest`
+- **MQTT Activity**: Check backend logs for "Weather data stored" messages
+- **Frontend Status**: Check http://localhost:3002 for dashboard functionality
+
 ### Troubleshooting Data Issues
 1. **Check MQTT messages**: `docker exec weather_mosquitto mosquitto_sub -h localhost -t "weather/data/+" -v`
 2. **Clear InfluxDB data**: `docker exec weather_influxdb influx delete --bucket weather-data --start 1970-01-01T00:00:00Z --stop 2025-12-31T23:59:59Z --org weather-station --token weather-station-token-12345`
 3. **Check API health**: `curl http://localhost:5001/health`
 4. **Test latest data**: `curl http://localhost:5001/api/weather/data/WEMOS_STATION_001/latest`
+
+### Frontend Issues Resolution
+1. **Fix WeatherMap Component**: 
+   - Check if `WeatherMapClient.tsx` exists or needs to be created
+   - Fix syntax errors in `WeatherMap.tsx` around line 340
+   - Handle Leaflet SSR properly with dynamic imports
+2. **Material-UI Grid Update**: Replace deprecated props (xs, sm, md, lg) with new Grid2 syntax
+3. **Viewport Meta Tags**: Move viewport meta from `_document.tsx` to `_app.tsx` or `next.config.js`
 
 ### Port Conflicts Resolution
 If ports are in use:
@@ -250,3 +307,5 @@ If ports are in use:
 4. **Data Persistence**: Always call `flushWrites()` after `writeWeatherData()`
 5. **CORS Issues**: Backend enables CORS for frontend development
 6. **Docker Port Conflicts**: Grafana (3000) may conflict with Next.js default port
+7. **SSR Issues**: Use dynamic imports for client-side only components (like maps)
+8. **Material-UI Versions**: Check for breaking changes between v4/v5 and current v7 syntax
