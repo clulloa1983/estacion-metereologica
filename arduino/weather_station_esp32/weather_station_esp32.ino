@@ -155,7 +155,16 @@ void initializeSensors() {
 
   // Test BMP180
   sensors.bmp180_available = bmp.begin();
-  Serial.println(sensors.bmp180_available ? "✓ BMP180 detected" : "✗ BMP180 not found");
+  if (sensors.bmp180_available) {
+    Serial.println("✓ BMP180 detected");
+    // Test reading to ensure sensor is working
+    float testPressure = bmp.readPressure();
+    Serial.print("  Test pressure reading: ");
+    Serial.print(testPressure / 100.0F);
+    Serial.println(" hPa");
+  } else {
+    Serial.println("✗ BMP180 not found - Check I2C wiring (SDA=21, SCL=22)");
+  }
 
   // Test BH1750
   sensors.bh1750_available = lightMeter.begin();
@@ -257,8 +266,15 @@ void readAndSendData() {
   // Read BMP180 (Pressure)
   if (sensors.bmp180_available) {
     float pressure = bmp.readPressure() / 100.0F; // Convert Pa to hPa
-    pressure = calibratePressure(pressure);
-    doc["pressure"] = round(pressure * 100.0) / 100.0;
+    if (pressure > 0) {
+      pressure = calibratePressure(pressure);
+      doc["pressure"] = round(pressure * 100.0) / 100.0;
+      Serial.print("BMP180 Pressure: ");
+      Serial.print(pressure);
+      Serial.println(" hPa");
+    } else {
+      Serial.println("BMP180 pressure reading failed");
+    }
   }
 
   // Read BH1750 (Light)
