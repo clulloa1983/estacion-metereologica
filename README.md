@@ -7,17 +7,18 @@ Sistema completo de estación meteorológica basado en Arduino/ESP32 con dashboa
 - **Sensores Meteorológicos**: Temperatura, humedad, presión, viento, lluvia
 - **Conectividad**: WiFi con protocolo MQTT
 - **Base de Datos**: InfluxDB para datos de series temporales
-- **Dashboard**: Grafana para visualización
-- **API REST**: Backend en Node.js
+- **Dashboard**: React/Next.js con TypeScript + Grafana para visualización
+- **API REST**: Backend en Node.js/Express
 - **Alertas**: Sistema de notificaciones automáticas
 - **Exportación**: Datos en CSV/JSON
+- **Frontend Moderno**: Material-UI 7.3.1, Chart.js, Leaflet maps
 
 ## 🏗️ Arquitectura
 
 ```
 Arduino/ESP32 → MQTT → Backend API → InfluxDB
                             ↓
-                      Dashboard Web
+                   React Dashboard + Grafana
 ```
 
 ## 🚀 Inicio Rápido
@@ -58,13 +59,30 @@ npm install
 # Crear archivo de configuración
 cp .env.example .env
 
+# Iniciar en modo desarrollo (puerto 5002)
+npm run dev
+```
+
+### 3. Configurar el Frontend
+
+```bash
+cd frontend
+
+# Instalar dependencias
+npm install
+
+# Crear archivo de configuración
+cp .env.example .env.local
+# O crear .env.local con:
+# NEXT_PUBLIC_API_URL=http://localhost:5002/api
+
 # Iniciar en modo desarrollo
 npm run dev
 ```
 
-### 3. Configurar el Arduino/ESP32
+### 4. Configurar el Arduino/ESP32
 
-1. Abrir `arduino/weather_station/weather_station.ino`
+1. Abrir `arduino/weather_station_wemos/weather_station_wemos.ino`
 2. Configurar WiFi y MQTT:
 ```cpp
 const char* ssid = "TU_WIFI_SSID";
@@ -72,6 +90,14 @@ const char* password = "TU_WIFI_PASSWORD";
 const char* mqtt_server = "tu-servidor-mqtt.com";
 ```
 3. Subir el código al ESP32
+
+### 🌐 Servicios Disponibles
+
+- **Frontend Dashboard**: http://localhost:3001+ (auto-asignado, evita 3000 usado por Grafana)
+- **Backend API**: http://localhost:5002/api (Node.js/Express)
+- **InfluxDB UI**: http://localhost:8086 (admin/weather123)
+- **Grafana Dashboard**: http://localhost:3000 (admin/grafana123)
+- **MQTT Broker**: localhost:1883 (WebSocket: 9001)
 
 ## 📊 API Endpoints
 
@@ -90,10 +116,13 @@ const char* mqtt_server = "tu-servidor-mqtt.com";
 
 ```bash
 # Obtener últimos datos de una estación
-curl http://localhost:5000/api/weather/data/STATION_001/latest
+curl http://localhost:5002/api/weather/data/WEMOS_STATION_001/latest
+
+# Obtener datos históricos (últimos 30 minutos)
+curl "http://localhost:5002/api/weather/data/WEMOS_STATION_001?timeRange=30m"
 
 # Exportar datos en CSV
-curl "http://localhost:5000/api/weather/export/STATION_001?format=csv&start=-7d"
+curl "http://localhost:5002/api/weather/export/WEMOS_STATION_001?format=csv&start=-7d"
 ```
 
 ## 🔧 Configuración de Sensores
@@ -157,8 +186,15 @@ Editar `backend/src/services/alertService.js` para agregar nuevas reglas.
 ### Backend
 ```bash
 npm start     # Producción
-npm run dev   # Desarrollo
+npm run dev   # Desarrollo (puerto 5002)
 npm test      # Pruebas
+```
+
+### Frontend
+```bash
+npm run dev   # Desarrollo (puerto auto-asignado 3001+)
+npm run build # Compilar para producción
+npm start     # Servidor de producción
 ```
 
 ### Docker
@@ -169,25 +205,74 @@ docker-compose logs -f        # Ver logs
 docker-compose restart influxdb  # Reiniciar servicio
 ```
 
+## ⚙️ Configuración Importante
+
+### Variables de Entorno Frontend
+**IMPORTANTE**: El frontend DEBE tener `.env.local` con:
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:5002/api
+```
+Sin este archivo, las llamadas a la API fallarán con errores "Failed to fetch".
+
+### Gestión de Puertos
+- **Backend**: Puerto 5002 (configurable via `PORT` en `.env`)
+- **Frontend**: Auto-asigna puertos disponibles (3001+, evita 3000 usado por Grafana)
+- **Conflictos**: Next.js detecta automáticamente puertos ocupados y asigna el siguiente disponible
+
 ## 📁 Estructura del Proyecto
 
 ```
 estacion-metereologica/
 ├── arduino/
-│   └── weather_station/
-│       └── weather_station.ino
+│   ├── weather_station_wemos/
+│   │   ├── weather_station_wemos.ino
+│   │   └── README.md
+│   ├── weather_station_esp32/
+│   └── sensores-microcontroladores.md
 ├── backend/
 │   ├── src/
 │   │   ├── config/
+│   │   │   ├── influxdb.js
+│   │   │   └── logger.js
 │   │   ├── controllers/
+│   │   │   ├── alertController.js
+│   │   │   └── weatherController.js
 │   │   ├── routes/
+│   │   │   ├── alertRoutes.js
+│   │   │   └── weatherRoutes.js
 │   │   ├── services/
-│   │   └── middleware/
+│   │   │   ├── alertService.js
+│   │   │   └── mqttService.js
+│   │   ├── middleware/
+│   │   │   ├── rateLimiter.js
+│   │   │   └── validation.js
+│   │   └── index.js
 │   └── package.json
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── AlertsPanel.tsx
+│   │   │   ├── CurrentMeasurements.tsx
+│   │   │   ├── HistoricalCharts.tsx
+│   │   │   ├── SystemStatus.tsx
+│   │   │   ├── WeatherMap.tsx
+│   │   │   └── WeatherMapClient.tsx
+│   │   ├── pages/
+│   │   │   ├── index.tsx
+│   │   │   ├── _app.tsx
+│   │   │   └── _document.tsx
+│   │   └── services/
+│   │       ├── weatherService.ts
+│   │       └── socketService.ts
+│   ├── package.json
+│   └── tsconfig.json
 ├── docker/
 │   ├── grafana/
+│   │   └── provisioning/
 │   └── mosquitto/
+│       └── config/
 ├── docker-compose.yml
+├── CLAUDE.md
 └── README.md
 ```
 
@@ -196,25 +281,38 @@ estacion-metereologica/
 ### Agregar Nuevos Sensores
 
 1. **Hardware**: Conectar sensor al ESP32
-2. **Arduino**: Agregar lectura en `readAndSendData()`
-3. **Backend**: Actualizar validación en `validation.js`
-4. **Base de datos**: Los campos se crean automáticamente
+2. **Arduino**: Agregar lectura en `readAndSendData()` en `weather_station_wemos.ino`
+3. **Backend**: Actualizar validación en `middleware/validation.js`
+4. **Frontend**: Agregar visualización en componentes React correspondientes
+5. **Base de datos**: Los campos se crean automáticamente en InfluxDB
 
 ### Personalizar Alertas
 
-1. Editar reglas en `alertService.js`
+1. Editar reglas en `backend/src/services/alertService.js`
 2. Configurar notificaciones (email, SMS, etc.)
 3. Crear dashboard específico en Grafana
+4. Agregar visualización de alertas en componente `AlertsPanel.tsx`
 
 ## 📦 Despliegue en Producción
 
 ### Variables de Entorno
 
+**Backend (.env)**:
 ```bash
 NODE_ENV=production
+PORT=5002
 INFLUXDB_TOKEN=<token-seguro>
+INFLUXDB_URL=<url-influxdb>
+INFLUXDB_ORG=weather-station
+INFLUXDB_BUCKET=weather-data
 MQTT_USERNAME=<usuario>
 MQTT_PASSWORD=<contraseña>
+```
+
+**Frontend (.env.local)**:
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:5002/api
+NODE_ENV=production
 ```
 
 ### SSL/TLS
@@ -235,6 +333,38 @@ Configurar certificados para:
 ## 📄 Licencia
 
 MIT License - ver archivo [LICENSE](LICENSE) para detalles.
+
+## 🔍 Solución de Problemas
+
+### Problemas Comunes
+
+1. **Error "Failed to fetch" en frontend**:
+   - Verificar que `.env.local` existe con `NEXT_PUBLIC_API_URL=http://localhost:5002/api`
+   - Confirmar que el backend esté ejecutándose en puerto 5002
+
+2. **Puerto 3000 ocupado**:
+   - Next.js auto-asigna el siguiente puerto disponible (3001, 3002, etc.)
+   - Grafana usa puerto 3000 por defecto
+
+3. **Conflictos de puertos**:
+   ```bash
+   # Verificar procesos en puerto específico
+   netstat -ano | findstr :5002
+   # Terminar proceso si es necesario
+   cmd /c "taskkill /F /PID <process_id>"
+   ```
+
+4. **Datos no aparecen en dashboard**:
+   - Verificar conexión MQTT: `docker logs weather_mosquitto`
+   - Comprobar logs del backend: `npm run dev`
+   - Revisar InfluxDB: http://localhost:8086
+
+### Lista de Verificación del Sistema
+
+1. ✅ Docker services: `docker-compose ps`
+2. ✅ Backend API: `curl http://localhost:5002/health`
+3. ✅ Frontend: Verificar puerto auto-asignado en consola
+4. ✅ MQTT: `docker exec weather_mosquitto mosquitto_sub -h localhost -t "weather/data/+" -v`
 
 ## 🆘 Soporte
 

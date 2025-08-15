@@ -8,7 +8,7 @@ This is an IoT Weather Station system with Arduino/ESP32 hardware sensors that c
 
 **Architecture Flow**: Arduino/ESP32 → MQTT → Backend API → InfluxDB → Frontend Dashboard + Grafana
 
-**Current Status**: The system is actively running with real-time data collection. Backend API is functional and receiving sensor data from WEMOS_STATION_001. Frontend dashboard is operational but has some rendering issues with the map component.
+**Current Status**: The system infrastructure is set up but not currently running. Backend API is configured for port 5002, and frontend components including WeatherMapClient are properly implemented. Docker services need to be started for full operation.
 
 ## System Components
 
@@ -78,20 +78,21 @@ npm start
 ```
 
 ### Service Access Points
-- **Frontend Dashboard**: http://localhost:3002 (React/Next.js with TypeScript)
-- **Backend API**: http://localhost:5001/api (Node.js/Express)
+- **Frontend Dashboard**: http://localhost:3000+ (auto-assigned port, React/Next.js with TypeScript)
+- **Backend API**: http://localhost:5002/api (Node.js/Express)
 - **InfluxDB UI**: http://localhost:8086 (admin/weather123)
 - **Grafana Dashboard**: http://localhost:3000 (admin/grafana123) 
 - **MQTT Broker**: localhost:1883 (WebSocket: 9001)
 
 **Current Port Status**: 
-- Backend is running on port 5001 and actively processing MQTT data
-- Frontend is running on port 3002 with some compilation warnings
+- Backend is configured for port 5002 (not currently running)
+- Frontend auto-assigns available ports starting from 3000 (Grafana uses 3000 in Docker)
+- Docker services not currently running
 
 ### Port Configuration
 The system uses the following ports:
-- **Frontend (Next.js)**: 3002+ (auto-assigns available port if 3000/3002 busy)
-- **Backend API**: 5001 (configurable via PORT env var)
+- **Frontend (Next.js)**: 3001+ (auto-assigns available port, avoids 3000 used by Grafana)
+- **Backend API**: 5002 (configured via PORT env var, changed from default 5000)
 - **Grafana**: 3000 (Docker service)
 - **InfluxDB**: 8086 (Docker service)
 - **MQTT**: 1883 (Docker service, WebSocket: 9001)
@@ -127,14 +128,14 @@ Data points use `station_id` as primary tag for device identification.
 - Express.js server with middleware for security, logging, and rate limiting
 - Health check endpoint at `/health`
 - Graceful shutdown handling for SIGTERM/SIGINT
-- Currently running on port 5001 (default port 5000)
+- Currently configured for port 5002 (changed from default 5000)
 
 **MQTTService** (`src/services/mqttService.js`): 
 - Handles MQTT broker connection and message routing
 - Processes incoming sensor data and forwards to InfluxDB
 - Validates timestamps from Arduino (handles millis() vs real timestamps)
 - Manages device status monitoring
-- Currently receiving data from WEMOS_STATION_001
+- Ready to receive data from WEMOS_STATION_001 when services are running
 
 **AlertService** (`src/services/alertService.js`):
 - Evaluates sensor data against predefined thresholds
@@ -163,11 +164,12 @@ Data points use `station_id` as primary tag for device identification.
   - `weatherService.ts`: Backend API client with TypeScript interfaces
   - `socketService.ts`: WebSocket communication (placeholder)
 
-**Known Frontend Issues**:
-- WeatherMap component has syntax errors and missing WeatherMapClient import
-- Material-UI Grid deprecation warnings (xs, sm, md, lg props removed)
-- viewport meta tag warnings in _document.tsx
-- Leaflet SSR issues with "window is not defined" error
+**Frontend Implementation Status**:
+- ✅ WeatherMapClient component properly implemented with Leaflet integration
+- ✅ Dynamic import with SSR disabled for map components  
+- ✅ Material-UI 7.3.1 components working correctly
+- ⚠️ Potential Grid deprecation warnings may still exist
+- ⚠️ Need to verify viewport meta configuration
 
 ### API Endpoints Structure
 - **Weather Data**: `/api/weather/*` - CRUD operations for sensor data
@@ -187,8 +189,8 @@ Data points use `station_id` as primary tag for device identification.
 ## Arduino/ESP32 Integration
 
 ### Current Station Status
-- **WEMOS_STATION_001**: Currently active and sending data every ~60 seconds
-- **Data Flow**: Arduino → MQTT → Backend → InfluxDB (working properly)
+- **WEMOS_STATION_001**: Ready for deployment, code uploaded to ESP32
+- **Data Flow**: Arduino → MQTT → Backend → InfluxDB (configured and ready)
 - **Sensor Data**: Temperature, humidity, pressure, wind speed/direction, rainfall
 
 ### Hardware Files Location
@@ -237,13 +239,13 @@ Alert rules are defined in `ALERT_RULES` array in `alertService.js`. Each rule s
 ### Environment Configuration
 
 **Backend** requires `.env` file with:
-- `PORT=5001` - Backend server port (currently active)
+- `PORT=5002` - Backend server port (configured)
 - InfluxDB connection details (URL, token, org, bucket)
 - MQTT broker configuration
 - Rate limiting and logging preferences
 
 **Frontend** requires `.env.local` file with:
-- `NEXT_PUBLIC_API_URL=http://localhost:5001/api` - Backend API URL (required for API calls)
+- `NEXT_PUBLIC_API_URL=http://localhost:5002/api` - Backend API URL (required for API calls)
 - `NODE_ENV=development` - Environment mode
 
 **IMPORTANT**: Frontend MUST have `.env.local` file or API calls will fail with "Failed to fetch" errors.
@@ -267,32 +269,31 @@ This creates the real-time pipeline from hardware sensors through to database st
 ## Common Development Tasks
 
 ### System Status Check
-- **Backend Health**: `curl http://localhost:5001/health`
-- **Latest Data**: `curl http://localhost:5001/api/weather/data/WEMOS_STATION_001/latest`
+- **Backend Health**: `curl http://localhost:5002/health`
+- **Latest Data**: `curl http://localhost:5002/api/weather/data/WEMOS_STATION_001/latest`
 - **MQTT Activity**: Check backend logs for "Weather data stored" messages
-- **Frontend Status**: Check http://localhost:3002 for dashboard functionality
+- **Frontend Status**: Check auto-assigned port (typically 3001+) for dashboard functionality
+- **Docker Services**: `docker ps` to check running containers
 
 ### Troubleshooting Data Issues
 1. **Check MQTT messages**: `docker exec weather_mosquitto mosquitto_sub -h localhost -t "weather/data/+" -v`
 2. **Clear InfluxDB data**: `docker exec weather_influxdb influx delete --bucket weather-data --start 1970-01-01T00:00:00Z --stop 2025-12-31T23:59:59Z --org weather-station --token weather-station-token-12345`
-3. **Check API health**: `curl http://localhost:5001/health`
-4. **Test latest data**: `curl http://localhost:5001/api/weather/data/WEMOS_STATION_001/latest`
+3. **Check API health**: `curl http://localhost:5002/health`
+4. **Test latest data**: `curl http://localhost:5002/api/weather/data/WEMOS_STATION_001/latest`
 
-### Frontend Issues Resolution
-1. **Fix WeatherMap Component**: 
-   - Check if `WeatherMapClient.tsx` exists or needs to be created
-   - Fix syntax errors in `WeatherMap.tsx` around line 340
-   - Handle Leaflet SSR properly with dynamic imports
-2. **Material-UI Grid Update**: Replace deprecated props (xs, sm, md, lg) with new Grid2 syntax
-3. **Viewport Meta Tags**: Move viewport meta from `_document.tsx` to `_app.tsx` or `next.config.js`
+### System Startup Checklist
+1. **Start Docker Services**: `docker-compose up -d` (all infrastructure services)
+2. **Start Backend**: `cd backend && npm run dev` (runs on port 5002)
+3. **Start Frontend**: `cd frontend && npm run dev` (auto-assigns port, typically 3001+)
+4. **Verify Services**: Check all endpoints are responding correctly
 
 ### Port Conflicts Resolution
 If ports are in use:
-1. **Check running processes**: `netstat -ano | findstr :5001` (backend) or `netstat -ano | findstr :3002` (frontend)
+1. **Check running processes**: `netstat -ano | findstr :5002` (backend) or `netstat -ano | findstr :3000` (frontend)
 2. **Kill conflicting process**: `cmd /c "taskkill /F /PID <process_id>"`
 3. **Or change port**: Update `PORT` in `backend/.env` and `NEXT_PUBLIC_API_URL` in `frontend/.env.local`
 
-**Frontend Port Auto-Assignment**: Next.js automatically assigns available ports (3002, 3003, etc.) if default ports are busy. Check console output for actual port used.
+**Frontend Port Auto-Assignment**: Next.js automatically assigns available ports (3001, 3002, etc.) avoiding 3000 used by Grafana. Check console output for actual port used.
 
 ### Dashboard Development
 - **Historical Charts**: Default shows last 30 minutes (`timeRange=30m`)

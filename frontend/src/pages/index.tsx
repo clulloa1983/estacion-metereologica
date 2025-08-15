@@ -26,7 +26,7 @@ interface WeatherData {
 
 export default function Dashboard() {
   const [currentData, setCurrentData] = useState<WeatherData | null>(null);
-  const [stationId] = useState('WEMOS_STATION_001'); // Podrías hacer esto configurable
+  const [stationId] = useState('ESP32_STATION_001'); // Podrías hacer esto configurable
   const [loading, setLoading] = useState(true);
   const [socketConnected, setSocketConnected] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
