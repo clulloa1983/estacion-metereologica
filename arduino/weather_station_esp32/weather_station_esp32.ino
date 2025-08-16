@@ -8,7 +8,8 @@
 
 // Pin definitions for ESP32 DevKit V1
 #define DHT_PIN 4         // GPIO4 - DHT22 sensor
-#define RAIN_PIN 2        // GPIO2 - MH-RD rain sensor
+#define RAIN_DIGITAL_PIN 2        // GPIO2 - MH-RD rain sensor (digital)
+#define RAIN_ANALOG_PIN 34        // GPIO34 - MH-RD rain sensor (analog)
 #define MQ7_PIN 36        // GPIO36 (ADC1_CH0) - MQ7 CO sensor
 #define MQ135_PIN 12      // GPIO12 - MQ135 air quality (digital)
 #define DSM501A_PIN 13    // GPIO13 - DSM501A dust sensor
@@ -77,7 +78,7 @@ void setup() {
   Wire.begin(SDA_PIN, SCL_PIN);
 
   // Initialize pins
-  pinMode(RAIN_PIN, INPUT_PULLUP);
+  pinMode(RAIN_DIGITAL_PIN, INPUT_PULLUP);
   pinMode(MQ135_PIN, INPUT);
   pinMode(DSM501A_PIN, INPUT);
 
@@ -86,7 +87,7 @@ void setup() {
 
   // Setup interrupt for rain sensor
   if (sensors.mh_rd_available) {
-    attachInterrupt(digitalPinToInterrupt(RAIN_PIN), rainPulseISR, FALLING);
+    attachInterrupt(digitalPinToInterrupt(RAIN_DIGITAL_PIN), rainPulseISR, FALLING);
   }
 
   // Connect to WiFi
@@ -170,9 +171,9 @@ void initializeSensors() {
   sensors.bh1750_available = lightMeter.begin();
   Serial.println(sensors.bh1750_available ? "✓ BH1750 detected" : "✗ BH1750 not found");
 
-  // Test rain sensor (only if needed for this test)
-  sensors.mh_rd_available = false;
-  Serial.println("✗ MH-RD rain sensor disabled for testing");
+  // Test rain sensor MH-RD
+  sensors.mh_rd_available = true;
+  Serial.println("✓ MH-RD rain sensor enabled");
 
   // Test analog sensors (disable for initial testing)
   sensors.mq7_available = false;
@@ -285,10 +286,19 @@ void readAndSendData() {
     }
   }
 
-  // Calculate rainfall (pulses in last minute)
+  // Read MH-RD rain sensor (both analog and digital)
   if (sensors.mh_rd_available) {
+    // Digital reading (pulse count for rainfall amount)
     float rainfall = calculateRainfall();
     doc["rainfall"] = round(rainfall * 100.0) / 100.0;
+    
+    // Analog reading (rain intensity level 0-4095)
+    int rain_analog = analogRead(RAIN_ANALOG_PIN);
+    doc["rain_intensity"] = rain_analog;
+    
+    // Convert to percentage (inverted: higher analog value = less rain)
+    float rain_percentage = map(rain_analog, 0, 4095, 100, 0);
+    doc["rain_level_percent"] = constrain(rain_percentage, 0, 100);
   }
 
   // Read MQ7 (Carbon Monoxide) - ESP32 has 12-bit ADC (0-4095)
