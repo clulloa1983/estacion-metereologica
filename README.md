@@ -387,13 +387,13 @@ const char* mqtt_server = "tu-servidor-mqtt.com";
 
 ```bash
 # Obtener últimos datos de una estación
-curl http://localhost:5002/api/weather/data/WEMOS_STATION_001/latest
+curl http://localhost:5002/api/weather/data/ESP32_STATION_001/latest
 
 # Obtener datos históricos (últimos 30 minutos)
-curl "http://localhost:5002/api/weather/data/WEMOS_STATION_001?timeRange=30m"
+curl "http://localhost:5002/api/weather/data/ESP32_STATION_001?timeRange=30m"
 
 # Exportar datos en CSV
-curl "http://localhost:5002/api/weather/export/WEMOS_STATION_001?format=csv&start=-7d"
+curl "http://localhost:5002/api/weather/export/ESP32_STATION_001?format=csv&start=-7d"
 ```
 
 ## 🔧 Hardware y Configuración ESP32/WEMOS

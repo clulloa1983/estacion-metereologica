@@ -2,37 +2,45 @@
 
 ---
 
-## ✅ Sensores Disponibles
+## ✅ Sensores Conectados (ESP32)
 
-- 🌡️ **DHT22** — Sensor de temperatura y humedad
-- 🌫️ **Dsm501A** — Sensor de partículas de polvo PM2.5
-- 💡 **GY-30 / BH1750FVI** — Sensor de luminiscencia
-- 🫁 **MQ7** — Sensor de monóxido de carbono
-- 🏭 **MQ135** — Sensor de calidad de aire
-- 🌧️ **MH-RD** — Sensor de lluvia
-- 🧭 **BMP180 Gy68** — Sensor de presión barométrica (I2C)
+- 🌡️ **DHT22** — Sensor de temperatura y humedad (GPIO27)
+- 🧭 **BMP180** — Sensor de presión barométrica (I2C - GPIO21/22)
+- 🌧️ **MH-RD** — Sensor de lluvia (GPIO12)
 
 ---
 
-## 🚚 Sensores en Camino
+## 🖥️ Microcontrolador Principal
 
-- 🌧️ **Pluviómetro** — Medidor de lluvia
-- 🌬️ **Anemómetro** — Medidor de velocidad del viento
-- 🧭 **Sensor de dirección de viento**
+- 🚀 **ESP32** — Microcontrolador definitivo del proyecto
 
----
-
-## 🖥️ Microcontroladores Disponibles
-
-- 🤖 **WEMOS D1 R2**
-
-
----
-
-## 🖥️ Microcontroladores  en Camino
-
-- 🚀 **ESP32**
+### Especificaciones ESP32
+- **CPU**: Dual Core 240MHz
+- **WiFi**: 802.11 b/g/n (2.4 GHz)
+- **Bluetooth**: v4.2 BR/EDR y BLE
+- **GPIO**: 34 pines disponibles
+- **ADC**: 18 canales, 12-bit
+- **I2C**: GPIO21 (SDA), GPIO22 (SCL)
+- **Memoria**: 4MB Flash, 520KB RAM
+- **Alimentación**: 5V (USB/Micro USB) / 3.3V (regulado)
 
 ---
 
-> 📦 *Actualiza esta lista conforme se agreguen nuevos sensores o microcontroladores al proyecto.*
+## 🎯 Configuración Actual
+
+### Conexiones Activas
+| Sensor | Pin ESP32 | Protocolo | Función |
+|--------|-----------|-----------|---------|
+| DHT22 | GPIO27 | OneWire | Temperatura y humedad |
+| BMP180 | GPIO21/22 | I2C | Presión barométrica |
+| MH-RD | GPIO12 | Digital | Detección de lluvia |
+
+### Estado del Proyecto
+- ✅ **ESP32**: Microcontrolador principal en uso
+- ✅ **Sensores básicos**: DHT22, BMP180, MH-RD conectados
+- ✅ **Comunicación**: MQTT funcional
+- ✅ **Alimentación**: USB/5V estable
+
+---
+
+> 📦 *Configuración actualizada para ESP32 como microcontrolador definitivo del proyecto.*
