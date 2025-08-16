@@ -1,10 +1,12 @@
 #include <WiFi.h>
+#include <WiFiManager.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <DHT.h>
 #include <Wire.h>
 #include <Adafruit_BMP085.h>
 #include <BH1750.h>
+#include <Preferences.h>
 
 // Pin definitions for ESP32 DevKit V1
 #define DHT_PIN 4         // GPIO4 - DHT22 sensor
@@ -22,12 +24,15 @@ DHT dht(DHT_PIN, DHT_TYPE);
 Adafruit_BMP085 bmp;
 BH1750 lightMeter;
 
-// WiFi and MQTT configuration
-const char* ssid = "Depa1313";
-const char* password = "claudio1983";
-const char* mqtt_server = "192.168.1.98";
-const int mqtt_port = 1883;
-const char* station_id = "ESP32_STATION_001";
+// WiFi and MQTT configuration (stored in NVS)
+char mqtt_server[40] = "192.168.1.98";  // Default fallback
+char mqtt_port[6] = "1883";              // Default fallback
+char station_id[20] = "ESP32_STATION_001"; // Default fallback
+char api_token[64] = "";                  // For future API authentication
+
+// WiFiManager and Preferences
+WiFiManager wm;
+Preferences preferences;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -90,11 +95,14 @@ void setup() {
     attachInterrupt(digitalPinToInterrupt(RAIN_DIGITAL_PIN), rainPulseISR, FALLING);
   }
 
-  // Connect to WiFi
+  // Load configuration from NVS
+  loadConfiguration();
+  
+  // Connect to WiFi using WiFiManager
   connectWiFi();
 
   // Setup MQTT
-  client.setServer(mqtt_server, mqtt_port);
+  client.setServer(mqtt_server, atoi(mqtt_port));
   client.setCallback(mqttCallback);
   client.setBufferSize(512); // Increase MQTT buffer size
 
@@ -194,24 +202,74 @@ void printAvailableSensors() {
   Serial.println("========================\n");
 }
 
-void connectWiFi() {
-  WiFi.begin(ssid, password);
-  Serial.print("Connecting to WiFi");
+void loadConfiguration() {
+  preferences.begin("weather-station", false);
   
-  int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-    delay(500);
-    Serial.print(".");
-    attempts++;
+  // Load MQTT configuration
+  preferences.getString("mqtt_server", mqtt_server, sizeof(mqtt_server));
+  preferences.getString("mqtt_port", mqtt_port, sizeof(mqtt_port));
+  preferences.getString("station_id", station_id, sizeof(station_id));
+  preferences.getString("api_token", api_token, sizeof(api_token));
+  
+  preferences.end();
+  
+  Serial.println("Configuration loaded:");
+  Serial.println("MQTT Server: " + String(mqtt_server));
+  Serial.println("MQTT Port: " + String(mqtt_port));
+  Serial.println("Station ID: " + String(station_id));
+}
+
+void saveConfiguration() {
+  preferences.begin("weather-station", false);
+  
+  preferences.putString("mqtt_server", mqtt_server);
+  preferences.putString("mqtt_port", mqtt_port);
+  preferences.putString("station_id", station_id);
+  preferences.putString("api_token", api_token);
+  
+  preferences.end();
+  Serial.println("Configuration saved to NVS");
+}
+
+void connectWiFi() {
+  // Setup WiFiManager with custom parameters
+  WiFiManagerParameter custom_mqtt_server("mqtt_server", "MQTT Server", mqtt_server, 40);
+  WiFiManagerParameter custom_mqtt_port("mqtt_port", "MQTT Port", mqtt_port, 6);
+  WiFiManagerParameter custom_station_id("station_id", "Station ID", station_id, 20);
+  WiFiManagerParameter custom_api_token("api_token", "API Token", api_token, 64);
+  
+  wm.addParameter(&custom_mqtt_server);
+  wm.addParameter(&custom_mqtt_port);
+  wm.addParameter(&custom_station_id);
+  wm.addParameter(&custom_api_token);
+  
+  // Configure WiFiManager
+  wm.setConfigPortalTimeout(180); // 3 minutes timeout
+  wm.setConnectTimeout(20);        // 20 seconds to connect
+  
+  bool connected = false;
+  
+  // Try to connect to saved WiFi
+  if(wm.autoConnect("WeatherStation-Setup")) {
+    connected = true;
+  } else {
+    Serial.println("Failed to connect to WiFi");
+    ESP.restart(); // Restart and try again
   }
   
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println();
-    Serial.print("Connected to WiFi. IP address: ");
+  if (connected) {
+    Serial.println("WiFi connected successfully!");
+    Serial.print("IP address: ");
     Serial.println(WiFi.localIP());
-  } else {
-    Serial.println();
-    Serial.println("Failed to connect to WiFi");
+    
+    // Update configuration with user input
+    strcpy(mqtt_server, custom_mqtt_server.getValue());
+    strcpy(mqtt_port, custom_mqtt_port.getValue());
+    strcpy(station_id, custom_station_id.getValue());
+    strcpy(api_token, custom_api_token.getValue());
+    
+    // Save updated configuration
+    saveConfiguration();
   }
 }
 
@@ -221,7 +279,15 @@ void reconnectMQTT() {
     
     String clientId = String(station_id) + "_" + String(random(0xffff), HEX);
     
-    if (client.connect(clientId.c_str())) {
+    // Use API token for MQTT authentication if available
+    bool mqtt_connected = false;
+    if (strlen(api_token) > 0) {
+      mqtt_connected = client.connect(clientId.c_str(), "api_user", api_token);
+    } else {
+      mqtt_connected = client.connect(clientId.c_str());
+    }
+    
+    if (mqtt_connected) {
       Serial.println("connected");
       
       // Subscribe to command topics

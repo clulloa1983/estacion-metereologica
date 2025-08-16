@@ -68,8 +68,8 @@ npm install
 Copia `.env.example` a `.env.local` y configura:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:5000/api
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
+NEXT_PUBLIC_API_URL=http://localhost:5002/api
+NEXT_PUBLIC_SOCKET_URL=http://localhost:5002
 NEXT_PUBLIC_MAP_DEFAULT_LAT=-34.6037
 NEXT_PUBLIC_MAP_DEFAULT_LNG=-58.3816
 ```
@@ -80,7 +80,7 @@ NEXT_PUBLIC_MAP_DEFAULT_LNG=-58.3816
 npm run dev
 ```
 
-El dashboard estará disponible en: http://localhost:3000
+El dashboard estará disponible en: http://localhost:3001 (o puerto auto-asignado)
 
 ## Componentes Principales
 

@@ -10,6 +10,7 @@ const influxClient = require('./config/influxdb');
 const mqttService = require('./services/mqttService');
 const weatherRoutes = require('./routes/weatherRoutes');
 const alertRoutes = require('./routes/alertRoutes');
+const authRoutes = require('./routes/authRoutes');
 const { rateLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
@@ -24,6 +25,10 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(rateLimiter);
 
+// Public routes
+app.use('/api/auth', authRoutes);
+
+// Protected routes (will be updated to require authentication)
 app.use('/api/weather', weatherRoutes);
 app.use('/api/alerts', alertRoutes);
 
