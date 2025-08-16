@@ -25,8 +25,12 @@ export interface Alert {
 }
 
 class WeatherService {
-  async getLatestData(stationId: string): Promise<WeatherDataPoint> {
+  async getLatestData(stationId: string): Promise<WeatherDataPoint | null> {
     const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}/latest`);
+    if (response.status === 404) {
+      // No recent data available for this station
+      return null;
+    }
     if (!response.ok) {
       throw new Error('Failed to fetch latest data');
     }

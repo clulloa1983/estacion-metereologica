@@ -47,8 +47,14 @@ export default function Dashboard() {
     const fetchLatestData = async () => {
       try {
         const data = await weatherService.getLatestData(stationId);
-        setCurrentData(data);
-        setLastUpdate(new Date());
+        if (data) {
+          setCurrentData(data);
+          setLastUpdate(new Date());
+        } else {
+          // No hay datos recientes disponibles
+          setCurrentData(null);
+          console.log('No recent data available for station:', stationId);
+        }
       } catch (error) {
         console.error('Error fetching latest data:', error);
       } finally {
@@ -124,6 +130,13 @@ export default function Dashboard() {
       </AppBar>
       
       <Container maxWidth="xl">
+        {!loading && !currentData && (
+          <Alert severity="info" sx={{ mb: 3 }}>
+            No hay datos recientes disponibles para la estación {stationId}. 
+            Verifique que el ESP32 esté enviando datos o que los servicios del sistema estén funcionando correctamente.
+          </Alert>
+        )}
+        
         <Grid container spacing={3}>
           {/* Mediciones Actuales */}
           <Grid item xs={12}>
