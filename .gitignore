@@ -61,6 +61,16 @@ out/
 # Next.js
 .next/
 .vercel/
+# Next.js build output
+frontend/.next/
+frontend/out/
+# Next.js cache
+frontend/.cache/
+# ESLint cache
+frontend/.eslintcache
+# TypeScript build info
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
 
 # Temporary files
 tmp/
