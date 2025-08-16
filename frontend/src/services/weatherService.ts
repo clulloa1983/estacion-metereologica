@@ -60,14 +60,31 @@ class WeatherService {
       ...(parameters && { parameters: parameters.join(',') })
     });
     
-    const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}?${params}`, {
-      headers: this.getHeaders()
-    });
-    if (!response.ok) {
-      throw new Error('Failed to fetch historical data');
+    const url = `${API_BASE_URL}/weather/data/${stationId}?${params}`;
+    console.log('Fetching historical data from:', url);
+    console.log('API_BASE_URL:', API_BASE_URL);
+    console.log('Headers:', this.getHeaders());
+    
+    try {
+      const response = await fetch(url, {
+        headers: this.getHeaders()
+      });
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch historical data: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+      const result = await response.json();
+      console.log('Historical data result:', result);
+      return result.data || [];
+    } catch (error) {
+      console.error('Network error in getHistoricalData:', error);
+      throw error;
     }
-    const result = await response.json();
-    return result.data || [];
   }
 
   async getSummary(stationId: string, timeRange: string = '24h') {
