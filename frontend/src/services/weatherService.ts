@@ -1,4 +1,5 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'dev-device-key-12345';
 
 export interface WeatherDataPoint {
   station_id: string;
@@ -25,8 +26,16 @@ export interface Alert {
 }
 
 class WeatherService {
+  private getHeaders(): HeadersInit {
+    return {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY
+    };
+  }
   async getLatestData(stationId: string): Promise<WeatherDataPoint | null> {
-    const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}/latest`);
+    const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}/latest`, {
+      headers: this.getHeaders()
+    });
     if (response.status === 404) {
       // No recent data available for this station
       return null;
@@ -51,7 +60,9 @@ class WeatherService {
       ...(parameters && { parameters: parameters.join(',') })
     });
     
-    const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}?${params}`);
+    const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}?${params}`, {
+      headers: this.getHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch historical data');
     }
@@ -61,7 +72,9 @@ class WeatherService {
 
   async getSummary(stationId: string, timeRange: string = '24h') {
     const params = new URLSearchParams({ timeRange });
-    const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}/summary?${params}`);
+    const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}/summary?${params}`, {
+      headers: this.getHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch summary');
     }
@@ -70,7 +83,9 @@ class WeatherService {
   }
 
   async getStations() {
-    const response = await fetch(`${API_BASE_URL}/weather/stations`);
+    const response = await fetch(`${API_BASE_URL}/weather/stations`, {
+      headers: this.getHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch stations');
     }
@@ -87,7 +102,9 @@ class WeatherService {
       ? `${API_BASE_URL}/alerts/${stationId}?${params}`
       : `${API_BASE_URL}/alerts?${params}`;
       
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: this.getHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch alerts');
     }
@@ -98,6 +115,7 @@ class WeatherService {
   async acknowledgeAlert(alertId: string): Promise<void> {
     const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/acknowledge`, {
       method: 'PUT',
+      headers: this.getHeaders()
     });
     if (!response.ok) {
       throw new Error('Failed to acknowledge alert');
@@ -105,7 +123,9 @@ class WeatherService {
   }
 
   async getAlertSummary(stationId: string) {
-    const response = await fetch(`${API_BASE_URL}/alerts/summary/${stationId}`);
+    const response = await fetch(`${API_BASE_URL}/alerts/summary/${stationId}`, {
+      headers: this.getHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to fetch alert summary');
     }
@@ -115,7 +135,9 @@ class WeatherService {
 
   async exportData(stationId: string, format: 'csv' | 'json' = 'csv', timeRange: string = '24h') {
     const params = new URLSearchParams({ format, timeRange });
-    const response = await fetch(`${API_BASE_URL}/weather/export/${stationId}?${params}`);
+    const response = await fetch(`${API_BASE_URL}/weather/export/${stationId}?${params}`, {
+      headers: this.getHeaders()
+    });
     if (!response.ok) {
       throw new Error('Failed to export data');
     }
