@@ -4,16 +4,30 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 
 const logger = require('./config/logger');
 const influxClient = require('./config/influxdb');
 const mqttService = require('./services/mqttService');
+const cacheService = require('./services/cacheService');
+const socketService = require('./services/socketService');
 const weatherRoutes = require('./routes/weatherRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const authRoutes = require('./routes/authRoutes');
 const { rateLimiter } = require('./middleware/rateLimiter');
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: ["http://localhost:3001", "http://localhost:3000"],
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  transports: ['websocket', 'polling']
+});
+
 const PORT = process.env.PORT || 5002;
 
 app.use(helmet());
@@ -37,7 +51,11 @@ app.get('/health', (req, res) => {
     status: 'OK',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-    environment: process.env.NODE_ENV
+    environment: process.env.NODE_ENV,
+    cache: {
+      connected: cacheService.isConnected,
+      service: 'Redis'
+    }
   });
 });
 
@@ -66,8 +84,22 @@ const startServer = async () => {
     await mqttService.connect();
     logger.info('Connected to MQTT broker');
 
-    app.listen(PORT, () => {
+    await cacheService.connect();
+    logger.info('Cache service initialized');
+
+    // Initialize Socket.IO service
+    socketService.initialize(io);
+    
+    // Pass socketService to services for real-time broadcasts
+    mqttService.setSocketService(socketService);
+    
+    // Import and configure alertService
+    const alertService = require('./services/alertService');
+    alertService.setSocketService(socketService);
+
+    httpServer.listen(PORT, () => {
       logger.info(`Weather Station API running on port ${PORT}`);
+      logger.info(`WebSocket server running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);
     });
   } catch (error) {
@@ -76,13 +108,15 @@ const startServer = async () => {
   }
 };
 
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
+  await cacheService.disconnect();
   process.exit(0);
 });
 
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
   logger.info('SIGINT received, shutting down gracefully');
+  await cacheService.disconnect();
   process.exit(0);
 });
 

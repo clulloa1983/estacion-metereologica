@@ -50,6 +50,12 @@ class AlertService {
   constructor() {
     this.alertHistory = new Map();
     this.suppressionTime = 30 * 60 * 1000; // 30 minutos
+    this.socketService = null;
+  }
+
+  setSocketService(socketService) {
+    this.socketService = socketService;
+    logger.info('Socket service integrated with Alert service');
   }
 
   async checkAlerts(stationId, weatherData) {
@@ -92,6 +98,11 @@ class AlertService {
     try {
       writeAlert(alert);
       logger.warn(`Alert created for station ${stationId}:`, alert);
+      
+      // Broadcast alert to WebSocket clients
+      if (this.socketService) {
+        this.socketService.broadcastAlert(stationId, alert);
+      }
       
       return alert;
     } catch (error) {

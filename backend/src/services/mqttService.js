@@ -8,12 +8,18 @@ const { weatherDataSchema, statusDataSchema, alertDataSchema } = require('../sch
 class MQTTService {
   constructor() {
     this.client = null;
+    this.socketService = null;
     this.brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1883';
     this.topics = {
       weatherData: 'weather/data/+',
       status: 'weather/status/+',
       alerts: 'weather/alerts/+'
     };
+  }
+
+  setSocketService(socketService) {
+    this.socketService = socketService;
+    logger.info('Socket service integrated with MQTT service');
   }
 
   async connect() {
@@ -108,6 +114,11 @@ class MQTTService {
       writeWeatherData(stationId, weatherData);
       await flushWrites();
 
+      // Broadcast weather data to WebSocket clients
+      if (this.socketService) {
+        this.socketService.broadcastWeatherData(stationId, weatherData);
+      }
+
       await alertService.checkAlerts(stationId, weatherData);
 
       logger.info(`Valid weather data stored for station ${stationId}`, {
@@ -140,6 +151,11 @@ class MQTTService {
 
       writeWeatherData(stationId, statusData);
       await flushWrites();
+
+      // Broadcast station status to WebSocket clients
+      if (this.socketService) {
+        this.socketService.broadcastStationStatus(stationId, statusData);
+      }
 
       logger.info(`Valid status data stored for station ${stationId}`, {
         status: statusData.status,

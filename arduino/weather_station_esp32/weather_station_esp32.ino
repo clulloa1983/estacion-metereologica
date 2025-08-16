@@ -40,9 +40,15 @@ PubSubClient client(espClient);
 // Global variables
 volatile int rain_pulses = 0;
 unsigned long last_reading = 0;
-unsigned long reading_interval = 60000; // 1 minute
+unsigned long reading_interval = 60000; // 1 minute (changeable via MQTT)
 unsigned long last_wifi_check = 0;
 int wifi_check_interval = 30000; // 30 seconds
+
+// Deep Sleep configuration
+bool deep_sleep_enabled = true;
+unsigned long sleep_duration_ms = 60000; // Default 1 minute sleep
+RTC_DATA_ATTR int boot_count = 0;
+RTC_DATA_ATTR volatile int persistent_rain_pulses = 0;
 
 // Dust sensor variables for DSM501A
 unsigned long duration;
@@ -77,7 +83,10 @@ void IRAM_ATTR rainPulseISR();
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("ESP32 Weather Station Starting...");
+  
+  // Increment boot count and handle wake up
+  ++boot_count;
+  handleWakeUp();
 
   // Initialize I2C
   Wire.begin(SDA_PIN, SCL_PIN);
@@ -86,6 +95,9 @@ void setup() {
   pinMode(RAIN_DIGITAL_PIN, INPUT_PULLUP);
   pinMode(MQ135_PIN, INPUT);
   pinMode(DSM501A_PIN, INPUT);
+
+  // Restore rain pulse count from RTC memory
+  rain_pulses = persistent_rain_pulses;
 
   // Initialize sensors and check availability
   initializeSensors();
@@ -116,6 +128,31 @@ void setup() {
 void loop() {
   unsigned long current_time = millis();
 
+  // If deep sleep is enabled, do one reading cycle and then sleep
+  if (deep_sleep_enabled) {
+    // Quick WiFi and MQTT reconnection
+    if (WiFi.status() != WL_CONNECTED) {
+      Serial.println("WiFi connection lost, reconnecting...");
+      connectWiFi();
+    }
+    
+    if (!client.connected()) {
+      reconnectMQTT();
+    }
+    client.loop();
+    
+    // Do single sensor reading
+    readAndSendData();
+    
+    // Wait for MQTT to finish sending
+    delay(1000);
+    
+    // Enter deep sleep
+    enterDeepSleep();
+    return; // This won't actually execute, but for clarity
+  }
+
+  // Original loop logic for when deep sleep is disabled
   // Check WiFi connection periodically
   if (current_time - last_wifi_check > wifi_check_interval) {
     if (WiFi.status() != WL_CONNECTED) {
@@ -211,12 +248,19 @@ void loadConfiguration() {
   preferences.getString("station_id", station_id, sizeof(station_id));
   preferences.getString("api_token", api_token, sizeof(api_token));
   
+  // Load deep sleep configuration
+  deep_sleep_enabled = preferences.getBool("deep_sleep_enabled", true); // Default enabled
+  sleep_duration_ms = preferences.getULong("sleep_duration_ms", 60000); // Default 1 minute
+  reading_interval = sleep_duration_ms; // Sync intervals
+  
   preferences.end();
   
   Serial.println("Configuration loaded:");
   Serial.println("MQTT Server: " + String(mqtt_server));
   Serial.println("MQTT Port: " + String(mqtt_port));
   Serial.println("Station ID: " + String(station_id));
+  Serial.println("Deep Sleep: " + String(deep_sleep_enabled ? "enabled" : "disabled"));
+  Serial.println("Sleep Duration: " + String(sleep_duration_ms) + "ms");
 }
 
 void saveConfiguration() {
@@ -227,11 +271,24 @@ void saveConfiguration() {
   preferences.putString("station_id", station_id);
   preferences.putString("api_token", api_token);
   
+  // Save deep sleep configuration
+  preferences.putBool("deep_sleep_enabled", deep_sleep_enabled);
+  preferences.putULong("sleep_duration_ms", sleep_duration_ms);
+  
   preferences.end();
   Serial.println("Configuration saved to NVS");
 }
 
 void connectWiFi() {
+  // For deep sleep mode, reduce WiFi connection timeout for faster startup
+  if (deep_sleep_enabled) {
+    wm.setConfigPortalTimeout(30);  // Reduced from 180 seconds
+    wm.setConnectTimeout(10);       // Reduced from 20 seconds
+  } else {
+    wm.setConfigPortalTimeout(180); // 3 minutes timeout
+    wm.setConnectTimeout(20);       // 20 seconds to connect
+  }
+  
   // Setup WiFiManager with custom parameters
   WiFiManagerParameter custom_mqtt_server("mqtt_server", "MQTT Server", mqtt_server, 40);
   WiFiManagerParameter custom_mqtt_port("mqtt_port", "MQTT Port", mqtt_port, 6);
@@ -243,10 +300,6 @@ void connectWiFi() {
   wm.addParameter(&custom_station_id);
   wm.addParameter(&custom_api_token);
   
-  // Configure WiFiManager
-  wm.setConfigPortalTimeout(180); // 3 minutes timeout
-  wm.setConnectTimeout(20);        // 20 seconds to connect
-  
   bool connected = false;
   
   // Try to connect to saved WiFi
@@ -254,7 +307,14 @@ void connectWiFi() {
     connected = true;
   } else {
     Serial.println("Failed to connect to WiFi");
-    ESP.restart(); // Restart and try again
+    if (deep_sleep_enabled) {
+      // If deep sleep enabled and WiFi fails, sleep and try again later
+      Serial.println("WiFi failed in deep sleep mode, sleeping for 30 seconds...");
+      esp_sleep_enable_timer_wakeup(30 * 1000000); // 30 seconds
+      esp_deep_sleep_start();
+    } else {
+      ESP.restart(); // Restart and try again
+    }
   }
   
   if (connected) {
@@ -274,8 +334,12 @@ void connectWiFi() {
 }
 
 void reconnectMQTT() {
-  while (!client.connected()) {
+  int attempts = 0;
+  int max_attempts = deep_sleep_enabled ? 3 : 10; // Fewer attempts in deep sleep mode
+  
+  while (!client.connected() && attempts < max_attempts) {
     Serial.print("Attempting MQTT connection...");
+    attempts++;
     
     String clientId = String(station_id) + "_" + String(random(0xffff), HEX);
     
@@ -296,13 +360,19 @@ void reconnectMQTT() {
       
       // Send online status
       sendStatusUpdate("online");
+      break;
       
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
+      Serial.println(" try again in " + String(deep_sleep_enabled ? "2" : "5") + " seconds");
+      delay(deep_sleep_enabled ? 2000 : 5000); // Shorter delay in deep sleep mode
     }
+  }
+  
+  if (!client.connected() && deep_sleep_enabled) {
+    Serial.println("MQTT connection failed after " + String(max_attempts) + " attempts in deep sleep mode");
+    // Continue with sensor reading even if MQTT fails
   }
 }
 
@@ -485,10 +555,87 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     initializeSensors();
     printAvailableSensors();
     sendStatusUpdate("sensor_check_complete");
+  } else if (command == "sleep_mode") {
+    // Toggle deep sleep mode
+    deep_sleep_enabled = cmdDoc["enabled"].as<bool>();
+    if (cmdDoc.containsKey("interval_ms")) {
+      sleep_duration_ms = cmdDoc["interval_ms"].as<unsigned long>();
+      reading_interval = sleep_duration_ms; // Sync reading interval
+    }
+    Serial.println("Deep sleep " + String(deep_sleep_enabled ? "enabled" : "disabled"));
+    Serial.println("Sleep duration: " + String(sleep_duration_ms) + "ms");
+    
+    // Save configuration to persist across reboots
+    saveConfiguration();
+    
+    sendStatusUpdate("sleep_mode_updated");
+  } else if (command == "wake_up") {
+    // Force wake up and disable sleep temporarily  
+    deep_sleep_enabled = false;
+    Serial.println("Deep sleep disabled via wake_up command");
+    sendStatusUpdate("awake");
   }
 }
 
 // Interrupt service routine for rain sensor
 void IRAM_ATTR rainPulseISR() {
   rain_pulses++;
+}
+
+// Deep Sleep Functions
+void handleWakeUp() {
+  esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+  
+  Serial.println("Boot #" + String(boot_count));
+  
+  switch(wakeup_reason) {
+    case ESP_SLEEP_WAKEUP_TIMER:
+      Serial.println("Wakeup caused by timer");
+      break;
+    case ESP_SLEEP_WAKEUP_EXT0:
+      Serial.println("Wakeup caused by external signal using RTC_IO");
+      break;
+    case ESP_SLEEP_WAKEUP_EXT1:
+      Serial.println("Wakeup caused by external signal using RTC_CNTL");
+      break;
+    case ESP_SLEEP_WAKEUP_TOUCHPAD:
+      Serial.println("Wakeup caused by touchpad");
+      break;
+    case ESP_SLEEP_WAKEUP_ULP:
+      Serial.println("Wakeup caused by ULP program");
+      break;
+    default:
+      Serial.println("Wakeup was not caused by deep sleep: " + String(wakeup_reason));
+      break;
+  }
+}
+
+void enterDeepSleep() {
+  Serial.println("Preparing for deep sleep...");
+  
+  // Save rain pulse count to RTC memory (survives deep sleep)
+  persistent_rain_pulses = rain_pulses;
+  
+  // Send offline status
+  sendStatusUpdate("going_to_sleep");
+  delay(500); // Give time for MQTT message to send
+  
+  // Disconnect WiFi to save power
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_OFF);
+  
+  // Configure timer wakeup
+  esp_sleep_enable_timer_wakeup(sleep_duration_ms * 1000); // Convert ms to microseconds
+  
+  // Optional: Enable wakeup on external interrupt (e.g., for rain sensor)
+  // This allows immediate wakeup if it starts raining heavily
+  if (sensors.mh_rd_available) {
+    esp_sleep_enable_ext0_wakeup(GPIO_NUM_2, 0); // Rain sensor on GPIO2, wake on LOW
+  }
+  
+  Serial.println("Going to sleep for " + String(sleep_duration_ms) + "ms");
+  Serial.flush(); // Ensure all serial output is sent before sleeping
+  
+  // Enter deep sleep
+  esp_deep_sleep_start();
 }

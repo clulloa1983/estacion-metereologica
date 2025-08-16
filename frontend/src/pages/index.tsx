@@ -62,45 +62,54 @@ export default function Dashboard() {
       }
     };
 
-    // TODO: Configurar WebSocket cuando esté implementado en el backend
-    // const setupSocket = () => {
-    //   socketService.connect();
-    //   
-    //   // Suscribirse a la estación
-    //   socketService.subscribeToStation(stationId);
-    //   
-    //   // Escuchar eventos de conexión
-    //   socketService.on('connection', (data: any) => {
-    //     setSocketConnected(data.status === 'connected');
-    //   });
-    //   
-    //   // Escuchar datos en tiempo real
-    //   socketService.on('weather-data', (data: WeatherData) => {
-    //     if (data.station_id === stationId) {
-    //       setCurrentData(data);
-    //       setLastUpdate(new Date());
-    //     }
-    //   });
-    //   
-    //   // Escuchar nuevas alertas
-    //   socketService.on('new-alert', (alert: any) => {
-    //     console.log('Nueva alerta recibida:', alert);
-    //     // Podrías mostrar una notificación aquí
-    //   });
-    // };
+    // WebSocket setup - ¡Ahora implementado en el backend!
+    const setupSocket = () => {
+      socketService.connect();
+      
+      // Suscribirse a la estación
+      socketService.subscribeToStation(stationId);
+      
+      // Escuchar eventos de conexión
+      socketService.on('connection', (data: any) => {
+        setSocketConnected(data.status === 'connected');
+        console.log('WebSocket conectado:', data);
+      });
+      
+      // Escuchar datos en tiempo real
+      socketService.on('weather-data', (payload: any) => {
+        if (payload.stationId === stationId) {
+          setCurrentData(payload.data);
+          setLastUpdate(new Date());
+          console.log('Datos en tiempo real recibidos:', payload.data);
+        }
+      });
+      
+      // Escuchar nuevas alertas
+      socketService.on('new-alert', (payload: any) => {
+        console.log('Nueva alerta recibida:', payload.alert);
+        // Podrías mostrar una notificación aquí
+      });
+
+      // Escuchar estado de la estación
+      socketService.on('station-status', (payload: any) => {
+        console.log('Estado de estación actualizado:', payload.status);
+      });
+    };
 
     fetchLatestData();
-    // setupSocket(); // Deshabilitado hasta implementar Socket.IO en backend
+    setupSocket(); // ¡Habilitado! Socket.IO implementado en backend
     
-    // Actualizar cada 60 segundos (no hay WebSocket por ahora)
+    // Mantener polling cada 60 segundos como fallback
     const interval = setInterval(() => {
-      fetchLatestData();
+      if (!socketConnected) {
+        fetchLatestData();
+      }
     }, 60000);
     
     return () => {
       clearInterval(interval);
-      // socketService.unsubscribeFromStation(stationId);
-      // socketService.disconnect();
+      socketService.unsubscribeFromStation(stationId);
+      socketService.disconnect();
     };
   }, [stationId]);
 
@@ -112,6 +121,14 @@ export default function Dashboard() {
             Estación Meteorológica - Dashboard
           </Typography>
           <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+            <Chip
+              icon={socketConnected ? <Wifi /> : <WifiOff />}
+              label={socketConnected ? 'Tiempo Real (WebSocket)' : 'Polling HTTP'}
+              color={socketConnected ? 'success' : 'warning'}
+              variant="outlined"
+              size="small"
+              sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
+            />
             <Chip
               icon={getConnectionStatus().connected ? <Wifi /> : <WifiOff />}
               label={getConnectionStatus().text}

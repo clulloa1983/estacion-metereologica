@@ -1,5 +1,6 @@
 const { queryWeatherData, writeWeatherData, flushWrites, bucket } = require('../config/influxdb');
 const logger = require('../config/logger');
+const cacheService = require('../services/cacheService');
 
 const receiveWeatherData = async (req, res) => {
   try {
@@ -31,6 +32,10 @@ const receiveWeatherData = async (req, res) => {
     writeWeatherData(station_id, weatherData);
     await flushWrites();
 
+    // Invalidate cache for this station when new data arrives
+    await cacheService.invalidatePattern(`weather:latest:${station_id}*`);
+    await cacheService.invalidatePattern(`weather:historical:${station_id}*`);
+
     logger.info(`Weather data received from station ${station_id}`);
     
     res.status(200).json({
@@ -56,6 +61,19 @@ const getWeatherData = async (req, res) => {
     let actualStart = start;
     if (timeRange && !start) {
       actualStart = `-${timeRange}`;
+    }
+
+    // Check cache first
+    const cacheKey = cacheService.getHistoricalDataKey(stationId, actualStart, end, aggregation, limit);
+    const cachedData = await cacheService.get(cacheKey);
+    
+    if (cachedData) {
+      return res.json({
+        success: true,
+        data: cachedData.data,
+        count: cachedData.count,
+        cached: true
+      });
     }
 
     let query = `
@@ -116,10 +134,18 @@ const getWeatherData = async (req, res) => {
     // Ordenar por timestamp
     transformedData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
     
+    // Cache the result with appropriate TTL
+    const isShortRange = !timeRangeValue.includes('d') && 
+                        (!timeRangeValue.includes('h') || parseInt(timeRangeValue.replace('-', '').replace('h', '')) <= 6);
+    const ttl = isShortRange ? cacheService.constructor.TTL.HISTORICAL_SHORT : cacheService.constructor.TTL.HISTORICAL_LONG;
+    
+    await cacheService.set(cacheKey, { data: transformedData, count: transformedData.length }, ttl);
+    
     res.json({
       success: true,
       data: transformedData,
-      count: transformedData.length
+      count: transformedData.length,
+      cached: false
     });
   } catch (error) {
     logger.error('Error querying weather data:', error);
@@ -133,6 +159,19 @@ const getWeatherData = async (req, res) => {
 const getLatestData = async (req, res) => {
   try {
     const { stationId } = req.params;
+
+    // Check cache first - this is the most frequently called endpoint
+    const cacheKey = cacheService.getLatestDataKey(stationId);
+    const cachedData = await cacheService.get(cacheKey);
+    
+    if (cachedData) {
+      return res.json({
+        success: true,
+        data: cachedData.data,
+        station_id: stationId,
+        cached: true
+      });
+    }
 
     const query = `
       from(bucket: "${bucket}")
@@ -158,10 +197,14 @@ const getLatestData = async (req, res) => {
       latestData.timestamp = row._time;
     });
 
+    // Cache latest data with short TTL (most frequently accessed)
+    await cacheService.set(cacheKey, { data: latestData }, cacheService.constructor.TTL.LATEST_DATA);
+
     res.json({
       success: true,
       data: latestData,
-      station_id: stationId
+      station_id: stationId,
+      cached: false
     });
   } catch (error) {
     logger.error('Error getting latest data:', error);
@@ -219,6 +262,17 @@ const getSummary = async (req, res) => {
 
 const getStations = async (req, res) => {
   try {
+    // Check cache first
+    const cacheKey = cacheService.getStationsKey();
+    const cachedData = await cacheService.get(cacheKey);
+    
+    if (cachedData) {
+      return res.json({
+        success: true,
+        stations: cachedData.stations,
+        cached: true
+      });
+    }
     const query = `
       from(bucket: "${bucket}")
         |> range(start: -30d)
@@ -231,9 +285,13 @@ const getStations = async (req, res) => {
     const data = await queryWeatherData(query);
     const stations = [...new Set(data.map(row => row.station_id))];
 
+    // Cache stations list
+    await cacheService.set(cacheKey, { stations }, cacheService.constructor.TTL.STATIONS);
+
     res.json({
       success: true,
-      stations: stations
+      stations: stations,
+      cached: false
     });
   } catch (error) {
     logger.error('Error getting stations:', error);

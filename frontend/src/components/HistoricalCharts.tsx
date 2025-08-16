@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo, useMemo, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -49,7 +49,7 @@ interface TabPanelProps {
   value: number;
 }
 
-function TabPanel(props: TabPanelProps) {
+const TabPanel = memo((props: TabPanelProps) => {
   const { children, value, index, ...other } = props;
 
   return (
@@ -63,9 +63,9 @@ function TabPanel(props: TabPanelProps) {
       {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
     </div>
   );
-}
+});
 
-const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
+const HistoricalCharts: React.FC<HistoricalChartsProps> = memo(({ stationId }) => {
   const [data, setData] = useState<WeatherDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30m');
@@ -80,32 +80,30 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
     { value: '30d', label: 'Último mes' }
   ];
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const historicalData = await weatherService.getHistoricalData(stationId, timeRange);
-        // Asegurar que historicalData sea un array
-        setData(Array.isArray(historicalData) ? historicalData : []);
-      } catch (error) {
-        console.error('Error fetching historical data:', error);
-        setData([]); // Asegurar que data sea un array en caso de error
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-
-    // Configurar actualizaci贸n autom谩tica cada 30 segundos
-    const interval = setInterval(() => {
-      fetchData();
-    }, 30000);
-
-    return () => clearInterval(interval);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const historicalData = await weatherService.getHistoricalData(stationId, timeRange);
+      // Asegurar que historicalData sea un array
+      setData(Array.isArray(historicalData) ? historicalData : []);
+    } catch (error) {
+      console.error('Error fetching historical data:', error);
+      setData([]); // Asegurar que data sea un array en caso de error
+    } finally {
+      setLoading(false);
+    }
   }, [stationId, timeRange]);
 
-  const prepareChartData = (parameter: string, label: string, color: string) => {
+  useEffect(() => {
+    fetchData();
+
+    // Configurar actualización automática cada 30 segundos
+    const interval = setInterval(fetchData, 30000);
+
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  const prepareChartData = useCallback((parameter: string, label: string, color: string) => {
     const labels = data.map(d => new Date(d.timestamp));
     const values = data.map(d => (d as any)[parameter] || 0);
 
@@ -123,9 +121,9 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
         }
       ]
     };
-  };
+  }, [data]);
 
-  const chartOptions = {
+  const chartOptions = useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -151,9 +149,9 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
       mode: 'index' as const,
       intersect: false,
     },
-  };
+  }), []);
 
-  const airQualityData = {
+  const airQualityData = useMemo(() => ({
     labels: data.map(d => new Date(d.timestamp)),
     datasets: [
       {
@@ -173,9 +171,9 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
         tension: 0.1,
       }
     ]
-  };
+  }), [data]);
 
-  const airQualityOptions = {
+  const airQualityOptions = useMemo(() => ({
     ...chartOptions,
     scales: {
       ...chartOptions.scales,
@@ -201,7 +199,7 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
         },
       },
     },
-  };
+  }), [chartOptions]);
 
   const signalData = {
     labels: data.map(d => new Date(d.timestamp)),
@@ -317,6 +315,6 @@ const HistoricalCharts: React.FC<HistoricalChartsProps> = ({ stationId }) => {
       </CardContent>
     </Card>
   );
-};
+});
 
 export default HistoricalCharts;

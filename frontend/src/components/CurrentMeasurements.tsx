@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -48,7 +48,7 @@ interface MeasurementCardProps {
   loading: boolean;
 }
 
-const MeasurementCard: React.FC<MeasurementCardProps> = ({ 
+const MeasurementCard: React.FC<MeasurementCardProps> = memo(({ 
   title, 
   value, 
   unit, 
@@ -78,7 +78,7 @@ const MeasurementCard: React.FC<MeasurementCardProps> = ({
     return '#9c27b0'; // Púrpura - muy fuerte
   };
 
-  const getCardColor = () => {
+  const cardColor = useMemo(() => {
     if (title.includes('Temperatura') && value !== undefined) {
       return getTemperatureColor(value);
     }
@@ -89,13 +89,13 @@ const MeasurementCard: React.FC<MeasurementCardProps> = ({
       return getWindColor(value);
     }
     return '#1976d2';
-  };
+  }, [title, value]);
 
   return (
-    <Card sx={{ height: '100%', borderLeft: `4px solid ${getCardColor()}` }}>
+    <Card sx={{ height: '100%', borderLeft: `4px solid ${cardColor}` }}>
       <CardContent>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-          <Box sx={{ color: getCardColor(), mr: 1 }}>
+          <Box sx={{ color: cardColor, mr: 1 }}>
             {icon}
           </Box>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -106,7 +106,7 @@ const MeasurementCard: React.FC<MeasurementCardProps> = ({
         {loading ? (
           <Skeleton variant="text" height={40} />
         ) : (
-          <Typography variant="h4" component="div" color={getCardColor()}>
+          <Typography variant="h4" component="div" color={cardColor}>
             {value !== undefined ? value.toFixed(1) : '--'}
             <Typography variant="body2" component="span" color="text.secondary" sx={{ ml: 1 }}>
               {unit}
@@ -116,7 +116,7 @@ const MeasurementCard: React.FC<MeasurementCardProps> = ({
       </CardContent>
     </Card>
   );
-};
+});
 
 const getWindDirection = (degrees: number): string => {
   const directions = [
@@ -127,8 +127,11 @@ const getWindDirection = (degrees: number): string => {
   return directions[index];
 };
 
-const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = ({ data, loading }) => {
-  const lastUpdate = data ? new Date(data.timestamp).toLocaleString() : null;
+const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, loading }) => {
+  const lastUpdate = useMemo(() => 
+    data ? new Date(data.timestamp).toLocaleString() : null, 
+    [data?.timestamp]
+  );
 
   return (
     <Card>
@@ -266,6 +269,6 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = ({ data, loading
       </CardContent>
     </Card>
   );
-};
+});
 
 export default CurrentMeasurements;
