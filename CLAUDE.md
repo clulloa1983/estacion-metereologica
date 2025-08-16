@@ -8,7 +8,7 @@ This is an IoT Weather Station system with Arduino/ESP32 hardware sensors that c
 
 **Architecture Flow**: Arduino/ESP32 → MQTT → Backend API → InfluxDB → Frontend Dashboard + Grafana
 
-**Current Status**: The system infrastructure is set up but not currently running. Backend API is configured for port 5002, and frontend components including WeatherMapClient are properly implemented. Docker services need to be started for full operation.
+**Current Status**: FULLY OPERATIONAL - All system components are running and collecting real-time weather data. Backend API is running on port 5002, frontend dashboard on port 3001, and ESP32_STATION_001 is actively sending weather data via MQTT every ~20 seconds. Complete data pipeline is functional.
 
 ## System Components
 
@@ -65,7 +65,7 @@ npm install
 # Create environment configuration
 cp .env.example .env.local
 # OR create .env.local with:
-# NEXT_PUBLIC_API_URL=http://localhost:5001/api
+# NEXT_PUBLIC_API_URL=http://localhost:5002/api
 
 # Development mode with hot reload
 npm run dev
@@ -78,16 +78,16 @@ npm start
 ```
 
 ### Service Access Points
-- **Frontend Dashboard**: http://localhost:3000+ (auto-assigned port, React/Next.js with TypeScript)
-- **Backend API**: http://localhost:5002/api (Node.js/Express)
-- **InfluxDB UI**: http://localhost:8086 (admin/weather123)
-- **Grafana Dashboard**: http://localhost:3000 (admin/grafana123) 
-- **MQTT Broker**: localhost:1883 (WebSocket: 9001)
+- **Frontend Dashboard**: http://localhost:3001 (React/Next.js with TypeScript - ACTIVE)
+- **Backend API**: http://localhost:5002/api (Node.js/Express - ACTIVE)
+- **InfluxDB UI**: http://localhost:8086 (admin/weather123 - ACTIVE)
+- **Grafana Dashboard**: http://localhost:3000 (admin/grafana123 - ACTIVE) 
+- **MQTT Broker**: localhost:1883 (WebSocket: 9001 - ACTIVE)
 
 **Current Port Status**: 
-- Backend is configured for port 5002 (not currently running)
-- Frontend auto-assigns available ports starting from 3000 (Grafana uses 3000 in Docker)
-- Docker services not currently running
+- Backend running on port 5002 (ACTIVE - health check passes)
+- Frontend running on port 3001 (ACTIVE - auto-assigned, avoids Grafana port 3000)
+- All Docker services running and accessible
 
 ### Port Configuration
 The system uses the following ports:
@@ -135,7 +135,7 @@ Data points use `station_id` as primary tag for device identification.
 - Processes incoming sensor data and forwards to InfluxDB
 - Validates timestamps from Arduino (handles millis() vs real timestamps)
 - Manages device status monitoring
-- Ready to receive data from WEMOS_STATION_001 when services are running
+- Currently receiving real-time data from ESP32_STATION_001 every ~20 seconds
 
 **AlertService** (`src/services/alertService.js`):
 - Evaluates sensor data against predefined thresholds
@@ -168,8 +168,9 @@ Data points use `station_id` as primary tag for device identification.
 - ✅ WeatherMapClient component properly implemented with Leaflet integration
 - ✅ Dynamic import with SSR disabled for map components  
 - ✅ Material-UI 7.3.1 components working correctly
-- ⚠️ Potential Grid deprecation warnings may still exist
-- ⚠️ Need to verify viewport meta configuration
+- ✅ Frontend dashboard fully operational on port 3001
+- ⚠️ Minor viewport meta warning in _document.js (non-critical)
+- ✅ Real-time data updates working (30-second polling)
 
 ### API Endpoints Structure
 - **Weather Data**: `/api/weather/*` - CRUD operations for sensor data
@@ -189,9 +190,10 @@ Data points use `station_id` as primary tag for device identification.
 ## Arduino/ESP32 Integration
 
 ### Current Station Status
-- **WEMOS_STATION_001**: Ready for deployment, code uploaded to ESP32
-- **Data Flow**: Arduino → MQTT → Backend → InfluxDB (configured and ready)
+- **ESP32_STATION_001**: ACTIVE and transmitting data every ~20 seconds
+- **Data Flow**: Arduino → MQTT → Backend → InfluxDB (FULLY OPERATIONAL)
 - **Sensor Data**: Temperature, humidity, pressure, wind speed/direction, rainfall
+- **Connection Status**: Stable MQTT connection with regular status updates
 
 ### Hardware Files Location
 - **Arduino Code**: `arduino/weather_station_wemos/weather_station_wemos.ino`
@@ -269,23 +271,23 @@ This creates the real-time pipeline from hardware sensors through to database st
 ## Common Development Tasks
 
 ### System Status Check
-- **Backend Health**: `curl http://localhost:5002/health`
-- **Latest Data**: `curl http://localhost:5002/api/weather/data/WEMOS_STATION_001/latest`
-- **MQTT Activity**: Check backend logs for "Weather data stored" messages
-- **Frontend Status**: Check auto-assigned port (typically 3001+) for dashboard functionality
-- **Docker Services**: `docker ps` to check running containers
+- **Backend Health**: `curl http://localhost:5002/health` ✅ ACTIVE
+- **Latest Data**: `curl http://localhost:5002/api/weather/data/ESP32_STATION_001/latest` ✅ RECEIVING DATA
+- **MQTT Activity**: Check backend logs for "Weather data stored" messages ✅ ACTIVE (~20s intervals)
+- **Frontend Status**: http://localhost:3001 ✅ ACTIVE 
+- **Docker Services**: `docker ps` to check running containers ✅ ALL RUNNING
 
 ### Troubleshooting Data Issues
 1. **Check MQTT messages**: `docker exec weather_mosquitto mosquitto_sub -h localhost -t "weather/data/+" -v`
 2. **Clear InfluxDB data**: `docker exec weather_influxdb influx delete --bucket weather-data --start 1970-01-01T00:00:00Z --stop 2025-12-31T23:59:59Z --org weather-station --token weather-station-token-12345`
 3. **Check API health**: `curl http://localhost:5002/health`
-4. **Test latest data**: `curl http://localhost:5002/api/weather/data/WEMOS_STATION_001/latest`
+4. **Test latest data**: `curl http://localhost:5002/api/weather/data/ESP32_STATION_001/latest`
 
-### System Startup Checklist
-1. **Start Docker Services**: `docker-compose up -d` (all infrastructure services)
-2. **Start Backend**: `cd backend && npm run dev` (runs on port 5002)
-3. **Start Frontend**: `cd frontend && npm run dev` (auto-assigns port, typically 3001+)
-4. **Verify Services**: Check all endpoints are responding correctly
+### System Startup Checklist ✅ COMPLETED
+1. **Start Docker Services**: `docker-compose up -d` ✅ RUNNING (InfluxDB, Grafana, MQTT, Redis)
+2. **Start Backend**: `cd backend && npm run dev` ✅ RUNNING (port 5002)
+3. **Start Frontend**: `cd frontend && npm run dev` ✅ RUNNING (port 3001)
+4. **Verify Services**: ✅ ALL SERVICES OPERATIONAL - ESP32 sending data every ~20 seconds
 
 ### Port Conflicts Resolution
 If ports are in use:
