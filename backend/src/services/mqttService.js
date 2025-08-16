@@ -2,6 +2,8 @@ const mqtt = require('mqtt');
 const logger = require('../config/logger');
 const { writeWeatherData, flushWrites } = require('../config/influxdb');
 const alertService = require('./alertService');
+const { validateMQTTData, sanitizeTimestamp } = require('../middleware/validation');
+const { weatherDataSchema, statusDataSchema, alertDataSchema } = require('../schemas/weatherSchemas');
 
 class MQTTService {
   constructor() {
@@ -87,27 +89,20 @@ class MQTTService {
 
   async handleWeatherData(stationId, data) {
     try {
-      // Validate timestamp - if it's not a valid ISO string or epoch timestamp, use server time
-      let timestamp;
-      if (data.timestamp) {
-        // Check if timestamp is a valid ISO string or a reasonable epoch timestamp
-        const parsedTime = new Date(data.timestamp);
-        const isValidDate = !isNaN(parsedTime.getTime());
-        const isReasonableTimestamp = typeof data.timestamp === 'string' && data.timestamp.includes('-');
-        
-        if (isValidDate && isReasonableTimestamp) {
-          timestamp = data.timestamp;
-        } else {
-          // Invalid timestamp (likely millis() from Arduino), use server time
-          timestamp = new Date().toISOString();
-        }
-      } else {
-        timestamp = new Date().toISOString();
+      // Validar estructura de datos de sensores
+      const validation = validateMQTTData(data, weatherDataSchema);
+      
+      if (!validation.isValid) {
+        logger.error(`Invalid weather data from station ${stationId}:`, validation.errors);
+        return; // Rechazar datos inválidos
       }
+
+      // Sanitizar timestamp (convierte millis() de Arduino a timestamp real)
+      const timestamp = sanitizeTimestamp(validation.data.timestamp);
 
       const weatherData = {
         timestamp,
-        ...data
+        ...validation.data
       };
 
       writeWeatherData(stationId, weatherData);
@@ -115,7 +110,11 @@ class MQTTService {
 
       await alertService.checkAlerts(stationId, weatherData);
 
-      logger.info(`Weather data stored for station ${stationId}`);
+      logger.info(`Valid weather data stored for station ${stationId}`, {
+        temperature: weatherData.temperature,
+        humidity: weatherData.humidity,
+        pressure: weatherData.pressure
+      });
     } catch (error) {
       logger.error('Error handling weather data:', error);
     }
@@ -123,36 +122,30 @@ class MQTTService {
 
   async handleStatusData(stationId, data) {
     try {
-      // Validate timestamp - if it's not a valid ISO string or epoch timestamp, use server time
-      let timestamp;
-      if (data.timestamp) {
-        // Check if timestamp is a valid ISO string or a reasonable epoch timestamp
-        const parsedTime = new Date(data.timestamp);
-        const isValidDate = !isNaN(parsedTime.getTime());
-        const isReasonableTimestamp = typeof data.timestamp === 'string' && data.timestamp.includes('-');
-        
-        if (isValidDate && isReasonableTimestamp) {
-          timestamp = data.timestamp;
-        } else {
-          // Invalid timestamp (likely millis() from Arduino), use server time
-          timestamp = new Date().toISOString();
-        }
-      } else {
-        timestamp = new Date().toISOString();
+      // Validar estructura de datos de estado
+      const validation = validateMQTTData(data, statusDataSchema);
+      
+      if (!validation.isValid) {
+        logger.error(`Invalid status data from station ${stationId}:`, validation.errors);
+        return;
       }
+
+      // Sanitizar timestamp
+      const timestamp = sanitizeTimestamp(validation.data.timestamp);
 
       const statusData = {
         timestamp,
-        battery_voltage: data.battery_voltage,
-        signal_strength: data.signal_strength,
-        uptime: data.uptime,
-        status: data.status || 'online'
+        ...validation.data
       };
 
       writeWeatherData(stationId, statusData);
       await flushWrites();
 
-      logger.info(`Status data stored for station ${stationId}`);
+      logger.info(`Valid status data stored for station ${stationId}`, {
+        status: statusData.status,
+        battery_voltage: statusData.battery_voltage,
+        signal_strength: statusData.signal_strength
+      });
     } catch (error) {
       logger.error('Error handling status data:', error);
     }
@@ -160,12 +153,30 @@ class MQTTService {
 
   async handleAlertData(stationId, data) {
     try {
-      await alertService.processAlert({
-        station_id: stationId,
-        ...data
-      });
+      // Validar estructura de datos de alerta
+      const validation = validateMQTTData(data, alertDataSchema);
+      
+      if (!validation.isValid) {
+        logger.error(`Invalid alert data from station ${stationId}:`, validation.errors);
+        return;
+      }
 
-      logger.info(`Alert processed for station ${stationId}`);
+      // Sanitizar timestamp
+      const timestamp = sanitizeTimestamp(validation.data.timestamp);
+
+      const alertData = {
+        station_id: stationId,
+        timestamp,
+        ...validation.data
+      };
+
+      await alertService.processAlert(alertData);
+
+      logger.info(`Valid alert processed for station ${stationId}`, {
+        type: alertData.type,
+        severity: alertData.severity,
+        message: alertData.message
+      });
     } catch (error) {
       logger.error('Error handling alert data:', error);
     }

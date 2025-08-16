@@ -1,85 +1,166 @@
 const Joi = require('joi');
 const logger = require('../config/logger');
+const {
+  weatherDataSchema,
+  statusDataSchema,
+  alertDataSchema,
+  stationIdSchema,
+  timeRangeSchema,
+  alertConfigSchema
+} = require('../schemas/weatherSchemas');
 
-const weatherDataSchema = Joi.object({
-  station_id: Joi.string().required(),
-  timestamp: Joi.string().isoDate().optional(),
-  temperature: Joi.number().min(-50).max(60).optional(),
-  humidity: Joi.number().min(0).max(100).optional(),
-  pressure: Joi.number().min(800).max(1200).optional(),
-  wind_speed: Joi.number().min(0).max(200).optional(),
-  wind_direction: Joi.number().min(0).max(360).optional(),
-  rainfall: Joi.number().min(0).optional(),
-  pm25: Joi.number().min(0).optional(),
-  pm10: Joi.number().min(0).optional(),
-  uv_index: Joi.number().min(0).max(15).optional(),
-  battery_voltage: Joi.number().min(0).max(15).optional(),
-  signal_strength: Joi.number().optional(),
-  uptime: Joi.number().optional()
+// Esquemas adicionales para validación de rutas
+const weatherDataRouteSchema = weatherDataSchema.keys({
+  station_id: Joi.string().required()
 });
 
 const querySchema = Joi.object({
-  start: Joi.string().optional(),
-  end: Joi.string().optional(),
-  limit: Joi.number().integer().min(1).max(10000).optional(),
-  aggregation: Joi.string().valid('5m', 'hourly', 'daily').optional(),
+  start: Joi.string().isoDate().optional(),
+  end: Joi.string().isoDate().optional(),
+  limit: Joi.number().integer().min(1).max(10000).default(1000),
+  aggregation: Joi.string().valid('1m', '5m', '15m', '30m', '1h', '6h', '12h', '1d').optional(),
   severity: Joi.string().valid('LOW', 'MEDIUM', 'HIGH', 'CRITICAL').optional(),
-  acknowledged: Joi.string().valid('true', 'false').optional(),
-  format: Joi.string().valid('json', 'csv').optional(),
-  timeRange: Joi.string().optional(),
-  parameters: Joi.string().optional(),
-  stationId: Joi.string().optional()
+  acknowledged: Joi.boolean().optional(),
+  format: Joi.string().valid('json', 'csv').default('json'),
+  timeRange: timeRangeSchema,
+  parameters: Joi.string().pattern(/^[a-zA-Z_,]+$/).optional(),
+  stationId: stationIdSchema.optional()
 });
 
-const alertSchema = Joi.object({
-  station_id: Joi.string().required(),
-  alert_type: Joi.string().required(),
-  severity: Joi.string().valid('LOW', 'MEDIUM', 'HIGH', 'CRITICAL').required(),
-  message: Joi.string().required(),
-  timestamp: Joi.string().isoDate().optional()
+const paramsSchema = Joi.object({
+  stationId: stationIdSchema,
+  alertId: Joi.string().uuid().optional()
 });
 
-const validateWeatherData = (req, res, next) => {
-  const { error } = weatherDataSchema.validate(req.body);
-  if (error) {
-    logger.warn('Weather data validation failed:', error.details);
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid weather data format',
-      details: error.details.map(d => d.message)
+const alertRouteSchema = alertDataSchema.keys({
+  station_id: Joi.string().required()
+});
+
+/**
+ * Middleware genérico para validación usando esquemas Joi
+ */
+const validate = (schema, property = 'body') => {
+  return (req, res, next) => {
+    const { error, value } = schema.validate(req[property], {
+      abortEarly: false,
+      allowUnknown: true,
+      stripUnknown: true,
+      convert: true
     });
-  }
-  next();
+
+    if (error) {
+      const errorDetails = error.details.map(detail => ({
+        field: detail.path.join('.'),
+        message: detail.message,
+        value: detail.context?.value
+      }));
+
+      logger.warn(`${property} validation failed:`, {
+        endpoint: req.originalUrl,
+        method: req.method,
+        errors: errorDetails
+      });
+
+      return res.status(400).json({
+        success: false,
+        error: `Invalid ${property} format`,
+        details: errorDetails
+      });
+    }
+
+    req[property] = value;
+    next();
+  };
 };
 
-const validateQuery = (req, res, next) => {
-  const { error } = querySchema.validate(req.query);
+const validateWeatherData = validate(weatherDataRouteSchema, 'body');
+
+const validateQuery = validate(querySchema, 'query');
+const validateParams = validate(paramsSchema, 'params');
+
+const validateAlert = validate(alertRouteSchema, 'body');
+
+/**
+ * Validación para datos MQTT (no middleware de Express)
+ */
+const validateMQTTData = (data, schema) => {
+  const { error, value } = schema.validate(data, {
+    abortEarly: false,
+    allowUnknown: true,
+    stripUnknown: true,
+    convert: true
+  });
+
   if (error) {
-    logger.warn('Query validation failed:', error.details);
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid query parameters',
-      details: error.details.map(d => d.message)
+    const errorDetails = error.details.map(detail => ({
+      field: detail.path.join('.'),
+      message: detail.message,
+      value: detail.context?.value
+    }));
+
+    logger.warn('MQTT data validation failed:', {
+      errors: errorDetails,
+      originalData: data
     });
+
+    return {
+      isValid: false,
+      data: null,
+      errors: errorDetails
+    };
   }
-  next();
+
+  return {
+    isValid: true,
+    data: value,
+    errors: null
+  };
 };
 
-const validateAlert = (req, res, next) => {
-  const { error } = alertSchema.validate(req.body);
-  if (error) {
-    logger.warn('Alert validation failed:', error.details);
-    return res.status(400).json({
-      success: false,
-      error: 'Invalid alert data format',
-      details: error.details.map(d => d.message)
-    });
+/**
+ * Sanitiza timestamp de Arduino millis() a ISO string
+ */
+const sanitizeTimestamp = (timestamp) => {
+  if (!timestamp) {
+    return new Date().toISOString();
   }
-  next();
+
+  if (typeof timestamp === 'string' && timestamp.includes('-')) {
+    const date = new Date(timestamp);
+    if (!isNaN(date.getTime())) {
+      return timestamp;
+    }
+  }
+
+  if (typeof timestamp === 'number' || (typeof timestamp === 'string' && /^\d+$/.test(timestamp))) {
+    const numTimestamp = Number(timestamp);
+    
+    if (numTimestamp > 86400000) {
+      logger.debug('Arduino millis() detected, using server time');
+      return new Date().toISOString();
+    }
+    
+    if (numTimestamp > 1000000000) {
+      return new Date(numTimestamp * (numTimestamp < 10000000000 ? 1000 : 1)).toISOString();
+    }
+  }
+
+  logger.debug('Invalid timestamp format, using server time');
+  return new Date().toISOString();
 };
 
 module.exports = {
+  validate,
   validateWeatherData,
   validateQuery,
-  validateAlert
+  validateParams,
+  validateAlert,
+  validateMQTTData,
+  sanitizeTimestamp,
+  // Esquemas exportados para uso directo
+  weatherDataSchema,
+  statusDataSchema,
+  alertDataSchema,
+  querySchema,
+  paramsSchema
 };
