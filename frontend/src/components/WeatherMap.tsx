@@ -64,7 +64,7 @@ const DEFAULT_COORDINATES = {
   lng: -70.660126,
 };
 
-const WeatherMap: React.FC<WeatherMapProps> = ({ stationId, currentData }) => {
+function WeatherMap({ stationId, currentData }: WeatherMapProps) {
   const [stationCoordinates, setStationCoordinates] = useState(DEFAULT_COORDINATES);
   
   useEffect(() => {
@@ -110,7 +110,7 @@ const WeatherMap: React.FC<WeatherMapProps> = ({ stationId, currentData }) => {
         {/* Información de ubicación */}
         <Paper sx={{ p: 2, mb: 2, backgroundColor: 'background.default' }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="subtitle2" gutterBottom>
                 Coordenadas de la estación:
               </Typography>
@@ -123,7 +123,7 @@ const WeatherMap: React.FC<WeatherMapProps> = ({ stationId, currentData }) => {
             </Grid>
             
             {currentData && (
-              <Grid item xs={12} sm={6}>
+              <Grid size={{ xs: 12, sm: 6 }}>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   <Chip 
                     icon={<Thermostat />}

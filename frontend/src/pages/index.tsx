@@ -158,27 +158,27 @@ export default function Dashboard() {
         
         <Grid container spacing={3}>
           {/* Mediciones Actuales */}
-          <Grid item xs={12}>
+          <Grid size={{ xs: 12 }}>
             <CurrentMeasurements data={currentData} loading={loading} />
           </Grid>
           
           {/* Gráficos Históricos */}
-          <Grid item xs={12} lg={8}>
+          <Grid size={{ xs: 12, lg: 8 }}>
             <HistoricalCharts stationId={stationId} />
           </Grid>
           
           {/* Estado del Sistema */}
-          <Grid item xs={12} lg={4}>
+          <Grid size={{ xs: 12, lg: 4 }}>
             <SystemStatus data={currentData} />
           </Grid>
           
           {/* Alertas */}
-          <Grid item xs={12} lg={6}>
+          <Grid size={{ xs: 12, lg: 6 }}>
             <AlertsPanel stationId={stationId} />
           </Grid>
           
           {/* Mapa */}
-          <Grid item xs={12} lg={6}>
+          <Grid size={{ xs: 12, lg: 6 }}>
             <WeatherMap stationId={stationId} currentData={currentData} />
           </Grid>
         </Grid>

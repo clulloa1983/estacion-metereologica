@@ -43,7 +43,7 @@ const weatherStationIcon = L.icon({
   shadowAnchor: [12, 41]
 });
 
-const WeatherMapClient: React.FC<WeatherMapClientProps> = ({ coordinates, stationId, currentData }) => {
+function WeatherMapClient({ coordinates, stationId, currentData }: WeatherMapClientProps) {
   return (
     <MapContainer
       center={[coordinates.lat, coordinates.lng]}

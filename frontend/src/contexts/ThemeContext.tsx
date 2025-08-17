@@ -117,7 +117,7 @@ interface ThemeProviderProps {
   children: ReactNode;
 }
 
-export const CustomThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+export function CustomThemeProvider({ children }: ThemeProviderProps) {
   const [mode, setMode] = useState<ThemeMode>('light');
 
   useEffect(() => {
@@ -149,4 +149,4 @@ export const CustomThemeProvider: React.FC<ThemeProviderProps> = ({ children }) 
       {children}
     </ThemeContext.Provider>
   );
-};
+}

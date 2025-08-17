@@ -43,7 +43,7 @@ interface SystemStatusProps {
   data: WeatherData | null;
 }
 
-const SystemStatus: React.FC<SystemStatusProps> = ({ data }) => {
+function SystemStatus({ data }: SystemStatusProps) {
   const getBatteryIcon = (voltage?: number) => {
     if (!voltage) return <BatteryAlert color="error" />;
     
@@ -233,6 +233,6 @@ const SystemStatus: React.FC<SystemStatusProps> = ({ data }) => {
       </CardContent>
     </Card>
   );
-};
+}
 
 export default SystemStatus;

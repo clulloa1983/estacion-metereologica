@@ -8,10 +8,10 @@ interface ThemeToggleProps {
   color?: 'inherit' | 'default' | 'primary' | 'secondary';
 }
 
-const ThemeToggle: React.FC<ThemeToggleProps> = ({ 
+function ThemeToggle({ 
   size = 'medium', 
   color = 'inherit' 
-}) => {
+}: ThemeToggleProps) {
   const { mode, toggleTheme } = useThemeMode();
 
   return (
@@ -26,6 +26,6 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({
       </IconButton>
     </Tooltip>
   );
-};
+}
 
 export default ThemeToggle;

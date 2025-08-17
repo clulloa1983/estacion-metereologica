@@ -48,14 +48,14 @@ interface MeasurementCardProps {
   loading: boolean;
 }
 
-const MeasurementCard: React.FC<MeasurementCardProps> = memo(({ 
+const MeasurementCard = memo(function MeasurementCard({ 
   title, 
   value, 
   unit, 
   icon, 
   color = 'primary',
   loading 
-}) => {
+}: MeasurementCardProps) {
   const getTemperatureColor = (temp: number) => {
     if (temp < 0) return '#1976d2'; // Azul
     if (temp < 15) return '#4fc3f7'; // Azul claro
@@ -118,6 +118,8 @@ const MeasurementCard: React.FC<MeasurementCardProps> = memo(({
   );
 });
 
+MeasurementCard.displayName = 'MeasurementCard';
+
 const getWindDirection = (degrees: number): string => {
   const directions = [
     'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
@@ -127,7 +129,7 @@ const getWindDirection = (degrees: number): string => {
   return directions[index];
 };
 
-const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, loading }) => {
+const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }: CurrentMeasurementsProps) {
   const lastUpdate = useMemo(() => 
     data ? new Date(data.timestamp).toLocaleString() : null, 
     [data?.timestamp]
@@ -151,7 +153,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
         
         <Grid container spacing={3}>
           {/* Temperatura */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
               title="Temperatura"
               value={data?.temperature}
@@ -162,7 +164,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
           </Grid>
           
           {/* Humedad */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
               title="Humedad"
               value={data?.humidity}
@@ -173,7 +175,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
           </Grid>
           
           {/* Presión */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
               title="Presión"
               value={data?.pressure}
@@ -184,7 +186,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
           </Grid>
           
           {/* Velocidad del Viento */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
               title="Viento"
               value={data?.wind_speed}
@@ -195,7 +197,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
           </Grid>
           
           {/* Dirección del Viento */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <Card>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -217,7 +219,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
           </Grid>
           
           {/* Precipitación */}
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
               title="Lluvia"
               value={data?.rainfall}
@@ -229,7 +231,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
           
           {/* PM2.5 (opcional) */}
           {data?.pm25 !== undefined && (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <MeasurementCard
                 title="PM2.5"
                 value={data.pm25}
@@ -242,7 +244,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
           
           {/* Índice UV (opcional) */}
           {data?.uv_index !== undefined && (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <MeasurementCard
                 title="Índice UV"
                 value={data.uv_index}
@@ -255,7 +257,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
           
           {/* Batería (opcional) */}
           {data?.battery_voltage !== undefined && (
-            <Grid item xs={12} sm={6} md={3}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <MeasurementCard
                 title="Batería"
                 value={data.battery_voltage}
@@ -270,5 +272,7 @@ const CurrentMeasurements: React.FC<CurrentMeasurementsProps> = memo(({ data, lo
     </Card>
   );
 });
+
+CurrentMeasurements.displayName = 'CurrentMeasurements';
 
 export default CurrentMeasurements;

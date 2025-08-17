@@ -5,7 +5,6 @@ export default function Document() {
     <Html lang="es">
       <Head>
         <meta name="description" content="Dashboard de Estación Meteorológica IoT" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
         <link
           rel="stylesheet"

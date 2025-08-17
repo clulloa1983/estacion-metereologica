@@ -20,7 +20,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Componente interno que usa el tema del contexto
-const AppContent: React.FC<{ Component: any; pageProps: any }> = ({ Component, pageProps }) => {
+function AppContent({ Component, pageProps }: { Component: any; pageProps: any }) {
   const { theme } = useThemeMode();
 
   return (
@@ -31,7 +31,7 @@ const AppContent: React.FC<{ Component: any; pageProps: any }> = ({ Component, p
       </LocalizationProvider>
     </ThemeProvider>
   );
-};
+}
 
 export default function App({ Component, pageProps }: AppProps) {
   return (

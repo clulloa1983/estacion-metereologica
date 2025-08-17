@@ -1,10 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  swcMinify: true,
-  experimental: {
-    appDir: false, // Usar páginas tradicionales por ahora
-  },
   webpack: (config, { isServer }) => {
     // Evitar problemas con Leaflet en SSR
     if (!isServer) {

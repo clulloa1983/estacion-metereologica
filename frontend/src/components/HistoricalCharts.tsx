@@ -8,7 +8,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Grid,
   Skeleton,
   Tabs,
   Tab
@@ -49,7 +48,7 @@ interface TabPanelProps {
   value: number;
 }
 
-const TabPanel = memo((props: TabPanelProps) => {
+const TabPanel = memo(function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
   return (
@@ -65,7 +64,7 @@ const TabPanel = memo((props: TabPanelProps) => {
   );
 });
 
-const HistoricalCharts: React.FC<HistoricalChartsProps> = memo(({ stationId }) => {
+const HistoricalCharts = memo(function HistoricalCharts({ stationId }: HistoricalChartsProps) {
   const [data, setData] = useState<WeatherDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30m');

@@ -56,7 +56,7 @@ function TabPanel(props: TabPanelProps) {
   );
 }
 
-const AlertsPanel: React.FC<AlertsPanelProps> = ({ stationId }) => {
+function AlertsPanel({ stationId }: AlertsPanelProps) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -162,7 +162,7 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ stationId }) => {
     return (
       <List>
         {alertList.map((alert, index) => (
-          <React.Fragment key={alert.id}>
+          <React.Fragment key={`alert-${alert.id}-${index}`}>
             <ListItem>
               <ListItemIcon>
                 {getAlertIcon(alert.severity)}
@@ -170,7 +170,7 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ stationId }) => {
               <ListItemText
                 primary={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography variant="subtitle2">
+                    <Typography variant="subtitle2" component="span">
                       {alert.alert_type}
                     </Typography>
                     <Chip 
@@ -181,11 +181,11 @@ const AlertsPanel: React.FC<AlertsPanelProps> = ({ stationId }) => {
                   </Box>
                 }
                 secondary={
-                  <Box>
-                    <Typography variant="body2" sx={{ mb: 0.5 }}>
+                  <Box component="span">
+                    <Typography variant="body2" component="span" sx={{ display: 'block', mb: 0.5 }}>
                       {alert.message}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" component="span" color="text.secondary" sx={{ display: 'block' }}>
                       {formatAlertTime(alert.timestamp)}
                     </Typography>
                   </Box>

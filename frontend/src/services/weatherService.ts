@@ -32,6 +32,7 @@ class WeatherService {
       'x-api-key': API_KEY
     };
   }
+
   async getLatestData(stationId: string): Promise<WeatherDataPoint | null> {
     const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}/latest`, {
       headers: this.getHeaders()
