@@ -6,7 +6,15 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "test": "jest"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest --testPathPattern=tests/.*\\.test\\.js",
+    "test:integration": "jest --testPathPattern=tests/integration",
+    "test:ci": "jest --ci --coverage --watchAll=false",
+    "lint": "echo 'Linting not configured yet'",
+    "lint:fix": "echo 'Linting not configured yet'",
+    "type-check": "echo 'TypeScript not configured for backend'"
   },
   "dependencies": {
     "@influxdata/influxdb-client": "^1.33.2",

@@ -1,0 +1,285 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.0.0
+
+env:
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+
+jobs:
+  # Create GitHub Release
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      release_id: ${{ steps.create_release.outputs.id }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch full history for changelog
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Generate changelog between tags
+        if [ $(git tag --list | wc -l) -gt 1 ]; then
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD~1)
+          echo "## Changes since $PREVIOUS_TAG" > CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" $PREVIOUS_TAG..HEAD >> CHANGELOG.md
+        else
+          echo "## Initial Release" > CHANGELOG.md
+          git log --pretty=format:"- %s (%h)" >> CHANGELOG.md
+        fi
+        
+        # Set output for later use
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        cat CHANGELOG.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: Weather Station ${{ github.ref_name }}
+        body: ${{ steps.changelog.outputs.changelog }}
+        draft: false
+        prerelease: ${{ contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
+
+  # Build and push Docker images
+  build-and-push:
+    name: Build and Push Docker Images
+    runs-on: ubuntu-latest
+    needs: create-release
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        component: [backend, frontend]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.component }}
+        tags: |
+          type=ref,event=tag
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./${{ matrix.component }}
+        file: ./${{ matrix.component }}/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          VERSION=${{ github.ref_name }}
+          COMMIT_SHA=${{ github.sha }}
+          BUILD_DATE=${{ github.event.head_commit.timestamp }}
+
+  # Create deployment artifacts
+  create-artifacts:
+    name: Create Deployment Artifacts
+    runs-on: ubuntu-latest
+    needs: create-release
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Build backend
+      run: |
+        cd backend
+        npm ci --production
+        tar -czf ../weather-station-backend-${{ github.ref_name }}.tar.gz .
+
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm ci
+        npm run build
+        tar -czf ../weather-station-frontend-${{ github.ref_name }}.tar.gz .next package.json package-lock.json
+
+    - name: Create deployment package
+      run: |
+        mkdir -p deployment-package
+        cp docker-compose.yml deployment-package/
+        cp -r docker/ deployment-package/ || true
+        cp -r scripts/ deployment-package/ || true
+        cp README.md deployment-package/
+        tar -czf weather-station-deployment-${{ github.ref_name }}.tar.gz deployment-package/
+
+    - name: Upload backend artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./weather-station-backend-${{ github.ref_name }}.tar.gz
+        asset_name: weather-station-backend-${{ github.ref_name }}.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload frontend artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./weather-station-frontend-${{ github.ref_name }}.tar.gz
+        asset_name: weather-station-frontend-${{ github.ref_name }}.tar.gz
+        asset_content_type: application/gzip
+
+    - name: Upload deployment package
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./weather-station-deployment-${{ github.ref_name }}.tar.gz
+        asset_name: weather-station-deployment-${{ github.ref_name }}.tar.gz
+        asset_content_type: application/gzip
+
+  # Deploy to production (if configured)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [create-release, build-and-push]
+    environment: production
+    if: "!contains(github.ref_name, 'alpha') && !contains(github.ref_name, 'beta') && !contains(github.ref_name, 'rc')"
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to production
+      run: |
+        echo "Production deployment would happen here"
+        echo "This could include:"
+        echo "- Updating Kubernetes manifests with new image tags"
+        echo "- Rolling out to production cluster"
+        echo "- Running smoke tests"
+        echo "- Updating monitoring dashboards"
+        echo "Version: ${{ github.ref_name }}"
+        echo "Images:"
+        echo "- Backend: ${{ env.REGISTRY }}/${{ github.repository }}-backend:${{ github.ref_name }}"
+        echo "- Frontend: ${{ env.REGISTRY }}/${{ github.repository }}-frontend:${{ github.ref_name }}"
+
+    # Example production deployment (configure as needed)
+    # - name: Update Kubernetes deployment
+    #   run: |
+    #     # Update image tags in Kubernetes manifests
+    #     sed -i "s|weather-backend:.*|weather-backend:${{ github.ref_name }}|g" k8s/backend-deployment.yaml
+    #     sed -i "s|weather-frontend:.*|weather-frontend:${{ github.ref_name }}|g" k8s/frontend-deployment.yaml
+    #     
+    #     # Apply to cluster
+    #     kubectl apply -f k8s/
+    #     
+    #     # Wait for rollout
+    #     kubectl rollout status deployment/weather-backend
+    #     kubectl rollout status deployment/weather-frontend
+
+    - name: Run post-deployment tests
+      run: |
+        echo "Running post-deployment smoke tests..."
+        # Add smoke tests here
+        # curl -f https://your-production-domain.com/health
+        # Test basic functionality
+
+  # Notify stakeholders
+  notify-release:
+    name: Notify Release
+    runs-on: ubuntu-latest
+    needs: [create-release, build-and-push, create-artifacts]
+    if: always()
+
+    steps:
+    - name: Send release notification
+      run: |
+        if [ "${{ needs.create-release.result }}" == "success" ] && [ "${{ needs.build-and-push.result }}" == "success" ]; then
+          echo "✅ Weather Station ${{ github.ref_name }} released successfully!"
+          echo "🐳 Docker images available at ${{ env.REGISTRY }}/${{ github.repository }}"
+          echo "📦 Deployment artifacts attached to release"
+        else
+          echo "❌ Release ${{ github.ref_name }} failed"
+          echo "Check the workflow logs for details"
+        fi
+        
+        # Add notification integrations here:
+        # - Slack webhook
+        # - Discord webhook  
+        # - Email notification
+        # - Microsoft Teams
+        
+        # Example Slack notification:
+        # curl -X POST -H 'Content-type: application/json' \
+        #   --data "{\"text\":\"Weather Station ${{ github.ref_name }} released! 🚀\"}" \
+        #   ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Security scan for release
+  security-scan-release:
+    name: Security Scan Release
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+    - name: Run Trivy vulnerability scanner on images
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: '${{ env.REGISTRY }}/${{ github.repository }}-backend:${{ github.ref_name }}'
+        format: 'sarif'
+        output: 'trivy-backend-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-backend-results.sarif'
+
+    - name: Scan frontend image
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: '${{ env.REGISTRY }}/${{ github.repository }}-frontend:${{ github.ref_name }}'
+        format: 'sarif'
+        output: 'trivy-frontend-results.sarif'
+
+    - name: Upload frontend scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-frontend-results.sarif'

@@ -1,0 +1,184 @@
+name: Dependabot Auto-merge
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependabot-auto-merge:
+    name: Auto-merge Dependabot PRs
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+    - name: Dependabot metadata
+      id: metadata
+      uses: dependabot/fetch-metadata@v1
+      with:
+        github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+    - name: Auto-merge patch updates
+      if: steps.metadata.outputs.update-type == 'version-update:semver-patch'
+      run: |
+        echo "Auto-merging patch update: ${{ steps.metadata.outputs.dependency-names }}"
+        gh pr merge --auto --merge "$PR_URL"
+      env:
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Auto-merge minor updates for dev dependencies
+      if: |
+        steps.metadata.outputs.update-type == 'version-update:semver-minor' &&
+        steps.metadata.outputs.dependency-type == 'direct:development'
+      run: |
+        echo "Auto-merging minor dev dependency update: ${{ steps.metadata.outputs.dependency-names }}"
+        gh pr merge --auto --merge "$PR_URL"
+      env:
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Comment on major updates
+      if: steps.metadata.outputs.update-type == 'version-update:semver-major'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `⚠️ This is a **major version update** for \`${{ steps.metadata.outputs.dependency-names }}\`.
+            
+            Please review the changes carefully:
+            - Check the changelog for breaking changes
+            - Update configuration if needed
+            - Test thoroughly before merging
+            
+            The PR will not be auto-merged and requires manual review.`
+          });
+
+    - name: Label PR based on update type
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const updateType = '${{ steps.metadata.outputs.update-type }}';
+          const dependencyType = '${{ steps.metadata.outputs.dependency-type }}';
+          
+          let labels = ['dependencies'];
+          
+          if (updateType.includes('patch')) {
+            labels.push('patch-update');
+          } else if (updateType.includes('minor')) {
+            labels.push('minor-update');
+          } else if (updateType.includes('major')) {
+            labels.push('major-update', 'needs-review');
+          }
+          
+          if (dependencyType === 'direct:development') {
+            labels.push('dev-dependency');
+          } else {
+            labels.push('production-dependency');
+          }
+          
+          github.rest.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: labels
+          });
+
+  # Run tests for Dependabot PRs
+  test-dependabot-pr:
+    name: Test Dependabot PR
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Test backend changes
+      run: |
+        cd backend
+        npm ci
+        npm test
+      env:
+        CI: true
+        REDIS_URL: redis://localhost:6379
+
+    - name: Test frontend changes
+      run: |
+        cd frontend
+        npm ci
+        npm test
+      env:
+        CI: true
+
+    - name: Build frontend to test for build issues
+      run: |
+        cd frontend
+        npm run build
+      env:
+        NEXT_PUBLIC_API_URL: http://localhost:5002/api
+
+    - name: Check for security vulnerabilities
+      run: |
+        cd backend && npm audit --audit-level moderate
+        cd ../frontend && npm audit --audit-level moderate
+
+    - name: Comment test results
+      if: always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const testResult = '${{ job.status }}' === 'success' ? '✅ passed' : '❌ failed';
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `🤖 **Dependabot PR Tests**: ${testResult}
+            
+            - Backend tests: ${{ steps.backend-test.outcome || 'completed' }}
+            - Frontend tests: ${{ steps.frontend-test.outcome || 'completed' }}
+            - Security audit: ${{ steps.security-audit.outcome || 'completed' }}
+            - Build test: ${{ steps.build-test.outcome || 'completed' }}
+            
+            ${testResult.includes('failed') ? 'Please review the test failures before merging.' : 'All tests passed! Ready for review.'}`
+          });
+
+  # Enable auto-merge for approved PRs
+  enable-auto-merge:
+    name: Enable Auto-merge
+    runs-on: ubuntu-latest
+    needs: test-dependabot-pr
+    if: |
+      github.actor == 'dependabot[bot]' && 
+      needs.test-dependabot-pr.result == 'success'
+
+    steps:
+    - name: Enable auto-merge
+      run: |
+        gh pr merge --auto --merge "$PR_URL"
+      env:
+        PR_URL: ${{ github.event.pull_request.html_url }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

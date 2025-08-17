@@ -1,0 +1,230 @@
+version: 2
+
+updates:
+  # Backend npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "weather-station-team"
+    assignees:
+      - "weather-station-team"
+    commit-message:
+      prefix: "backend"
+      prefix-development: "backend(dev)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "backend"
+    milestone: 1
+    target-branch: "develop"
+    versioning-strategy: "increase-if-necessary"
+    
+    # Group related updates
+    groups:
+      express-ecosystem:
+        patterns:
+          - "express*"
+          - "helmet"
+          - "cors"
+          - "morgan"
+          - "compression"
+      test-dependencies:
+        patterns:
+          - "jest*"
+          - "supertest"
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+      security-dependencies:
+        patterns:
+          - "bcryptjs"
+          - "jsonwebtoken"
+          - "helmet"
+        update-types:
+          - "security"
+
+    # Ignore specific updates
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "npm"
+        update-types: ["version-update:semver-major"]
+
+  # Frontend npm dependencies  
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+      day: "monday" 
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "weather-station-team"
+    assignees:
+      - "weather-station-team"
+    commit-message:
+      prefix: "frontend"
+      prefix-development: "frontend(dev)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "frontend"
+    milestone: 1
+    target-branch: "develop"
+    versioning-strategy: "increase-if-necessary"
+
+    # Group related updates
+    groups:
+      react-ecosystem:
+        patterns:
+          - "react*"
+          - "next*"
+          - "@types/react*"
+        update-types:
+          - "minor"
+          - "patch"
+      mui-ecosystem:
+        patterns:
+          - "@mui/*"
+          - "@emotion/*"
+        update-types:
+          - "minor"
+          - "patch"
+      chart-dependencies:
+        patterns:
+          - "chart*"
+          - "react-chartjs-2"
+          - "chartjs-*"
+        update-types:
+          - "minor"
+          - "patch"
+      map-dependencies:
+        patterns:
+          - "leaflet*"
+          - "react-leaflet*"
+        update-types:
+          - "minor"
+          - "patch"
+      test-dependencies:
+        patterns:
+          - "jest*"
+          - "@testing-library/*"
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+    # Ignore specific updates
+    ignore:
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+
+  # Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    reviewers:
+      - "weather-station-team"
+    assignees:
+      - "weather-station-team"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "backend"
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly" 
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    reviewers:
+      - "weather-station-team"
+    assignees:
+      - "weather-station-team"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "frontend"
+
+  # Docker Compose dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+      timezone: "UTC"
+    reviewers:
+      - "weather-station-team"
+    assignees:
+      - "weather-station-team"
+    commit-message:
+      prefix: "docker"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "docker"
+      - "infrastructure"
+
+  # GitHub Actions dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00" 
+      timezone: "UTC"
+    reviewers:
+      - "weather-station-team"
+    assignees:
+      - "weather-station-team"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "ci-cd"
+
+    # Group GitHub Actions updates
+    groups:
+      github-actions:
+        patterns:
+          - "actions/*"
+          - "github/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+    # Keep major version pins for stability
+    ignore:
+      - dependency-name: "actions/checkout"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "actions/setup-node"
+        update-types: ["version-update:semver-major"]
