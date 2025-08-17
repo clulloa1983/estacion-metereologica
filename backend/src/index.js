@@ -15,7 +15,10 @@ const socketService = require('./services/socketService');
 const weatherRoutes = require('./routes/weatherRoutes');
 const alertRoutes = require('./routes/alertRoutes');
 const authRoutes = require('./routes/authRoutes');
+const monitoringRoutes = require('./routes/monitoringRoutes');
 const { rateLimiter } = require('./middleware/rateLimiter');
+const { requestLogger, addUserContext, errorLogger } = require('./middleware/requestLogger');
+const { specs, swaggerUi, swaggerOptions } = require('./config/swagger');
 
 const app = express();
 const httpServer = createServer(app);
@@ -33,11 +36,26 @@ const PORT = process.env.PORT || 5002;
 app.use(helmet());
 app.use(cors());
 app.use(compression());
-app.use(morgan('combined', { stream: { write: message => logger.info(message.trim()) }}));
+
+// Enhanced request logging (replaces morgan)
+app.use(requestLogger);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 app.use(rateLimiter);
+
+// Add user context after authentication middleware
+app.use(addUserContext);
+
+// API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
+
+// Swagger JSON endpoint
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(specs);
+});
 
 // Public routes
 app.use('/api/auth', authRoutes);
@@ -45,7 +63,29 @@ app.use('/api/auth', authRoutes);
 // Protected routes (will be updated to require authentication)
 app.use('/api/weather', weatherRoutes);
 app.use('/api/alerts', alertRoutes);
+app.use('/api/monitoring', monitoringRoutes);
 
+/**
+ * @swagger
+ * /health:
+ *   get:
+ *     summary: Health check endpoint
+ *     description: Returns the current health status of the API server and its dependencies
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Server is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthCheck'
+ *       503:
+ *         description: Server is unhealthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
@@ -59,11 +99,15 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Error logging middleware
+app.use(errorLogger);
+
 app.use((err, req, res, next) => {
-  logger.error('Unhandled error:', err);
-  res.status(500).json({
-    error: 'Internal Server Error',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  // Error is already logged by errorLogger middleware
+  res.status(err.statusCode || 500).json({
+    error: err.name || 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
+    ...(process.env.NODE_ENV === 'development' && { requestId: req.requestId })
   });
 });
 

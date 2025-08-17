@@ -17,6 +17,12 @@ services:
       - influxdb-config:/etc/influxdb2
     networks:
       - weather-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   grafana:
     image: grafana/grafana:latest
@@ -34,7 +40,14 @@ services:
     networks:
       - weather-network
     depends_on:
-      - influxdb
+      influxdb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   redis:
     image: redis:7-alpine
@@ -47,6 +60,12 @@ services:
       - redis-data:/data
     networks:
       - weather-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
   mosquitto:
     image: eclipse-mosquitto:2
@@ -61,6 +80,12 @@ services:
       - ./docker/mosquitto/log:/mosquitto/log
     networks:
       - weather-network
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_pub -h localhost -t test -m 'health' -u '' -P '' || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
 volumes:
   influxdb-data:
