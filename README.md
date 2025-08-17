@@ -61,14 +61,14 @@ Sistema completo de estación meteorológica basado en Arduino/ESP32 con dashboa
 │                                   📊 FLUJO DE DATOS                                             │
 └─────────────────────────────────────────────────────────────────────────────────────────────────┘
 
-1️⃣ CAPTURA DE DATOS (ESP8266/WEMOS)
+1️⃣ CAPTURA DE DATOS (ESP32 DevKit V1)
 ┌──────────────────┐
-│   📡 ESP8266     │──── 60s interval ────┐
-│   WEMOS D1 R2    │                      │
+│   📡 ESP32       │──── 60s interval ────┐
+│   ESP32 DevKit V1│                      │
 │                  │  ┌─────────────────────▼──────────────────┐
 │ • Sensores I2C   │  │  📋 JSON Payload                       │
 │ • GPIO Digital   │  │  {                                     │
-│ • ADC Analógico  │  │    "station_id": "WEMOS_STATION_001", │
+│ • WiFiManager    │  │    "station_id": "ESP32_STATION_001", │
 │ • Interrupciones │  │    "timestamp": millis(),             │
 └──────────────────┘  │    "temperature": 25.67,              │
                       │    "humidity": 65.23,                 │
@@ -87,10 +87,10 @@ Sistema completo de estación meteorológica basado en Arduino/ESP32 con dashboa
 2️⃣ TRANSMISIÓN MQTT
 ┌──────────────────┐    📡 WiFi     ┌──────────────────┐
 │   📤 Publisher   │──────────────►│   🔗 MQTT Broker │
-│   ESP8266        │               │   Mosquitto      │
+│   ESP32          │               │   Mosquitto      │
 │                  │  Topic:       │   Puerto: 1883   │
 │ • Auto-reconnect │  weather/data/│   WS: 9001       │
-│ • QoS Level 0    │  WEMOS_STATION│                  │
+│ • QoS Level 0    │  ESP32_STATION│                  │
 │ • JSON Payload   │  _001         │ • Retain: false  │
 └──────────────────┘               │ • Persistence    │
                                    └──────────────────┘
@@ -202,9 +202,10 @@ Sistema completo de estación meteorológica basado en Arduino/ESP32 con dashboa
 │ • @mui/material           │ Componentes core                                      │
 │ • @mui/icons-material     │ Iconografía                                           │
 │ • @emotion/react          │ CSS-in-JS styling                                     │
-│ Chart.js 4.x              │ Gráficos y visualizaciones                           │
+│ Chart.js 4.5.0            │ Gráficos y visualizaciones                           │
 │ Leaflet 1.9+              │ Mapas interactivos                                    │
 │ • react-leaflet           │ Integración React                                     │
+│ Socket.IO Client 4.8.1    │ WebSocket real-time communication                    │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 
 🗄️ ALMACENAMIENTO & INFRAESTRUCTURA
@@ -244,6 +245,17 @@ Sistema completo de estación meteorológica basado en Arduino/ESP32 con dashboa
 │ • Volumes: persistent     │ Almacenamiento persistente                           │
 │ • Health Checks           │ Monitoreo de estado de servicios                     │
 │ Alpine Linux Base         │ Imágenes base ligeras                                │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+🧪 TESTING & CALIDAD DE CÓDIGO
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ Jest 29.7.0               │ Framework de testing para JavaScript                 │
+│ • Backend Testing         │ Tests unitarios y de integración                     │
+│ • Frontend Testing        │ Tests de componentes React                           │
+│ React Testing Library     │ Testing utilities para componentes React            │
+│ Supertest 6.3.3           │ Testing HTTP APIs                                     │
+│ jsdom Environment         │ Entorno de testing para componentes DOM              │
+│ Coverage Reports          │ Reportes de cobertura de código                      │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -679,6 +691,11 @@ npm test      # Pruebas
 npm run dev   # Desarrollo (puerto auto-asignado 3001+)
 npm run build # Compilar para producción
 npm start     # Servidor de producción
+npm test      # Ejecutar tests unitarios
+npm run test:watch # Tests en modo watch
+npm run test:coverage # Tests con cobertura
+npm run lint  # Verificar código con ESLint
+npm run type-check # Verificar tipos TypeScript
 ```
 
 ### Docker
@@ -708,10 +725,11 @@ Sin este archivo, las llamadas a la API fallarán con errores "Failed to fetch".
 ```
 estacion-metereologica/
 ├── arduino/
-│   ├── weather_station_wemos/
+│   ├── weather_station_esp32/
+│   │   └── weather_station_esp32.ino
+│   ├── weather_station_wemos/ (legacy)
 │   │   ├── weather_station_wemos.ino
 │   │   └── README.md
-│   ├── weather_station_esp32/
 │   └── sensores-microcontroladores.md
 ├── backend/
 │   ├── src/
@@ -723,10 +741,15 @@ estacion-metereologica/
 │   │   │   └── weatherController.js
 │   │   ├── routes/
 │   │   │   ├── alertRoutes.js
-│   │   │   └── weatherRoutes.js
+│   │   │   ├── weatherRoutes.js
+│   │   │   ├── authRoutes.js
+│   │   │   └── monitoringRoutes.js
 │   │   ├── services/
 │   │   │   ├── alertService.js
-│   │   │   └── mqttService.js
+│   │   │   ├── mqttService.js
+│   │   │   ├── cacheService.js
+│   │   │   ├── monitoringService.js
+│   │   │   └── socketService.js
 │   │   ├── middleware/
 │   │   │   ├── rateLimiter.js
 │   │   │   └── validation.js
@@ -745,9 +768,15 @@ estacion-metereologica/
 │   │   │   ├── index.tsx
 │   │   │   ├── _app.tsx
 │   │   │   └── _document.tsx
-│   │   └── services/
-│   │       ├── weatherService.ts
-│   │       └── socketService.ts
+│   │   ├── services/
+│   │   │   ├── weatherService.ts
+│   │   │   ├── socketService.ts
+│   │   │   └── __tests__/
+│   │   │       └── weatherService.test.ts
+│   │   └── components/
+│   │       └── __tests__/
+│   │           ├── AlertsPanel.test.tsx
+│   │           └── CurrentMeasurements.test.tsx
 │   ├── package.json
 │   └── tsconfig.json
 ├── docker/
@@ -817,6 +846,49 @@ Configurar certificados para:
 ## 📄 Licencia
 
 MIT License - ver archivo [LICENSE](LICENSE) para detalles.
+
+## ⚠️ Consideraciones de Desarrollo
+
+### Estado Actual del Proyecto
+
+**✅ Funcionalidades Implementadas:**
+- Sistema básico de captura y almacenamiento de datos
+- Dashboard React con visualizaciones Material-UI
+- API REST con endpoints básicos
+- Integración MQTT funcional
+- Configuración Docker completa
+- Testing framework configurado
+
+**🔄 En Desarrollo/Parcialmente Implementado:**
+- Sistema de autenticación (configurado pero no activo)
+- Cache Redis (disponible pero no utilizado)
+- WebSocket real-time (configurado pero usa polling)
+- Sistema de monitoreo (básico)
+- WiFiManager en ESP32 (implementado)
+
+**⚠️ Limitaciones Conocidas:**
+- Sin autenticación de producción
+- Configuración de seguridad básica
+- Sin optimización de rendimiento
+- Timestamps del ESP32 requieren conversión
+- No hay sistema de backup automatizado
+
+### Roadmap de Desarrollo Recomendado
+
+1. **Fase 1 - Seguridad** (Semana 1-2)
+   - Implementar autenticación JWT completa
+   - Configurar HTTPS/SSL
+   - Validación robusta de datos
+
+2. **Fase 2 - Performance** (Semana 3-4)
+   - Activar cache Redis
+   - Implementar WebSocket real-time
+   - Optimización de consultas InfluxDB
+
+3. **Fase 3 - Escalabilidad** (Semana 5-6)
+   - Sistema de backup
+   - Monitoreo avanzado
+   - Alertas por email/SMS
 
 ## 🔍 Solución de Problemas
 

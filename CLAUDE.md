@@ -8,7 +8,7 @@ This is an IoT Weather Station system with Arduino/ESP32 hardware sensors that c
 
 **Architecture Flow**: Arduino/ESP32 → MQTT → Backend API → InfluxDB → Frontend Dashboard + Grafana
 
-**Current Status**: PORT CONFIGURATION UPDATED - All port conflicts have been resolved and standardized. Backend API configured for port 5002, frontend auto-assigns port 3001+, and all environment files have been synchronized. System ready for deployment without port interference.
+**Current Status**: SYSTEM OPERATIONAL & CONFIGURED - All port conflicts resolved and standardized. Backend API configured for port 5002, frontend auto-assigns port 3001+, and all environment files synchronized. ESP32 hardware updated to include additional sensors (CO, air quality, dust, light). System functional but requires security and performance optimizations for production deployment.
 
 ## System Components
 
@@ -129,41 +129,61 @@ Data points use `station_id` as primary tag for device identification.
 - Express.js server with middleware for security, logging, and rate limiting
 - Health check endpoint at `/health`
 - Graceful shutdown handling for SIGTERM/SIGINT
-- Currently configured for port 5002 (changed from default 5000)
+- Currently configured for port 5002 (unified across all environments)
+- **Dependencies**: Express ^4.18.2, Helmet ^7.0.0, Compression ^1.7.4, CORS ^2.8.5
 
 **MQTTService** (`src/services/mqttService.js`): 
 - Handles MQTT broker connection and message routing
 - Processes incoming sensor data and forwards to InfluxDB
 - Validates timestamps from Arduino (handles millis() vs real timestamps)
 - Manages device status monitoring
-- Currently receiving real-time data from ESP32_STATION_001 every ~20 seconds
+- Currently receiving real-time data from ESP32_STATION_001 every ~60 seconds
+- **Dependencies**: MQTT ^5.0.5
 
 **AlertService** (`src/services/alertService.js`):
 - Evaluates sensor data against predefined thresholds
 - Generates alerts with severity levels (LOW, MEDIUM, HIGH, CRITICAL)
 - Implements alert suppression to prevent spam
 
+**CacheService** (`src/services/cacheService.js`):
+- Redis integration for performance optimization
+- **Dependencies**: Redis ^4.6.8
+
+**MonitoringService** (`src/services/monitoringService.js`):
+- System health monitoring and metrics collection
+
+**SocketService** (`src/services/socketService.js`):
+- WebSocket server implementation for real-time updates
+- **Dependencies**: Socket.IO ^4.8.1
+
 **InfluxDB Client** (`src/config/influxdb.js`):
 - Provides `writeWeatherData()` and `writeAlert()` functions
 - Uses Flux query language for data retrieval
 - Handles time-series data with automatic field type detection
 - Automatically converts Arduino millis() timestamps to server time
+- **Dependencies**: @influxdata/influxdb-client ^1.33.2
 
 ### Frontend Architecture
 
 **React/Next.js Dashboard** (`frontend/src/`):
-- **Technology Stack**: Next.js 15.4.6, React 19.1.1, TypeScript 5.9.2, Material-UI 7.3.1
-- **Pages**: Main dashboard page (`pages/index.tsx`)
+- **Technology Stack**: Next.js ^15.4.6, React ^19.1.1, TypeScript ^5.9.2, Material-UI ^7.3.1
+- **Pages**: Main dashboard page (`pages/index.tsx`) with TypeScript support
 - **Components**: Modular UI components for different dashboard sections
-  - `CurrentMeasurements.tsx`: Real-time sensor readings display
-  - `HistoricalCharts.tsx`: Time-series data visualization with Chart.js
+  - `CurrentMeasurements.tsx`: Real-time sensor readings display with Material-UI cards
+  - `HistoricalCharts.tsx`: Time-series data visualization with Chart.js ^4.5.0
   - `SystemStatus.tsx`: Device status and connectivity monitoring
-  - `AlertsPanel.tsx`: Alert management interface
-  - `WeatherMap.tsx`: Geographic data visualization (currently has rendering issues)
-  - `WeatherMapClient.tsx`: Client-side map component (referenced but may be missing)
+  - `AlertsPanel.tsx`: Alert management interface with acknowledgment features
+  - `WeatherMap.tsx`: Geographic data visualization with Leaflet integration
+  - `WeatherMapClient.tsx`: Client-side map component with SSR disabled
 - **Services**: API communication layer
   - `weatherService.ts`: Backend API client with TypeScript interfaces
-  - `socketService.ts`: WebSocket communication (updated to port 5002)
+  - `socketService.ts`: WebSocket communication (configured for port 5002)
+- **Additional Dependencies**: 
+  - Chart.js ^4.5.0 with chartjs-adapter-date-fns ^3.0.0
+  - Leaflet ^1.9.4 with react-leaflet ^5.0.0
+  - Socket.IO Client ^4.8.1
+  - Day.js ^1.11.13 for date handling
+  - MUI X Date Pickers ^8.10.0
 
 **Frontend Implementation Status**:
 - ✅ WeatherMapClient component properly implemented with Leaflet integration
@@ -186,7 +206,10 @@ Data points use `station_id` as primary tag for device identification.
   - `GET /api/alerts/summary/:stationId` - Alert summary statistics (actively used)
   - `POST /api/alerts` - Create new alert
   - `PUT /api/alerts/:alertId/acknowledge` - Acknowledge alert
-- **Health**: `/health` - API health check
+- **Authentication**: `/api/auth/*` - User authentication (configured)
+- **Monitoring**: `/api/monitoring/*` - System monitoring endpoints
+- **Health**: `/health` - API health check with detailed status
+- **API Documentation**: Swagger/OpenAPI documentation configured (swagger-jsdoc ^6.2.8, swagger-ui-express ^5.0.1)
 
 ## Arduino/ESP32 Integration
 
@@ -197,17 +220,20 @@ Data points use `station_id` as primary tag for device identification.
 - **Connection Status**: Stable MQTT connection with regular status updates
 
 ### Hardware Files Location
-- **Arduino Code**: `arduino/weather_station_wemos/weather_station_wemos.ino`
-- **Documentation**: `arduino/weather_station_wemos/README.md`
+- **Arduino Code**: `arduino/weather_station_esp32/weather_station_esp32.ino`
+- **Documentation**: `arduino/weather_station_wemos/README.md` (legacy)
 - **Sensor Guide**: `arduino/sensores-microcontroladores.md`
 
 ### Sensor Configuration
-The ESP32 code handles multiple sensors with interrupt-based wind/rain measurement:
-- DHT22: Temperature/humidity on GPIO 4
-- BMP280: Pressure via I2C (GPIO 21/22)  
-- Anemometer: Pulse counting on GPIO 2
-- Rain gauge: Pulse counting on GPIO 3
-- Wind vane: Analog reading on A0
+The ESP32 DevKit V1 code handles multiple sensors with comprehensive environmental monitoring:
+- **DHT22**: Temperature/humidity on GPIO 4
+- **BMP085**: Pressure via I2C (GPIO 21/22 - SDA/SCL)
+- **Rain Sensor (MH-RD)**: Digital (GPIO 2) and Analog (GPIO 34) inputs
+- **MQ7**: CO sensor on GPIO 36 (ADC1_CH0)
+- **MQ135**: Air quality sensor (digital) on GPIO 12
+- **DSM501A**: Dust sensor on GPIO 13
+- **BH1750**: Light sensor via I2C (GPIO 21/22)
+- **WiFiManager**: Dynamic configuration instead of hardcoded credentials
 
 ### Calibration System
 Sensor readings use calibration factors defined in `CalibrationFactors` struct. Modify these values for field calibration without code changes.
@@ -316,11 +342,33 @@ If ports are in use:
 
 ### Port Configuration Summary ✅ UPDATED
 **Environment Files Synchronized:**
-- `backend/.env`: PORT=5002 ✅
-- `backend/.env.example`: PORT=5002 ✅
+- `backend/.env`: PORT=5002, InfluxDB, MQTT, Redis, JWT configured ✅
+- `backend/.env.example`: PORT=5002 template ✅
 - `frontend/.env.local`: NEXT_PUBLIC_API_URL=http://localhost:5002/api ✅
 - `frontend/.env.example`: Updated with port 5002 ✅
 - `frontend/src/services/socketService.ts`: Default URL updated to port 5002 ✅
 - `frontend/README.md`: Documentation updated ✅
 
 **No Port Conflicts:** The system is now fully configured without any port interference between services.
+
+### Test Infrastructure
+**Backend Testing:**
+- Jest ^29.6.2 configured with test scripts
+- Supertest ^6.3.3 for API testing
+- Test structure: `tests/services/` and `tests/integration/`
+- Coverage reporting available
+
+**Frontend Testing:**
+- Jest ^29.7.0 with jsdom environment
+- React Testing Library ^14.1.2
+- Testing Library Jest DOM ^6.1.4
+- Component tests in `src/components/__tests__/`
+- Service tests in `src/services/__tests__/`
+
+### Development & Production Considerations
+**Current Limitations:**
+- Authentication system configured but not fully implemented
+- Redis cache service available but not actively used
+- WebSocket service configured but real-time updates use polling
+- No production-ready security configurations
+- ESP32 uses WiFiManager but stores MQTT config as defaults
