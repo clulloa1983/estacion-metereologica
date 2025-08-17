@@ -116,8 +116,8 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // Enhanced logger with additional methods
-const enhancedLogger = {
-  ...logger,
+const enhancedLogger = Object.create(logger);
+Object.assign(enhancedLogger, {
   
   // Request logging with context
   request: (message, context = {}) => {
@@ -206,6 +206,6 @@ const enhancedLogger = {
       ...context
     });
   }
-};
+});
 
 module.exports = enhancedLogger;
