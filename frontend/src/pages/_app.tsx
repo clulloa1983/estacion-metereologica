@@ -1,9 +1,10 @@
 import React from 'react';
 import type { AppProps } from 'next/app';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { CustomThemeProvider, useThemeMode } from '../contexts/ThemeContext';
 import 'leaflet/dist/leaflet.css';
 
 // Configurar iconos de Leaflet para evitar problemas de SSR
@@ -18,89 +19,10 @@ if (typeof window !== 'undefined') {
   });
 }
 
-// Tema personalizado para la aplicación meteorológica
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-      light: '#42a5f5',
-      dark: '#1565c0',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-    background: {
-      default: '#f5f5f5',
-      paper: '#ffffff',
-    },
-    success: {
-      main: '#4caf50',
-    },
-    warning: {
-      main: '#ff9800',
-    },
-    error: {
-      main: '#f44336',
-    },
-    info: {
-      main: '#2196f3',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontSize: '2.5rem',
-      fontWeight: 500,
-    },
-    h2: {
-      fontSize: '2rem',
-      fontWeight: 500,
-    },
-    h3: {
-      fontSize: '1.75rem',
-      fontWeight: 500,
-    },
-    h4: {
-      fontSize: '1.5rem',
-      fontWeight: 500,
-    },
-    h5: {
-      fontSize: '1.25rem',
-      fontWeight: 500,
-    },
-    h6: {
-      fontSize: '1rem',
-      fontWeight: 500,
-    },
-  },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          borderRadius: '12px',
-        },
-      },
-    },
-    MuiAppBar: {
-      styleOverrides: {
-        root: {
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          borderRadius: '16px',
-        },
-      },
-    },
-  },
-});
+// Componente interno que usa el tema del contexto
+const AppContent: React.FC<{ Component: any; pageProps: any }> = ({ Component, pageProps }) => {
+  const { theme } = useThemeMode();
 
-export default function App({ Component, pageProps }: AppProps) {
   return (
     <ThemeProvider theme={theme}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -108,5 +30,13 @@ export default function App({ Component, pageProps }: AppProps) {
         <Component {...pageProps} />
       </LocalizationProvider>
     </ThemeProvider>
+  );
+};
+
+export default function App({ Component, pageProps }: AppProps) {
+  return (
+    <CustomThemeProvider>
+      <AppContent Component={Component} pageProps={pageProps} />
+    </CustomThemeProvider>
   );
 }

@@ -8,6 +8,7 @@ import SystemStatus from '../components/SystemStatus';
 import AlertsPanel from '../components/AlertsPanel';
 import { weatherService } from '../services/weatherService';
 import { socketService } from '../services/socketService';
+import ThemeToggle from '../components/ThemeToggle';
 
 interface WeatherData {
   station_id: string;
@@ -142,6 +143,7 @@ export default function Dashboard() {
                 Última actualización: {lastUpdate.toLocaleTimeString()}
               </Typography>
             )}
+            <ThemeToggle color="inherit" />
           </Box>
         </Toolbar>
       </AppBar>
