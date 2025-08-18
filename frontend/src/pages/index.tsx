@@ -9,6 +9,7 @@ import HistoricalCharts from '../components/HistoricalCharts';
 import WeatherMap from '../components/WeatherMap';
 import SystemStatus from '../components/SystemStatus';
 import AlertsPanel from '../components/AlertsPanel';
+import RemoteConfigPanel from '../components/RemoteConfigPanel';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { weatherService } from '../services/weatherService';
 import { socketService } from '../services/socketService';
@@ -202,6 +203,11 @@ export default function Dashboard() {
           {/* Mapa */}
           <Grid size={{ xs: 12, lg: 6 }}>
             <WeatherMap stationId={stationId} currentData={currentData} />
+          </Grid>
+          
+          {/* Panel de Configuración Remota */}
+          <Grid size={{ xs: 12 }}>
+            <RemoteConfigPanel stationId={stationId} />
           </Grid>
         </Grid>
       </Container>
