@@ -13,7 +13,14 @@
       "Bash(docker exec:*)",
       "Bash(cmd /c:*)",
       "Bash(netsh interface portproxy:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(mkdir:*)",
+      "Bash(node:*)",
+      "Bash(chmod:*)",
+      "Bash(docker logs:*)",
+      "Bash(./scripts/backup-manager.sh:*)",
+      "Bash(./scripts/backup-simple.sh:*)",
+      "Bash(docker ps:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Grid, Box, Typography, AppBar, Toolbar, Chip, Alert } from '@mui/material';
 import { Wifi, WifiOff } from '@mui/icons-material';
+import { useTranslation } from 'next-i18next';
+import { GetStaticProps } from 'next';
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import CurrentMeasurements from '../components/CurrentMeasurements';
 import HistoricalCharts from '../components/HistoricalCharts';
 import WeatherMap from '../components/WeatherMap';
 import SystemStatus from '../components/SystemStatus';
 import AlertsPanel from '../components/AlertsPanel';
+import { LanguageSelector } from '../components/LanguageSelector';
 import { weatherService } from '../services/weatherService';
 import { socketService } from '../services/socketService';
 import ThemeToggle from '../components/ThemeToggle';
@@ -26,6 +30,7 @@ interface WeatherData {
 }
 
 export default function Dashboard() {
+  const { t } = useTranslation(['common', 'dashboard']);
   const [currentData, setCurrentData] = useState<WeatherData | null>(null);
   const [stationId] = useState('ESP32_STATION_001'); // Podrías hacer esto configurable
   const [loading, setLoading] = useState(true);
@@ -33,15 +38,15 @@ export default function Dashboard() {
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   
   const getConnectionStatus = () => {
-    if (!currentData?.timestamp) return { connected: false, text: 'Sin conexión' };
+    if (!currentData?.timestamp) return { connected: false, text: t('status.offline') };
     
     const lastUpdate = new Date(currentData.timestamp);
     const now = new Date();
     const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
     
-    if (diffMinutes < 2) return { connected: true, text: 'Tiempo Real' };
-    if (diffMinutes < 10) return { connected: true, text: 'Conexión lenta' };
-    return { connected: false, text: 'Sin conexión en vivo' };
+    if (diffMinutes < 2) return { connected: true, text: t('status.online') };
+    if (diffMinutes < 10) return { connected: true, text: t('status.connecting') };
+    return { connected: false, text: t('status.offline') };
   };
 
   useEffect(() => {
@@ -127,7 +132,7 @@ export default function Dashboard() {
               fontWeight: 600
             }}
           >
-            Estación Meteorológica
+            {t('title')}
           </Typography>
           <Box sx={{ 
             display: 'flex', 
@@ -135,6 +140,7 @@ export default function Dashboard() {
             alignItems: 'center',
             flexWrap: 'wrap'
           }}>
+            <LanguageSelector variant="icon" />
             <Chip
               icon={getConnectionStatus().connected ? <Wifi /> : <WifiOff />}
               label={getConnectionStatus().text}
@@ -156,7 +162,7 @@ export default function Dashboard() {
                   fontSize: '0.75rem'
                 }}
               >
-                Última actualización: {lastUpdate.toLocaleTimeString()}
+                {t('dashboard:currentMeasurements.lastUpdate')}: {lastUpdate.toLocaleTimeString()}
               </Typography>
             )}
             <ThemeToggle color="inherit" sx={{ ml: { xs: 0, sm: 1 } }} />
@@ -167,8 +173,8 @@ export default function Dashboard() {
       <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
         {!loading && !currentData && (
           <Alert severity="info" sx={{ mb: 3 }}>
-            No hay datos recientes disponibles para la estación {stationId}. 
-            Verifique que el ESP32 esté enviando datos o que los servicios del sistema estén funcionando correctamente.
+            {t('status.noData')} {stationId}. 
+            {t('dashboard:systemStatus.connectionStatus')}.
           </Alert>
         )}
         
@@ -202,3 +208,11 @@ export default function Dashboard() {
     </Box>
   );
 }
+
+export const getStaticProps: GetStaticProps = async ({ locale }) => {
+  return {
+    props: {
+      ...(await serverSideTranslations(locale ?? 'es', ['common', 'dashboard'])),
+    },
+  };
+};

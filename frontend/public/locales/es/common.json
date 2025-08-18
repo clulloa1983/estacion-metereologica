@@ -1,0 +1,49 @@
+{
+  "title": "Estación Meteorológica IoT",
+  "subtitle": "Dashboard de Monitoreo en Tiempo Real",
+  "navigation": {
+    "dashboard": "Panel Principal",
+    "historical": "Histórico",
+    "alerts": "Alertas",
+    "settings": "Configuración"
+  },
+  "buttons": {
+    "refresh": "Actualizar",
+    "export": "Exportar",
+    "reset": "Restablecer",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "apply": "Aplicar",
+    "close": "Cerrar"
+  },
+  "status": {
+    "online": "En línea",
+    "offline": "Desconectado",
+    "connecting": "Conectando",
+    "error": "Error",
+    "loading": "Cargando...",
+    "noData": "Sin datos disponibles"
+  },
+  "units": {
+    "temperature": "°C",
+    "humidity": "%",
+    "pressure": "hPa",
+    "windSpeed": "km/h",
+    "precipitation": "mm",
+    "light": "lux",
+    "airQuality": "AQI",
+    "co": "ppm",
+    "pm25": "µg/m³"
+  },
+  "timeRanges": {
+    "1h": "Última hora",
+    "6h": "Últimas 6 horas",
+    "24h": "Últimas 24 horas",
+    "7d": "Últimos 7 días",
+    "30d": "Últimos 30 días"
+  },
+  "footer": {
+    "copyright": "© 2025 Estación Meteorológica IoT",
+    "version": "Versión"
+  }
+}

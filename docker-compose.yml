@@ -87,6 +87,43 @@ services:
       retries: 5
       start_period: 10s
 
+  backup-service:
+    image: alpine:latest
+    container_name: weather_backup_service
+    restart: unless-stopped
+    environment:
+      - BACKUP_HOUR=2  # Hour to run backup (24h format)
+      - BACKUP_RETENTION_DAYS=7
+      - INFLUXDB_ORG=weather-station
+      - INFLUXDB_TOKEN=weather-station-token-12345
+      - CONTAINER_NAME=weather_influxdb
+    volumes:
+      - ./backups:/backups
+      - ./scripts:/scripts:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - weather-network
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    command: >
+      sh -c "
+        apk add --no-cache docker-cli curl bash &&
+        echo \"Backup service started. Will run daily at 0\$${BACKUP_HOUR}:00\" &&
+        while true; do
+          current_hour=\$$(date +%H);
+          if [ \$$current_hour -eq $${BACKUP_HOUR} ]; then
+            if [ ! -f /tmp/backup_done_today ]; then
+              echo 'Running scheduled backup...';
+              /scripts/backup-simple.sh;
+              touch /tmp/backup_done_today;
+            fi;
+          else
+            rm -f /tmp/backup_done_today;
+          fi;
+          sleep 3600;
+        done"
+
 volumes:
   influxdb-data:
   influxdb-config:

@@ -4,6 +4,7 @@ import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { appWithTranslation } from 'next-i18next';
 import { CustomThemeProvider, useThemeMode } from '../contexts/ThemeContext';
 import 'leaflet/dist/leaflet.css';
 
@@ -33,10 +34,12 @@ function AppContent({ Component, pageProps }: { Component: any; pageProps: any }
   );
 }
 
-export default function App({ Component, pageProps }: AppProps) {
+function App({ Component, pageProps }: AppProps) {
   return (
     <CustomThemeProvider>
       <AppContent Component={Component} pageProps={pageProps} />
     </CustomThemeProvider>
   );
 }
+
+export default appWithTranslation(App);

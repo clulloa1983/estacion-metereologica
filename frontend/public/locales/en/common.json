@@ -1,0 +1,49 @@
+{
+  "title": "IoT Weather Station",
+  "subtitle": "Real-Time Monitoring Dashboard",
+  "navigation": {
+    "dashboard": "Dashboard",
+    "historical": "Historical",
+    "alerts": "Alerts",
+    "settings": "Settings"
+  },
+  "buttons": {
+    "refresh": "Refresh",
+    "export": "Export",
+    "reset": "Reset",
+    "save": "Save",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "close": "Close"
+  },
+  "status": {
+    "online": "Online",
+    "offline": "Offline",
+    "connecting": "Connecting",
+    "error": "Error",
+    "loading": "Loading...",
+    "noData": "No data available"
+  },
+  "units": {
+    "temperature": "°C",
+    "humidity": "%",
+    "pressure": "hPa",
+    "windSpeed": "km/h",
+    "precipitation": "mm",
+    "light": "lux",
+    "airQuality": "AQI",
+    "co": "ppm",
+    "pm25": "µg/m³"
+  },
+  "timeRanges": {
+    "1h": "Last hour",
+    "6h": "Last 6 hours",
+    "24h": "Last 24 hours",
+    "7d": "Last 7 days",
+    "30d": "Last 30 days"
+  },
+  "footer": {
+    "copyright": "© 2025 IoT Weather Station",
+    "version": "Version"
+  }
+}

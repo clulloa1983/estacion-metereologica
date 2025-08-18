@@ -1,0 +1,48 @@
+{
+  "currentMeasurements": {
+    "title": "Current Measurements",
+    "lastUpdate": "Last update",
+    "temperature": "Temperature",
+    "humidity": "Humidity",
+    "pressure": "Atmospheric Pressure",
+    "windSpeed": "Wind Speed",
+    "precipitation": "Precipitation",
+    "lightIntensity": "Light Intensity",
+    "airQuality": "Air Quality",
+    "carbonMonoxide": "Carbon Monoxide",
+    "pm25": "Particulate Matter PM2.5"
+  },
+  "historicalCharts": {
+    "title": "Historical Charts",
+    "selectTimeRange": "Select time range",
+    "selectParameters": "Select parameters",
+    "noDataMessage": "No data available for selected range",
+    "errorMessage": "Error loading historical data"
+  },
+  "systemStatus": {
+    "title": "System Status",
+    "stationStatus": "Station Status",
+    "connectionStatus": "Connection Status",
+    "lastReading": "Last Reading",
+    "batteryLevel": "Battery Level",
+    "signalStrength": "Signal Strength",
+    "uptime": "Uptime"
+  },
+  "alerts": {
+    "title": "Active Alerts",
+    "noActiveAlerts": "No active alerts",
+    "severity": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "acknowledge": "Acknowledge",
+    "viewAll": "View all alerts"
+  },
+  "weatherMap": {
+    "title": "Station Location",
+    "loading": "Loading map...",
+    "error": "Error loading map"
+  }
+}
