@@ -19,18 +19,19 @@ Sistema completo de estación meteorológica basado en Arduino/ESP32 con dashboa
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
 │                           📡 ESTACIÓN METEOROLÓGICA IOT                             │
+│                         ✅ SISTEMA OPERACIONAL Y CONFIGURADO                        │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 
 ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
 │   🌡️ SENSORES    │    │   📶 CONECTIVIDAD │    │   💻 BACKEND     │    │   📊 FRONTEND    │
-│                  │    │                  │    │                  │    │                  │
-│ DHT22 (Temp/Hum) │    │                  │    │   Node.js/Express│    │   React/Next.js  │
-│ BMP180 (Presión) │    │    📡 WiFi       │    │   Puerto: 5002   │    │   Puerto: 3001+  │
-│ BH1750 (Luz)     │◄──►│       +          │◄──►│                  │◄──►│                  │
+│  ESP32 DevKit V1 │    │                  │    │                  │    │                  │
+│ DHT22 (Temp/Hum) │    │    📡 WiFi       │    │   Node.js/Express│    │   React/Next.js  │
+│ BMP085 (Presión) │    │   WiFiManager    │    │   Puerto: 5002   │    │   Puerto: 3001+  │
+│ BH1750 (Luz)     │◄──►│       +          │◄──►│                  │◄──►│   TypeScript     │
 │ MH-RD (Lluvia)   │    │    🔗 MQTT       │    │   🔄 Middlewares │    │   📈 Dashboard   │
 │ MQ7 (CO)         │    │   Puerto: 1883   │    │   • Rate Limit   │    │   • Material-UI  │
 │ MQ135 (Aire)     │    │   WS: 9001       │    │   • Validation   │    │   • Chart.js     │
-│ DSM501A (PM2.5)  │    │                  │    │   • CORS         │    │   • Leaflet Maps │
+│ DSM501A (PM2.5)  │    │                  │    │   • Auth/JWT     │    │   • Leaflet Maps │
 └──────────────────┘    └──────────────────┘    └──────────────────┘    └──────────────────┘
          │                        │                        │                        │
          │                        │                        │                        │
@@ -41,17 +42,18 @@ Sistema completo de estación meteorológica basado en Arduino/ESP32 con dashboa
 │                                  │                        │                                  │
 │  ┌─────────────────┐            │                        │            ┌─────────────────┐   │
 │  │   🗄️ InfluxDB   │◄───────────┘                        └───────────►│   📈 Grafana    │   │
-│  │                 │                                                   │                 │   │
+│  │    v2.7         │                                                   │    Latest       │   │
 │  │  • Time-series  │              ┌─────────────────┐                  │  • Dashboards   │   │
 │  │  • Weather data │              │   🔴 Redis      │                  │  • Alertas      │   │
-│  │  • Puerto: 8086 │              │                 │                  │  • Puerto: 3000 │   │
-│  │  • Bucket: data │              │  • Cache        │                  │  • admin/pass   │   │
-│  │  • Org: station │              │  • Sessions     │                  │  • Datasources  │   │
+│  │  • Puerto: 8086 │              │    v7-alpine    │                  │  • Puerto: 3000 │   │
+│  │  • Bucket: data │              │  • Cache        │                  │  • admin/grafana│   │
+│  │  • Org: station │              │  • Sessions     │                  │  • Auto-config  │   │
 │  └─────────────────┘              │  • Puerto: 6379 │                  └─────────────────┘   │
 │                                   └─────────────────┘                                        │
 └──────────────────────────────────────────────────────────────────────────────────────────────┘
 
                               🐳 Docker Compose Orquestación
+                                 ✅ Health Checks Activos
 ```
 
 ### Flujo de Datos Detallado
@@ -171,26 +173,35 @@ Sistema completo de estación meteorológica basado en Arduino/ESP32 con dashboa
 
 🖥️ HARDWARE & FIRMWARE
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
-│ ESP8266 (WEMOS D1 R2)     │ Microcontrolador principal WiFi                      │
+│ ESP32 DevKit V1           │ Microcontrolador principal WiFi/Bluetooth            │
 │ Arduino Framework         │ C++ con librerías específicas                        │
-│ • PubSubClient            │ Cliente MQTT para ESP8266                            │
+│ • WiFiManager             │ Configuración WiFi dinámica (sin hardcode)          │
+│ • PubSubClient            │ Cliente MQTT para ESP32                              │
 │ • ArduinoJson             │ Serialización JSON                                   │
-│ • DHT Sensor Library      │ Lectura sensores temperatura/humedad                 │
+│ • DHT Sensor Library      │ Lectura sensores temperatura/humedad (DHT22)         │
 │ • Adafruit BMP085         │ Presión barométrica                                   │
-│ • BH1750 Library          │ Sensor de luminosidad                                 │
+│ • BH1750 Library          │ Sensor de luminosidad I2C                            │
+│ • Preferences             │ Almacenamiento NVS persistente                       │
+│ • Deep Sleep Support      │ Gestión de energía para despliegues remotos          │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 
 💻 BACKEND & API
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
 │ Node.js 18+               │ Runtime JavaScript                                    │
-│ Express.js 4.18           │ Framework web minimalista                            │
-│ • express-rate-limit      │ Rate limiting                                         │
-│ • helmet                  │ Seguridad HTTP headers                               │
-│ • cors                    │ Cross-Origin Resource Sharing                        │
-│ • morgan                  │ HTTP request logger                                   │
-│ MQTT.js                   │ Cliente MQTT para Node.js                            │
-│ InfluxDB 2.x Client       │ Base de datos time-series                            │
-│ Winston                   │ Sistema de logging estructurado                      │
+│ Express.js 4.18.2         │ Framework web minimalista                            │
+│ • helmet 7.0.0            │ Seguridad HTTP headers                               │
+│ • cors 2.8.5              │ Cross-Origin Resource Sharing                        │
+│ • compression 1.7.4       │ Compresión HTTP                                       │
+│ • morgan 1.10.0           │ HTTP request logger                                   │
+│ • rate-limiter-flexible   │ Rate limiting avanzado                               │
+│ MQTT.js 5.0.5             │ Cliente MQTT para Node.js                            │
+│ InfluxDB Client 1.33.2    │ Cliente oficial InfluxDB 2.x                         │
+│ Winston 3.10.0            │ Sistema de logging estructurado                      │
+│ Redis 4.6.8               │ Cliente Redis para cache                             │
+│ Socket.IO 4.8.1           │ WebSocket server                                      │
+│ JWT + bcryptjs            │ Autenticación y hashing                              │
+│ Joi 17.9.2                │ Validación de esquemas                               │
+│ Swagger/OpenAPI           │ Documentación automática de API                      │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 
 🌐 FRONTEND & UI
@@ -202,10 +213,14 @@ Sistema completo de estación meteorológica basado en Arduino/ESP32 con dashboa
 │ • @mui/material           │ Componentes core                                      │
 │ • @mui/icons-material     │ Iconografía                                           │
 │ • @emotion/react          │ CSS-in-JS styling                                     │
+│ • @mui/x-date-pickers     │ Date/time pickers para filtros temporales           │
 │ Chart.js 4.5.0            │ Gráficos y visualizaciones                           │
-│ Leaflet 1.9+              │ Mapas interactivos                                    │
-│ • react-leaflet           │ Integración React                                     │
+│ • react-chartjs-2         │ Integración React para Chart.js                      │
+│ • chartjs-adapter-date-fns│ Adaptador para manejo de fechas                      │
+│ Leaflet 1.9.4             │ Mapas interactivos                                    │
+│ • react-leaflet 5.0.0     │ Integración React                                     │
 │ Socket.IO Client 4.8.1    │ WebSocket real-time communication                    │
+│ Day.js 1.11.13            │ Librería de manejo de fechas ligera                 │
 └─────────────────────────────────────────────────────────────────────────────────────┘
 
 🗄️ ALMACENAMIENTO & INFRAESTRUCTURA
@@ -504,35 +519,39 @@ curl "http://localhost:5002/api/weather/export/ESP32_STATION_001?format=csv&star
 └─────────────────┘    └─────────────────┘
 ```
 
-### Especificaciones Técnicas WEMOS D1 R2
+### Especificaciones Técnicas ESP32 DevKit V1
 
 | Componente | Especificación |
 |------------|----------------|
-| **Microcontrolador** | ESP8266 (80/160 MHz) |
+| **Microcontrolador** | ESP32 WROOM-32 (240 MHz dual-core) |
 | **Memoria Flash** | 4MB |
-| **RAM** | 80KB |
-| **GPIO Digitales** | 11 pines (D0-D8, TX, RX) |
-| **GPIO Analógicos** | 1 pin (A0) - 0-3.3V, 10-bit ADC |
-| **I2C** | D1 (SCL), D2 (SDA) |
-| **SPI** | D5 (CLK), D6 (MISO), D7 (MOSI), D8 (CS) |
-| **UART** | TX, RX |
+| **RAM** | 520KB SRAM |
+| **GPIO Digitales** | 30 pines GPIO |
+| **GPIO Analógicos** | 18 canales ADC de 12-bit |
+| **I2C** | GPIO21 (SDA), GPIO22 (SCL) |
+| **SPI** | Múltiples interfaces SPI |
+| **UART** | 3 interfaces UART |
 | **WiFi** | 802.11 b/g/n (2.4 GHz) |
-| **Alimentación** | 5V (USB/Barrel) / 3.3V (Regulado) |
-| **Consumo** | ~80mA (activo), ~20µA (deep sleep) |
+| **Bluetooth** | Bluetooth v4.2 BR/EDR y BLE |
+| **Alimentación** | 5V (USB) / 3.3V (Regulado) |
+| **Consumo** | ~240mA (activo), ~5µA (deep sleep) |
+| **Touch Sensors** | 10 touch pins capacitivos |
+| **DAC** | 2 canales DAC de 8-bit |
 
-### Tabla de Conexiones Consolidada
+### Tabla de Conexiones Consolidada (ESP32 DevKit V1)
 
-| Sensor | Pin WEMOS | Pin GPIO | Tipo | Voltaje | Protocolo | Descripción |
-|--------|-----------|----------|------|---------|-----------|-------------|
-| 🌡️ DHT22 | D5 | GPIO14 | Digital | 3.3V | OneWire | Temperatura y humedad |
-| 🧭 BMP180 SDA | D2 | GPIO4 | I2C | 3.3V | I2C | Presión barométrica |
-| 🧭 BMP180 SCL | D1 | GPIO5 | I2C | 3.3V | I2C | Presión barométrica |
-| 💡 BH1750 SDA | D2 | GPIO4 | I2C | 3.3V | I2C | Sensor de luz (compartido) |
-| 💡 BH1750 SCL | D1 | GPIO5 | I2C | 3.3V | I2C | Sensor de luz (compartido) |
-| 🌧️ MH-RD | D4 | GPIO2 | Digital | 3.3V | Interrupt | Sensor de lluvia |
-| 🫁 MQ7 | A0 | ADC0 | Analógico | 5V | ADC | Monóxido de carbono |
-| 🏭 MQ135 | D6 | GPIO12 | Digital | 3.3V | Digital | Calidad del aire |
-| 🌫️ DSM501A | D7 | GPIO13 | Digital | 5V | PWM | Partículas PM2.5 |
+| Sensor | Pin ESP32 | GPIO | Tipo | Voltaje | Protocolo | Descripción |
+|--------|-----------|------|------|---------|-----------|-------------|
+| 🌡️ DHT22 | GPIO4 | 4 | Digital | 3.3V | OneWire | Temperatura y humedad |
+| 🧭 BMP085 SDA | GPIO21 | 21 | I2C | 3.3V | I2C | Presión barométrica |
+| 🧭 BMP085 SCL | GPIO22 | 22 | I2C | 3.3V | I2C | Presión barométrica |
+| 💡 BH1750 SDA | GPIO21 | 21 | I2C | 3.3V | I2C | Sensor de luz (compartido) |
+| 💡 BH1750 SCL | GPIO22 | 22 | I2C | 3.3V | I2C | Sensor de luz (compartido) |
+| 🌧️ MH-RD Digital | GPIO2 | 2 | Digital | 3.3V | Interrupt | Sensor de lluvia (digital) |
+| 🌧️ MH-RD Analog | GPIO34 | 34 | Analógico | 3.3V | ADC | Sensor de lluvia (análogo) |
+| 🫁 MQ7 | GPIO36 | 36 | Analógico | 5V | ADC1_CH0 | Monóxido de carbono |
+| 🏭 MQ135 | GPIO12 | 12 | Digital | 3.3V | Digital | Calidad del aire |
+| 🌫️ DSM501A | GPIO13 | 13 | Digital | 5V | PWM | Partículas PM2.5 |
 
 ### Protocolo MQTT - Estructura de Comunicación
 
@@ -851,27 +870,34 @@ MIT License - ver archivo [LICENSE](LICENSE) para detalles.
 
 ### Estado Actual del Proyecto
 
-**✅ Funcionalidades Implementadas:**
-- Sistema básico de captura y almacenamiento de datos
-- Dashboard React con visualizaciones Material-UI
-- API REST con endpoints básicos
-- Integración MQTT funcional
-- Configuración Docker completa
-- Testing framework configurado
+**✅ Funcionalidades Completamente Implementadas:**
+- ✅ Sistema completo de captura y almacenamiento de datos
+- ✅ Dashboard React/Next.js con TypeScript y Material-UI 7.3.1
+- ✅ API REST robusta con validación Joi y documentación Swagger
+- ✅ Integración MQTT completamente funcional
+- ✅ Configuración Docker con health checks
+- ✅ Testing framework completo (Jest para backend y frontend)
+- ✅ ESP32 DevKit V1 con WiFiManager y sensores múltiples
+- ✅ Sistema de alertas con niveles de severidad
+- ✅ Mapas interactivos con Leaflet
+- ✅ Gráficos temporales con Chart.js
+- ✅ Theme toggle (modo oscuro/claro)
+- ✅ Sistema de logging estructurado con Winston
+- ✅ Rate limiting y middleware de seguridad
 
-**🔄 En Desarrollo/Parcialmente Implementado:**
-- Sistema de autenticación (configurado pero no activo)
-- Cache Redis (disponible pero no utilizado)
-- WebSocket real-time (configurado pero usa polling)
-- Sistema de monitoreo (básico)
-- WiFiManager en ESP32 (implementado)
+**🔄 Configurado y Listo para Activar:**
+- 🔧 Sistema de autenticación JWT (implementado, no activo)
+- 🔧 Cache Redis (disponible, no utilizado activamente)
+- 🔧 WebSocket real-time (configurado, actualmente usa polling)
+- 🔧 Sistema de monitoreo avanzado (básico implementado)
+- 🔧 Deep Sleep en ESP32 (implementado, configurable)
 
-**⚠️ Limitaciones Conocidas:**
-- Sin autenticación de producción
-- Configuración de seguridad básica
-- Sin optimización de rendimiento
-- Timestamps del ESP32 requieren conversión
-- No hay sistema de backup automatizado
+**⚠️ Consideraciones para Producción:**
+- 🔒 Autenticación de producción (configurada pero no habilitada)
+- 🔒 Certificados SSL/TLS para MQTT y API
+- 📊 Sistema de backup automatizado
+- 🔍 Monitoreo avanzado con métricas
+- ⚡ Optimización de rendimiento con cache activo
 
 ### Roadmap de Desarrollo Recomendado
 
