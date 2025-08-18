@@ -13,7 +13,8 @@ class MQTTService {
     this.topics = {
       weatherData: 'weather/data/+',
       status: 'weather/status/+',
-      alerts: 'weather/alerts/+'
+      alerts: 'weather/alerts/+',
+      commands: 'weather/command/+'
     };
   }
 
@@ -201,9 +202,53 @@ class MQTTService {
   publish(topic, message) {
     if (this.client && this.client.connected) {
       this.client.publish(topic, JSON.stringify(message));
+      return true;
     } else {
       logger.warn('MQTT client not connected, cannot publish message');
+      return false;
     }
+  }
+
+  /**
+   * Send configuration command to specific weather station
+   * @param {string} stationId - Weather station identifier
+   * @param {string} command - Command name
+   * @param {object} parameters - Command parameters (optional)
+   * @returns {Promise<boolean>} - Success status
+   */
+  async sendCommand(stationId, command, parameters = null) {
+    try {
+      const commandTopic = `weather/command/${stationId}`;
+      const commandMessage = {
+        command,
+        parameters,
+        timestamp: new Date().toISOString(),
+        id: `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      };
+
+      logger.info(`Sending command to ${stationId}:`, { command, parameters });
+
+      const success = this.publish(commandTopic, commandMessage);
+      
+      if (success) {
+        logger.info(`Command sent successfully to ${stationId}`, { topic: commandTopic, command });
+      } else {
+        logger.error(`Failed to send command to ${stationId} - MQTT not connected`);
+      }
+
+      return success;
+    } catch (error) {
+      logger.error(`Error sending command to ${stationId}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Check if MQTT client is connected
+   * @returns {boolean} - Connection status
+   */
+  isConnected() {
+    return this.client && this.client.connected;
   }
 
   disconnect() {

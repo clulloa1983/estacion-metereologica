@@ -6,7 +6,8 @@ const {
   alertDataSchema,
   stationIdSchema,
   timeRangeSchema,
-  alertConfigSchema
+  alertConfigSchema,
+  configCommandSchema
 } = require('../schemas/weatherSchemas');
 
 // Esquemas adicionales para validación de rutas
@@ -79,6 +80,8 @@ const validateQuery = validate(querySchema, 'query');
 const validateParams = validate(paramsSchema, 'params');
 
 const validateAlert = validate(alertRouteSchema, 'body');
+
+const validateConfigCommand = validate(configCommandSchema, 'body');
 
 /**
  * Validación para datos MQTT (no middleware de Express)
@@ -155,6 +158,7 @@ module.exports = {
   validateQuery,
   validateParams,
   validateAlert,
+  validateConfigCommand,
   validateMQTTData,
   sanitizeTimestamp,
   // Esquemas exportados para uso directo
@@ -162,5 +166,6 @@ module.exports = {
   statusDataSchema,
   alertDataSchema,
   querySchema,
-  paramsSchema
+  paramsSchema,
+  configCommandSchema
 };

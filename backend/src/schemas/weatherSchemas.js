@@ -82,11 +82,82 @@ const alertConfigSchema = Joi.object({
   suppression_minutes: Joi.number().min(1).max(1440).default(60)
 });
 
+// Schema para comandos de configuración remota
+const configCommandSchema = Joi.object({
+  command: Joi.string().valid(
+    // Comandos básicos
+    'status', 'restart', 'sensor_check', 'wake_up',
+    // Comandos de medición
+    'set_reading_interval', 'toggle_sensor', 'set_calibration',
+    // Comandos de alertas
+    'set_alert_threshold',
+    // Comandos de energía
+    'sleep_mode',
+    // Comandos de conectividad
+    'wifi_config'
+  ).required(),
+  parameters: Joi.alternatives().conditional('command', [
+    // Comandos sin parámetros
+    {
+      is: Joi.string().valid('status', 'restart', 'sensor_check', 'wake_up'),
+      then: Joi.forbidden()
+    },
+    // set_reading_interval
+    {
+      is: 'set_reading_interval',
+      then: Joi.object({
+        interval_ms: Joi.number().min(30000).max(3600000).required()
+      }).required()
+    },
+    // toggle_sensor
+    {
+      is: 'toggle_sensor',
+      then: Joi.object({
+        sensor: Joi.string().valid('dht22', 'bmp085', 'rain', 'mq7', 'mq135', 'dsm501a', 'bh1750').required(),
+        enabled: Joi.boolean().required()
+      }).required()
+    },
+    // set_calibration
+    {
+      is: 'set_calibration',
+      then: Joi.object({
+        sensor: Joi.string().valid('temperature', 'humidity', 'pressure', 'light').required(),
+        offset: Joi.number().min(-50).max(50).required()
+      }).required()
+    },
+    // set_alert_threshold
+    {
+      is: 'set_alert_threshold',
+      then: Joi.object({
+        parameter: Joi.string().valid('temperature', 'humidity', 'pressure', 'co_level', 'air_quality').required(),
+        min: Joi.number().optional(),
+        max: Joi.number().optional()
+      }).required()
+    },
+    // sleep_mode
+    {
+      is: 'sleep_mode',
+      then: Joi.object({
+        duration_ms: Joi.number().min(60000).max(86400000).required()
+      }).required()
+    },
+    // wifi_config
+    {
+      is: 'wifi_config',
+      then: Joi.object({
+        ssid: Joi.string().min(1).max(32).required(),
+        password: Joi.string().min(8).max(64).required()
+      }).required()
+    }
+  ]).optional()
+});
+
 module.exports = {
   weatherDataSchema,
   statusDataSchema,
   alertDataSchema,
   stationIdSchema,
   timeRangeSchema,
-  alertConfigSchema
+  alertConfigSchema,
+  configCommandSchema
 };

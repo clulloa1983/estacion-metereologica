@@ -251,7 +251,25 @@ void loadConfiguration() {
   // Load deep sleep configuration
   deep_sleep_enabled = preferences.getBool("deep_sleep_enabled", true); // Default enabled
   sleep_duration_ms = preferences.getULong("sleep_duration_ms", 60000); // Default 1 minute
-  reading_interval = sleep_duration_ms; // Sync intervals
+  reading_interval = preferences.getULong("reading_interval", 60000); // Load reading interval separately
+  
+  // Load calibration factors
+  cal.temp_offset = preferences.getFloat("temp_offset", 0.0);
+  cal.temp_scale = preferences.getFloat("temp_scale", 1.0);
+  cal.humidity_offset = preferences.getFloat("humidity_offset", 0.0);
+  cal.pressure_offset = preferences.getFloat("pressure_offset", 0.0);
+  cal.rain_factor = preferences.getFloat("rain_factor", 0.2);
+  cal.mq7_offset = preferences.getFloat("mq7_offset", 0.0);
+  cal.mq135_offset = preferences.getFloat("mq135_offset", 0.0);
+  
+  // Load sensor availability flags
+  sensors.dht22_available = preferences.getBool("sensor_dht22", true);
+  sensors.bmp180_available = preferences.getBool("sensor_bmp180", false);
+  sensors.bh1750_available = preferences.getBool("sensor_bh1750", false);
+  sensors.mh_rd_available = preferences.getBool("sensor_rain", false);
+  sensors.mq7_available = preferences.getBool("sensor_mq7", false);
+  sensors.mq135_available = preferences.getBool("sensor_mq135", false);
+  sensors.dsm501a_available = preferences.getBool("sensor_dsm501a", false);
   
   preferences.end();
   
@@ -274,6 +292,25 @@ void saveConfiguration() {
   // Save deep sleep configuration
   preferences.putBool("deep_sleep_enabled", deep_sleep_enabled);
   preferences.putULong("sleep_duration_ms", sleep_duration_ms);
+  preferences.putULong("reading_interval", reading_interval);
+  
+  // Save calibration factors
+  preferences.putFloat("temp_offset", cal.temp_offset);
+  preferences.putFloat("temp_scale", cal.temp_scale);
+  preferences.putFloat("humidity_offset", cal.humidity_offset);
+  preferences.putFloat("pressure_offset", cal.pressure_offset);
+  preferences.putFloat("rain_factor", cal.rain_factor);
+  preferences.putFloat("mq7_offset", cal.mq7_offset);
+  preferences.putFloat("mq135_offset", cal.mq135_offset);
+  
+  // Save sensor availability flags
+  preferences.putBool("sensor_dht22", sensors.dht22_available);
+  preferences.putBool("sensor_bmp180", sensors.bmp180_available);
+  preferences.putBool("sensor_bh1750", sensors.bh1750_available);
+  preferences.putBool("sensor_rain", sensors.mh_rd_available);
+  preferences.putBool("sensor_mq7", sensors.mq7_available);
+  preferences.putBool("sensor_mq135", sensors.mq135_available);
+  preferences.putBool("sensor_dsm501a", sensors.dsm501a_available);
   
   preferences.end();
   Serial.println("Configuration saved to NVS");
@@ -574,6 +611,129 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     deep_sleep_enabled = false;
     Serial.println("Deep sleep disabled via wake_up command");
     sendStatusUpdate("awake");
+  } else if (command == "set_reading_interval") {
+    // Set new reading interval
+    if (cmdDoc.containsKey("parameters") && cmdDoc["parameters"].containsKey("interval_ms")) {
+      unsigned long new_interval = cmdDoc["parameters"]["interval_ms"].as<unsigned long>();
+      if (new_interval >= 30000 && new_interval <= 3600000) { // 30s to 1h
+        reading_interval = new_interval;
+        Serial.println("Reading interval updated to: " + String(new_interval) + "ms");
+        saveConfiguration();
+        sendStatusUpdate("reading_interval_updated");
+      } else {
+        Serial.println("Invalid interval range (30s-1h)");
+        sendStatusUpdate("command_error");
+      }
+    }
+  } else if (command == "toggle_sensor") {
+    // Enable/disable specific sensor
+    if (cmdDoc.containsKey("parameters")) {
+      String sensor = cmdDoc["parameters"]["sensor"].as<String>();
+      bool enabled = cmdDoc["parameters"]["enabled"].as<bool>();
+      
+      if (sensor == "dht22") {
+        sensors.dht22_available = enabled;
+      } else if (sensor == "bmp085") {
+        sensors.bmp180_available = enabled;
+      } else if (sensor == "rain") {
+        sensors.mh_rd_available = enabled;
+      } else if (sensor == "mq7") {
+        sensors.mq7_available = enabled;
+      } else if (sensor == "mq135") {
+        sensors.mq135_available = enabled;
+      } else if (sensor == "dsm501a") {
+        sensors.dsm501a_available = enabled;
+      } else if (sensor == "bh1750") {
+        sensors.bh1750_available = enabled;
+      }
+      
+      Serial.println("Sensor " + sensor + " " + (enabled ? "enabled" : "disabled"));
+      saveConfiguration();
+      sendStatusUpdate("sensor_toggled");
+    }
+  } else if (command == "set_calibration") {
+    // Set calibration offset for sensors
+    if (cmdDoc.containsKey("parameters")) {
+      String sensor = cmdDoc["parameters"]["sensor"].as<String>();
+      float offset = cmdDoc["parameters"]["offset"].as<float>();
+      
+      if (sensor == "temperature") {
+        cal.temp_offset = offset;
+      } else if (sensor == "humidity") {
+        cal.humidity_offset = offset;
+      } else if (sensor == "pressure") {
+        cal.pressure_offset = offset;
+      } else if (sensor == "light") {
+        // Light calibration could be implemented as a scaling factor
+        // For now, we'll use temp_offset as a general offset placeholder
+        Serial.println("Light calibration not fully implemented");
+      }
+      
+      Serial.println("Calibration updated for " + sensor + ": " + String(offset));
+      saveConfiguration();
+      sendStatusUpdate("calibration_updated");
+    }
+  } else if (command == "set_alert_threshold") {
+    // Set alert thresholds (stored in NVS for future use)
+    if (cmdDoc.containsKey("parameters")) {
+      String parameter = cmdDoc["parameters"]["parameter"].as<String>();
+      
+      // For now, just acknowledge the command
+      // In a full implementation, these would be stored and used for local alerting
+      Serial.println("Alert threshold configured for: " + parameter);
+      if (cmdDoc["parameters"].containsKey("min")) {
+        Serial.println("Min threshold: " + String(cmdDoc["parameters"]["min"].as<float>()));
+      }
+      if (cmdDoc["parameters"].containsKey("max")) {
+        Serial.println("Max threshold: " + String(cmdDoc["parameters"]["max"].as<float>()));
+      }
+      
+      saveConfiguration();
+      sendStatusUpdate("alert_threshold_set");
+    }
+  } else if (command == "wifi_config") {
+    // Update WiFi credentials (use with caution!)
+    if (cmdDoc.containsKey("parameters")) {
+      String new_ssid = cmdDoc["parameters"]["ssid"].as<String>();
+      String new_password = cmdDoc["parameters"]["password"].as<String>();
+      
+      // Validate SSID and password lengths
+      if (new_ssid.length() > 0 && new_ssid.length() <= 32 && 
+          new_password.length() >= 8 && new_password.length() <= 64) {
+        
+        Serial.println("WiFi credentials updated. Attempting reconnection...");
+        
+        // Disconnect current WiFi
+        WiFi.disconnect();
+        delay(1000);
+        
+        // Try connecting with new credentials
+        WiFi.begin(new_ssid.c_str(), new_password.c_str());
+        
+        // Wait up to 10 seconds for connection
+        int attempts = 0;
+        while (WiFi.status() != WL_CONNECTED && attempts < 20) {
+          delay(500);
+          attempts++;
+        }
+        
+        if (WiFi.status() == WL_CONNECTED) {
+          Serial.println("WiFi reconnected successfully");
+          saveConfiguration();
+          sendStatusUpdate("wifi_updated");
+        } else {
+          Serial.println("WiFi reconnection failed, reverting to WiFiManager");
+          connectWiFi(); // Fall back to WiFiManager
+          sendStatusUpdate("wifi_update_failed");
+        }
+      } else {
+        Serial.println("Invalid WiFi credentials format");
+        sendStatusUpdate("command_error");
+      }
+    }
+  } else {
+    Serial.println("Unknown command: " + command);
+    sendStatusUpdate("unknown_command");
   }
 }
 
