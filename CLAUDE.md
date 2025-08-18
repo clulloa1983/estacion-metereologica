@@ -233,7 +233,7 @@ Data points use `station_id` as primary tag for device identification.
 
 ### Hardware Files Location
 - **Arduino Code**: `arduino/weather_station_esp32/weather_station_esp32.ino`
-- **Documentation**: `arduino/weather_station_wemos/README.md` (legacy)
+- **Documentation**: `arduino/weather_station_wemos/README.md` (legacy - ESP8266/WEMOS)
 - **Sensor Guide**: `arduino/sensores-microcontroladores.md`
 
 ### Sensor Configuration

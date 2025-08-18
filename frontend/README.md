@@ -1,258 +1,200 @@
-# Dashboard Frontend - Estación Meteorológica
+# 🌦️ Weather Station Frontend Dashboard
 
-Dashboard web interactivo para visualización en tiempo real de datos meteorológicos de una estación IoT Arduino/ESP32.
+**Dashboard web interactivo y moderno** para visualizar en tiempo real los datos meteorológicos de estaciones IoT Arduino/ESP32. Construido con tecnologías web de última generación para una experiencia fluida, responsiva y atractiva.
 
-## Características
+---
 
-### 📊 Visualización de Datos
-- **Mediciones Actuales**: Cards con valores en tiempo real con colores indicativos
-- **Gráficos Históricos**: Visualización de tendencias con múltiples timeframes
-- **Mapas Interactivos**: Ubicación de la estación con información contextual
-- **Sistema de Alertas**: Notificaciones categorizadas por severidad
+## ✨ Características Destacadas
 
-### 🔄 Tiempo Real
-- **WebSocket**: Conexión en vivo para datos instantáneos
-- **Fallback HTTP**: Actualización automática si WebSocket no está disponible
-- **Estado de Conexión**: Indicador visual del estado de conectividad
+- 📱 **Mediciones en Tiempo Real**: Cards interactivas con colores y animaciones dinámicas.
+- 📈 **Gráficos Históricos**: Tendencias con múltiples periodos y zoom interactivo.
+- 🗺️ **Mapas Interactivos**: Ubicación de estaciones con información contextual.
+- 🚨 **Sistema de Alertas**: Notificaciones inteligentes categorizadas por severidad.
+- 🌓 **Modo Oscuro/Claro**: Tema adaptable con cambio instantáneo.
+- 🌐 **WebSocket**: Datos instantáneos (<1s) vía Socket.IO.
+- 🔄 **Fallback HTTP**: Polling automático si WebSocket no está disponible.
+- 📶 **Estado de Conexión**: Indicadores visuales y auto-reconexión.
+- 🎨 **Interfaz Moderna**: Material-UI, diseño responsive y accesibilidad WCAG 2.1.
+- ⚡ **Performance Optimizada**: Lazy loading, memoización y code splitting.
 
-### 🎨 Interfaz de Usuario
-- **Material-UI**: Diseño moderno y responsivo
-- **Temas Personalizados**: Paleta de colores específica para datos meteorológicos
-- **Responsive Design**: Adaptable a dispositivos móviles y desktop
+---
 
-## Tecnologías Utilizadas
+## 🛠️ Stack Tecnológico
 
-- **Next.js 15** - Framework React con SSR/SSG
-- **TypeScript** - Tipado estático para mayor robustez
-- **Material-UI** - Biblioteca de componentes UI
-- **Chart.js** - Gráficos interactivos y responsivos
-- **Leaflet** - Mapas interactivos
-- **Socket.io** - Comunicación en tiempo real
-- **React Hooks** - Manejo de estado moderno
+- **Next.js** (React SSR/SSG)
+- **TypeScript** (tipado estricto)
+- **Material-UI** (UI moderna)
+- **Chart.js** (gráficos)
+- **Leaflet** (mapas)
+- **Socket.IO** (WebSocket)
+- **Jest & Testing Library** (testing)
+- **Day.js** (fechas)
+- ...y más
 
-## Estructura del Proyecto
+---
 
-```
+## 📁 Arquitectura del Proyecto
+
+```bash
 frontend/
 ├── src/
-│   ├── components/          # Componentes reutilizables
-│   │   ├── CurrentMeasurements.tsx    # Cards de mediciones actuales
-│   │   ├── HistoricalCharts.tsx       # Gráficos históricos
-│   │   ├── WeatherMap.tsx             # Mapa de ubicación
-│   │   ├── SystemStatus.tsx           # Estado del sistema
-│   │   └── AlertsPanel.tsx            # Panel de alertas
-│   ├── pages/               # Páginas de Next.js
-│   │   ├── index.tsx        # Dashboard principal
-│   │   ├── _app.tsx         # Configuración global
-│   │   └── _document.tsx    # Estructura HTML
-│   ├── services/            # Servicios de API
-│   │   ├── weatherService.ts          # Cliente API REST
-│   │   └── socketService.ts           # Cliente WebSocket
-│   └── styles/              # Estilos globales
-├── package.json             # Dependencias y scripts
-├── next.config.js          # Configuración Next.js
-└── .env.example            # Variables de entorno
+│   ├── components/        # 🧩 Componentes reutilizables
+│   ├── pages/             # 📄 Páginas Next.js
+│   ├── contexts/          # 🎯 Contextos React
+│   ├── services/          # 🔌 Servicios API/WebSocket
+│   └── __tests__/         # 🧪 Tests
+├── public/                # 🌄 Assets estáticos
+├── jest.config.js         # ⚙️ Configuración Jest
+├── next.config.js         # ⚡ Configuración Next.js
+├── tsconfig.json          # 📝 Configuración TypeScript
+├── package.json           # 📦 Dependencias y scripts
+└── .env.example           # 🌍 Variables de entorno
 ```
 
-## Configuración
+---
 
-### 1. Instalar Dependencias
+## 🚀 Instalación y Configuración Rápida
 
+1️⃣ **Requisitos Previos**
+- Node.js 18+ y npm/yarn
+- Backend API corriendo en `http://localhost:5002`
+
+2️⃣ **Instalación**
 ```bash
 cd frontend
 npm install
+# o
+yarn install
 ```
 
-### 2. Variables de Entorno
-
-Copia `.env.example` a `.env.local` y configura:
-
+3️⃣ **Variables de Entorno**
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:5002/api
 NEXT_PUBLIC_SOCKET_URL=http://localhost:5002
 NEXT_PUBLIC_MAP_DEFAULT_LAT=-34.6037
 NEXT_PUBLIC_MAP_DEFAULT_LNG=-58.3816
+NEXT_PUBLIC_DEFAULT_STATION_ID=ESP32_STATION_001
 ```
 
-### 3. Ejecutar en Desarrollo
-
+4️⃣ **Ejecutar en Desarrollo**
 ```bash
 npm run dev
+# Accede a http://localhost:3001
 ```
 
-El dashboard estará disponible en: http://localhost:3001 (o puerto auto-asignado)
+---
 
-## Componentes Principales
+## 🏃‍♂️ Scripts Útiles
 
-### CurrentMeasurements
-Muestra las mediciones actuales en cards con:
-- Colores dinámicos según valores (temperatura, humedad, viento)
-- Iconos descriptivos para cada parámetro
-- Actualizaciones en tiempo real
-- Indicadores de estado y calidad
+- `npm run dev` – 🛠️ Desarrollo con hot reload
+- `npm run build` – 📦 Build de producción
+- `npm start` – 🚀 Servidor de producción
+- `npm test` – 🧪 Ejecutar tests
+- `npm run lint` – 🔍 Linting de código
+- `npm run type-check` – 📝 Verificar tipos
 
-### HistoricalCharts
-Gráficos de tendencias con:
-- Múltiples parámetros en pestañas separadas
-- Rangos de tiempo configurables (1h, 6h, 24h, 7d, 30d)
-- Gráficos combinados (temperatura + humedad)
-- Zoom y pan interactivo
+---
 
-### WeatherMap
-Mapa interactivo que incluye:
-- Marcador de ubicación de la estación
-- Popup con información completa
-- Chips de estado con datos actuales
-- Controles de navegación
+## 🧩 Componentes Clave
 
-### AlertsPanel
-Sistema de alertas con:
-- Categorización por severidad (LOW, MEDIUM, HIGH, CRITICAL)
-- Reconocimiento de alertas
-- Filtros por estado (pendientes, reconocidas)
-- Resumen estadístico
+- **CurrentMeasurements**: Cards de mediciones con colores dinámicos e iconos.
+- **HistoricalCharts**: Gráficos avanzados con rangos configurables y zoom.
+- **WeatherMap**: Mapa interactivo con ubicación y datos en popup.
+- **AlertsPanel**: Panel de alertas con severidad visual y filtros.
+- **SystemStatus**: Estado de conectividad, batería y métricas.
+- **ThemeToggle**: Cambio de tema oscuro/claro con animación.
 
-### SystemStatus
-Monitor del estado del sistema:
-- Nivel de batería con indicador visual
-- Estado de conectividad
-- Última actualización
-- Información de la estación
+---
 
-## APIs y Endpoints
+## 🔌 Integración con APIs y WebSocket
 
-El frontend consume los siguientes endpoints del backend:
+### REST Endpoints
+- `/api/weather/data/{stationId}/latest` – Última lectura
+- `/api/weather/data/{stationId}?timeRange=30m` – Históricos
+- `/api/alerts/{stationId}` – Alertas por estación
+- `/api/monitoring/health` – Estado del sistema
 
+### WebSocket Events
+- `weather-data` – Nueva lectura
+- `new-alert` – Alerta generada
+- `station-status` – Estado de estación
+- `system-health` – Salud del sistema
+
+---
+
+## 🎨 Personalización
+
+- **Colores dinámicos** según valores meteorológicos.
+- **Tema Material-UI** personalizado.
+- **Mapa** configurable (coordenadas, tile server, zoom).
+- **Rangos de tiempo** para gráficos fácilmente ajustables.
+
+---
+
+## ⚡ Performance y Optimización
+
+- Lazy loading de mapas y gráficos.
+- Memoización de componentes y datos.
+- Actualización selectiva vía WebSocket.
+- Code splitting automático.
+- Monitoreo de Web Vitals.
+
+---
+
+## 🧪 Testing
+
+- Tests unitarios y de integración con Jest y Testing Library.
+- Cobertura y reporte automático.
+- Ejemplo:
 ```typescript
-// Datos meteorológicos
-GET /api/weather/data/{stationId}/latest
-GET /api/weather/data/{stationId}?timeRange={range}
-GET /api/weather/data/{stationId}/summary
-GET /api/weather/stations
+// CurrentMeasurements.test.tsx
+import { render, screen } from '@testing-library/react';
+import CurrentMeasurements from '../CurrentMeasurements';
 
-// Alertas
-GET /api/alerts/{stationId}
-PUT /api/alerts/{alertId}/acknowledge
-GET /api/alerts/summary/{stationId}
-
-// Exportación
-GET /api/weather/export/{stationId}?format={format}
+test('renders temperature with correct color', () => {
+  const mockData = { temperature: 30, humidity: 65 };
+  render(<CurrentMeasurements data={mockData} />);
+  
+  const tempElement = screen.getByTestId('temperature-card');
+  expect(tempElement).toHaveStyle('color: rgb(255, 152, 0)'); // Orange for 30°C
+});
 ```
 
-## WebSocket Events
+---
 
-Eventos en tiempo real:
+## 🤝 Contribución
 
-```typescript
-// Conexión
-'connect' / 'disconnect' / 'connect_error'
+1. 🍴 Haz fork del repo
+2. 🌟 Crea tu rama feature
+3. 📝 Commit y push
+4. 🧪 Ejecuta tests
+5. 🔄 Abre Pull Request
 
-// Datos
-'weather-data' -> WeatherDataPoint
-'new-alert' -> Alert
-'station-status' -> StatusUpdate
+---
 
-// Suscripciones
-emit('subscribe-station', stationId)
-emit('unsubscribe-station', stationId)
-```
+## 📈 Roadmap
 
-## Personalización
+- 🔔 Notificaciones push
+- 📱 PWA offline
+- 🌍 Multi-idioma
+- 📊 Exportación avanzada
+- 🤖 Predicción con ML
 
-### Colores de Temperatura
-```typescript
-const getTemperatureColor = (temp: number) => {
-  if (temp < 0) return '#1976d2';    // Azul - congelación
-  if (temp < 15) return '#4fc3f7';   // Azul claro - frío
-  if (temp < 25) return '#4caf50';   // Verde - ideal
-  if (temp < 35) return '#ff9800';   // Naranja - calor
-  return '#f44336';                  // Rojo - extremo
-};
-```
+---
 
-### Configuración de Mapas
-- Cambiar coordenadas por defecto en `.env.local`
-- Personalizar tile server (OpenStreetMap, Mapbox, etc.)
-- Ajustar zoom y límites de visualización
+## 📄 Licencia
 
-### Rangos de Tiempo
-Modificar en `HistoricalCharts.tsx`:
-```typescript
-const timeRangeOptions = [
-  { value: '1h', label: 'Última hora' },
-  { value: '6h', label: 'Últimas 6 horas' },
-  // ... agregar más rangos
-];
-```
+MIT License – Ver `LICENSE` para detalles.
 
-## Deployment
+---
 
-### Desarrollo
-```bash
-npm run dev
-```
+## 📞 Soporte y Enlaces
 
-### Producción
-```bash
-npm run build
-npm start
-```
+- 📚 Documentación: `CLAUDE.md`
+- 🌐 API Docs: [http://localhost:5002/api-docs](http://localhost:5002/api-docs)
+- 🏥 Health: [http://localhost:5002/health](http://localhost:5002/health)
+- 📊 Dashboard: [http://localhost:3001](http://localhost:3001)
 
-### Docker (opcional)
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-CMD ["npm", "start"]
-```
+---
 
-## Troubleshooting
-
-### Problemas Comunes
-
-1. **Error de Leaflet en SSR**
-   - Asegurar que los componentes de mapa usen `dynamic` import
-   - Verificar configuración en `_app.tsx`
-
-2. **WebSocket no conecta**
-   - Verificar que el backend tenga Socket.io configurado
-   - Revisar CORS en el servidor
-   - Comprobar URL en variables de entorno
-
-3. **Gráficos no cargan**
-   - Verificar que Chart.js esté correctamente instalado
-   - Comprobar formato de datos del backend
-   - Revisar configuración de escalas
-
-4. **Material-UI estilos inconsistentes**
-   - Verificar que CssBaseline esté en `_app.tsx`
-   - Comprobar orden de imports de CSS
-
-## Performance
-
-### Optimizaciones Implementadas
-- Lazy loading de componentes de mapa
-- Debouncing en actualizaciones de gráficos
-- Memoización de componentes pesados
-- Actualización selectiva por WebSocket
-
-### Métricas Recomendadas
-- Time to First Contentful Paint < 2s
-- Largest Contentful Paint < 3s
-- Cumulative Layout Shift < 0.1
-- First Input Delay < 100ms
-
-## Contribución
-
-1. Fork del repositorio
-2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
-3. Commit cambios (`git commit -m 'Agregar nueva funcionalidad'`)
-4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
-5. Crear Pull Request
-
-## Licencia
-
-Este proyecto está bajo la licencia MIT. Ver `LICENSE` para más detalles.
+**⚡ Frontend listo para producción, visual y potente ⚡**
