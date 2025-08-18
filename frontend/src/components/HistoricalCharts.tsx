@@ -128,6 +128,13 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
     plugins: {
       legend: {
         position: 'top' as const,
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            size: typeof window !== 'undefined' && window.innerWidth < 600 ? 10 : 12
+          }
+        }
       },
     },
     scales: {
@@ -233,11 +240,28 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
   return (
     <Card>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h5" component="h2">
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 2, sm: 0 },
+          mb: 2 
+        }}>
+          <Typography 
+            variant="h5" 
+            component="h2"
+            sx={{
+              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              fontWeight: 600
+            }}
+          >
             Gráficos Históricos
           </Typography>
-          <FormControl sx={{ minWidth: 180 }}>
+          <FormControl sx={{ 
+            minWidth: { xs: '100%', sm: 180 },
+            maxWidth: { xs: '100%', sm: 'none' }
+          }}>
             <InputLabel>Rango de tiempo</InputLabel>
             <Select
               value={timeRange}
@@ -254,7 +278,19 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         </Box>
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-          <Tabs value={selectedTab} onChange={handleTabChange}>
+          <Tabs 
+            value={selectedTab} 
+            onChange={handleTabChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            sx={{
+              '& .MuiTab-root': {
+                fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                minWidth: { xs: 60, sm: 72 },
+                padding: { xs: '6px 8px', sm: '12px 16px' }
+              }
+            }}
+          >
             <Tab label="Temperatura" />
             <Tab label="Humedad" />
             <Tab label="Calidad del Aire" />
@@ -265,7 +301,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         </Box>
 
         <TabPanel value={selectedTab} index={0}>
-          <Box sx={{ height: 400 }}>
+          <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line 
               data={prepareChartData('temperature', 'Temperatura (°C)', '#f44336')} 
               options={chartOptions} 
@@ -274,7 +310,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         </TabPanel>
 
         <TabPanel value={selectedTab} index={1}>
-          <Box sx={{ height: 400 }}>
+          <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line 
               data={prepareChartData('humidity', 'Humedad (%)', '#2196f3')} 
               options={chartOptions} 
@@ -283,13 +319,13 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         </TabPanel>
 
         <TabPanel value={selectedTab} index={2}>
-          <Box sx={{ height: 400 }}>
+          <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line data={airQualityData} options={airQualityOptions} />
           </Box>
         </TabPanel>
 
         <TabPanel value={selectedTab} index={3}>
-          <Box sx={{ height: 400 }}>
+          <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line 
               data={prepareChartData('free_heap', 'Memoria Libre (bytes)', '#ff9800')} 
               options={chartOptions} 
@@ -298,13 +334,13 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         </TabPanel>
 
         <TabPanel value={selectedTab} index={4}>
-          <Box sx={{ height: 400 }}>
+          <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line data={signalData} options={chartOptions} />
           </Box>
         </TabPanel>
 
         <TabPanel value={selectedTab} index={5}>
-          <Box sx={{ height: 400 }}>
+          <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line 
               data={prepareChartData('rainfall', 'Precipitación (mm)', '#3f51b5')} 
               options={chartOptions} 

@@ -116,39 +116,55 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{ mb: 3 }}>
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Estación Meteorológica - Dashboard
+      <AppBar position="static" sx={{ mb: 2 }}>
+        <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' } }}>
+          <Typography 
+            variant="h6" 
+            component="div" 
+            sx={{ 
+              flexGrow: 1,
+              fontSize: { xs: '1rem', sm: '1.25rem' },
+              fontWeight: 600
+            }}
+          >
+            Estación Meteorológica
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <Chip
-              icon={socketConnected ? <Wifi /> : <WifiOff />}
-              label={socketConnected ? 'Tiempo Real (WebSocket)' : 'Polling HTTP'}
-              color={socketConnected ? 'success' : 'warning'}
-              variant="outlined"
-              size="small"
-              sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
-            />
+          <Box sx={{ 
+            display: 'flex', 
+            gap: { xs: 1, sm: 2 }, 
+            alignItems: 'center',
+            flexWrap: 'wrap'
+          }}>
             <Chip
               icon={getConnectionStatus().connected ? <Wifi /> : <WifiOff />}
               label={getConnectionStatus().text}
               color={getConnectionStatus().connected ? 'success' : 'default'}
               variant="outlined"
               size="small"
-              sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
+              sx={{ 
+                color: 'white', 
+                borderColor: 'rgba(255,255,255,0.5)',
+                fontSize: { xs: '0.75rem', sm: '0.8125rem' }
+              }}
             />
             {lastUpdate && (
-              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: 'rgba(255,255,255,0.8)',
+                  display: { xs: 'none', sm: 'block' },
+                  fontSize: '0.75rem'
+                }}
+              >
                 Última actualización: {lastUpdate.toLocaleTimeString()}
               </Typography>
             )}
-            <ThemeToggle color="inherit" />
+            <ThemeToggle color="inherit" sx={{ ml: { xs: 0, sm: 1 } }} />
           </Box>
         </Toolbar>
       </AppBar>
       
-      <Container maxWidth="xl">
+      <Container maxWidth="xl" sx={{ px: { xs: 1, sm: 2, md: 3 } }}>
         {!loading && !currentData && (
           <Alert severity="info" sx={{ mb: 3 }}>
             No hay datos recientes disponibles para la estación {stationId}. 
@@ -156,7 +172,7 @@ export default function Dashboard() {
           </Alert>
         )}
         
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {/* Mediciones Actuales */}
           <Grid size={{ xs: 12 }}>
             <CurrentMeasurements data={currentData} loading={loading} />

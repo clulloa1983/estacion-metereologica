@@ -24,7 +24,12 @@ const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3001", "http://localhost:3000"],
+    origin: [
+      "http://localhost:3001", 
+      "http://localhost:3000",
+      "http://192.168.1.90:3001",
+      /^http:\/\/192\.168\.1\.\d+:\d+$/
+    ],
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -34,7 +39,16 @@ const io = new Server(httpServer, {
 const PORT = process.env.PORT || 5002;
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3001",
+    "http://localhost:3000", 
+    "http://192.168.1.90:3001",
+    /^http:\/\/192\.168\.1\.\d+:\d+$/
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+}));
 app.use(compression());
 
 // Enhanced request logging (replaces morgan)
@@ -141,7 +155,7 @@ const startServer = async () => {
     const alertService = require('./services/alertService');
     alertService.setSocketService(socketService);
 
-    httpServer.listen(PORT, () => {
+    httpServer.listen(PORT, '0.0.0.0', () => {
       logger.info(`Weather Station API running on port ${PORT}`);
       logger.info(`WebSocket server running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV}`);

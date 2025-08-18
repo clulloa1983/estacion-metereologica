@@ -92,13 +92,32 @@ const MeasurementCard = memo(function MeasurementCard({
   }, [title, value]);
 
   return (
-    <Card sx={{ height: '100%', borderLeft: `4px solid ${cardColor}` }}>
-      <CardContent>
+    <Card sx={{ 
+      height: '100%', 
+      borderLeft: `4px solid ${cardColor}`,
+      '&:hover': {
+        transform: 'translateY(-2px)',
+        boxShadow: 3,
+        transition: 'all 0.2s ease-in-out'
+      }
+    }}>
+      <CardContent sx={{ 
+        p: { xs: 2, sm: 3 },
+        '&:last-child': { pb: { xs: 2, sm: 3 } }
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
           <Box sx={{ color: cardColor, mr: 1 }}>
             {icon}
           </Box>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <Typography 
+            variant="h6" 
+            component="div" 
+            sx={{ 
+              flexGrow: 1,
+              fontSize: { xs: '0.9rem', sm: '1.1rem' },
+              fontWeight: 500
+            }}
+          >
             {title}
           </Typography>
         </Box>
@@ -106,9 +125,26 @@ const MeasurementCard = memo(function MeasurementCard({
         {loading ? (
           <Skeleton variant="text" height={40} />
         ) : (
-          <Typography variant="h4" component="div" color={cardColor}>
+          <Typography 
+            variant="h4" 
+            component="div" 
+            color={cardColor}
+            sx={{ 
+              fontSize: { xs: '1.8rem', sm: '2.125rem' },
+              fontWeight: 600,
+              lineHeight: 1.2
+            }}
+          >
             {value !== undefined ? value.toFixed(1) : '--'}
-            <Typography variant="body2" component="span" color="text.secondary" sx={{ ml: 1 }}>
+            <Typography 
+              variant="body2" 
+              component="span" 
+              color="text.secondary" 
+              sx={{ 
+                ml: 1,
+                fontSize: { xs: '0.75rem', sm: '0.875rem' }
+              }}
+            >
               {unit}
             </Typography>
           </Typography>
@@ -138,8 +174,22 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
   return (
     <Card>
       <CardContent>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h5" component="h2">
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 1, sm: 0 },
+          mb: { xs: 2, sm: 3 }
+        }}>
+          <Typography 
+            variant="h5" 
+            component="h2"
+            sx={{
+              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              fontWeight: 600
+            }}
+          >
             Mediciones Actuales
           </Typography>
           {data && (
@@ -147,11 +197,15 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
               label={`Última actualización: ${lastUpdate}`}
               variant="outlined"
               size="small"
+              sx={{
+                fontSize: { xs: '0.6rem', sm: '0.75rem' },
+                height: { xs: '24px', sm: '32px' }
+              }}
             />
           )}
         </Box>
         
-        <Grid container spacing={3}>
+        <Grid container spacing={{ xs: 2, sm: 3 }}>
           {/* Temperatura */}
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard

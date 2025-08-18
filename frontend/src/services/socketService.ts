@@ -5,7 +5,7 @@ class SocketService {
   private socket: Socket | null = null;
   private listeners: Map<string, Function[]> = new Map();
 
-  connect(serverUrl: string = 'http://localhost:5002') {
+  connect(serverUrl: string = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5002') {
     if (this.socket?.connected) {
       return;
     }
