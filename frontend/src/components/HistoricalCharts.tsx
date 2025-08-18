@@ -70,6 +70,19 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
   const [timeRange, setTimeRange] = useState('30m');
   const [selectedTab, setSelectedTab] = useState(0);
 
+  // Helper function para convertir timestamps de manera segura
+  const parseTimestamp = useCallback((timestamp: string | number): Date => {
+    if (!timestamp) return new Date();
+    
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      // Si falla, intentar como timestamp Unix
+      const unixTimestamp = typeof timestamp === 'string' ? parseInt(timestamp) : timestamp;
+      return new Date(unixTimestamp);
+    }
+    return date;
+  }, []);
+
   const timeRangeOptions = [
     { value: '30m', label: 'Últimos 30 minutos' },
     { value: '1h', label: 'Última hora' },
@@ -103,7 +116,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
   }, [fetchData]);
 
   const prepareChartData = useCallback((parameter: string, label: string, color: string) => {
-    const labels = data.map(d => new Date(d.timestamp));
+    const labels = data.map(d => parseTimestamp(d.timestamp));
     const values = data.map(d => (d as any)[parameter] || 0);
 
     return {
@@ -120,7 +133,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         }
       ]
     };
-  }, [data]);
+  }, [data, parseTimestamp]);
 
   const chartOptions = useMemo(() => ({
     responsive: true,
@@ -158,7 +171,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
   }), []);
 
   const airQualityData = useMemo(() => ({
-    labels: data.map(d => new Date(d.timestamp)),
+    labels: data.map(d => parseTimestamp(d.timestamp)),
     datasets: [
       {
         label: 'CO Level (ppm)',
@@ -177,7 +190,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         tension: 0.1,
       }
     ]
-  }), [data]);
+  }), [data, parseTimestamp]);
 
   const airQualityOptions = useMemo(() => ({
     ...chartOptions,
@@ -207,8 +220,8 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
     },
   }), [chartOptions]);
 
-  const signalData = {
-    labels: data.map(d => new Date(d.timestamp)),
+  const signalData = useMemo(() => ({
+    labels: data.map(d => parseTimestamp(d.timestamp)),
     datasets: [
       {
         label: 'Intensidad de Señal (dBm)',
@@ -218,7 +231,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         tension: 0.1,
       }
     ]
-  };
+  }), [data, parseTimestamp]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
