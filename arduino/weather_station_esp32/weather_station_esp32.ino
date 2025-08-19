@@ -44,6 +44,15 @@ unsigned long reading_interval = 60000; // 1 minute (changeable via MQTT)
 unsigned long last_wifi_check = 0;
 int wifi_check_interval = 30000; // 30 seconds
 
+// Configuration backup for rollback
+struct ConfigBackup {
+  unsigned long reading_interval_backup;
+  CalibrationFactors cal_backup;
+  SensorFlags sensors_backup;
+  bool deep_sleep_backup;
+  unsigned long sleep_duration_backup;
+} config_backup;
+
 // Deep Sleep configuration
 bool deep_sleep_enabled = true;
 unsigned long sleep_duration_ms = 60000; // Default 1 minute sleep
@@ -65,7 +74,22 @@ struct CalibrationFactors {
   float rain_factor = 0.2; // mm per pulse
   float mq7_offset = 0.0;
   float mq135_offset = 0.0;
+  float light_scale = 1.0;
+  float light_offset = 0.0;
 } cal;
+
+// Alert thresholds storage
+struct AlertThresholds {
+  float temp_min = -40.0;
+  float temp_max = 60.0;
+  float humidity_min = 0.0;
+  float humidity_max = 100.0;
+  float pressure_min = 800.0;
+  float pressure_max = 1200.0;
+  float light_min = 0.0;
+  float light_max = 100000.0;
+  bool alerts_enabled = false;
+} alert_thresholds;
 
 // Available sensors flags
 struct SensorFlags {
@@ -80,6 +104,12 @@ struct SensorFlags {
 
 // Function declarations
 void IRAM_ATTR rainPulseISR();
+void backupConfiguration();
+void restoreConfiguration();
+bool validateCommand(StaticJsonDocument<256>& cmdDoc);
+bool validateParameter(String param, float value, float min, float max);
+void applyCalibrationSafely(String sensor, float value);
+void logCommandExecution(String command, bool success);
 
 void setup() {
   Serial.begin(115200);
@@ -271,6 +301,21 @@ void loadConfiguration() {
   sensors.mq135_available = preferences.getBool("sensor_mq135", false);
   sensors.dsm501a_available = preferences.getBool("sensor_dsm501a", false);
   
+  // Load extended calibration factors
+  cal.light_scale = preferences.getFloat("light_scale", 1.0);
+  cal.light_offset = preferences.getFloat("light_offset", 0.0);
+  
+  // Load alert thresholds
+  alert_thresholds.temp_min = preferences.getFloat("alert_temp_min", -40.0);
+  alert_thresholds.temp_max = preferences.getFloat("alert_temp_max", 60.0);
+  alert_thresholds.humidity_min = preferences.getFloat("alert_hum_min", 0.0);
+  alert_thresholds.humidity_max = preferences.getFloat("alert_hum_max", 100.0);
+  alert_thresholds.pressure_min = preferences.getFloat("alert_pres_min", 800.0);
+  alert_thresholds.pressure_max = preferences.getFloat("alert_pres_max", 1200.0);
+  alert_thresholds.light_min = preferences.getFloat("alert_light_min", 0.0);
+  alert_thresholds.light_max = preferences.getFloat("alert_light_max", 100000.0);
+  alert_thresholds.alerts_enabled = preferences.getBool("alerts_enabled", false);
+  
   preferences.end();
   
   Serial.println("Configuration loaded:");
@@ -302,6 +347,19 @@ void saveConfiguration() {
   preferences.putFloat("rain_factor", cal.rain_factor);
   preferences.putFloat("mq7_offset", cal.mq7_offset);
   preferences.putFloat("mq135_offset", cal.mq135_offset);
+  preferences.putFloat("light_scale", cal.light_scale);
+  preferences.putFloat("light_offset", cal.light_offset);
+  
+  // Save alert thresholds
+  preferences.putFloat("alert_temp_min", alert_thresholds.temp_min);
+  preferences.putFloat("alert_temp_max", alert_thresholds.temp_max);
+  preferences.putFloat("alert_hum_min", alert_thresholds.humidity_min);
+  preferences.putFloat("alert_hum_max", alert_thresholds.humidity_max);
+  preferences.putFloat("alert_pres_min", alert_thresholds.pressure_min);
+  preferences.putFloat("alert_pres_max", alert_thresholds.pressure_max);
+  preferences.putFloat("alert_light_min", alert_thresholds.light_min);
+  preferences.putFloat("alert_light_max", alert_thresholds.light_max);
+  preferences.putBool("alerts_enabled", alert_thresholds.alerts_enabled);
   
   // Save sensor availability flags
   preferences.putBool("sensor_dht22", sensors.dht22_available);
@@ -455,6 +513,7 @@ void readAndSendData() {
   if (sensors.bh1750_available) {
     float lux = lightMeter.readLightLevel();
     if (lux >= 0) {
+      lux = calibrateLight(lux);
       doc["light_level"] = round(lux * 100.0) / 100.0;
     }
   }
@@ -527,6 +586,10 @@ float calibratePressure(float raw_pressure) {
   return raw_pressure + cal.pressure_offset;
 }
 
+float calibrateLight(float raw_light) {
+  return (raw_light * cal.light_scale) + cal.light_offset;
+}
+
 float calculateRainfall() {
   float rainfall = rain_pulses * cal.rain_factor;
   rain_pulses = 0; // Reset counter
@@ -578,139 +641,217 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   
   if (error) {
     Serial.println("Failed to parse command JSON");
+    logCommandExecution("parse_error", false);
     return;
   }
   
   String command = cmdDoc["command"];
+  Serial.println("Processing command: " + command);
+  
+  // Validate command before processing
+  if (!validateCommand(cmdDoc)) {
+    Serial.println("Command validation failed");
+    logCommandExecution(command, false);
+    sendStatusUpdate("command_validation_failed");
+    return;
+  }
+  
+  // Backup current configuration before making changes
+  backupConfiguration();
+  
+  bool command_success = true;
   
   if (command == "status") {
     sendStatusUpdate("online");
   } else if (command == "restart") {
     Serial.println("Restart command received");
+    logCommandExecution(command, true);
+    delay(1000);
     ESP.restart();
   } else if (command == "sensor_check") {
     initializeSensors();
     printAvailableSensors();
     sendStatusUpdate("sensor_check_complete");
   } else if (command == "sleep_mode") {
-    // Toggle deep sleep mode
-    deep_sleep_enabled = cmdDoc["enabled"].as<bool>();
-    if (cmdDoc.containsKey("interval_ms")) {
-      sleep_duration_ms = cmdDoc["interval_ms"].as<unsigned long>();
-      reading_interval = sleep_duration_ms; // Sync reading interval
+    // Toggle deep sleep mode with validation
+    if (cmdDoc.containsKey("enabled")) {
+      deep_sleep_enabled = cmdDoc["enabled"].as<bool>();
     }
-    Serial.println("Deep sleep " + String(deep_sleep_enabled ? "enabled" : "disabled"));
-    Serial.println("Sleep duration: " + String(sleep_duration_ms) + "ms");
+    if (cmdDoc.containsKey("interval_ms")) {
+      unsigned long new_sleep = cmdDoc["interval_ms"].as<unsigned long>();
+      if (validateParameter("sleep_duration", new_sleep, 30000, 3600000)) {
+        sleep_duration_ms = new_sleep;
+        reading_interval = sleep_duration_ms;
+      } else {
+        command_success = false;
+      }
+    }
     
-    // Save configuration to persist across reboots
-    saveConfiguration();
-    
-    sendStatusUpdate("sleep_mode_updated");
+    if (command_success) {
+      Serial.println("Deep sleep " + String(deep_sleep_enabled ? "enabled" : "disabled"));
+      Serial.println("Sleep duration: " + String(sleep_duration_ms) + "ms");
+      saveConfiguration();
+      sendStatusUpdate("sleep_mode_updated");
+    } else {
+      restoreConfiguration();
+      sendStatusUpdate("command_error");
+    }
   } else if (command == "wake_up") {
-    // Force wake up and disable sleep temporarily  
     deep_sleep_enabled = false;
     Serial.println("Deep sleep disabled via wake_up command");
+    saveConfiguration();
     sendStatusUpdate("awake");
   } else if (command == "set_reading_interval") {
-    // Set new reading interval
+    // Enhanced reading interval control with strict validation
     if (cmdDoc.containsKey("parameters") && cmdDoc["parameters"].containsKey("interval_ms")) {
       unsigned long new_interval = cmdDoc["parameters"]["interval_ms"].as<unsigned long>();
-      if (new_interval >= 30000 && new_interval <= 3600000) { // 30s to 1h
+      if (validateParameter("reading_interval", new_interval, 30000, 3600000)) {
         reading_interval = new_interval;
         Serial.println("Reading interval updated to: " + String(new_interval) + "ms");
         saveConfiguration();
         sendStatusUpdate("reading_interval_updated");
       } else {
-        Serial.println("Invalid interval range (30s-1h)");
-        sendStatusUpdate("command_error");
+        restoreConfiguration();
+        sendStatusUpdate("invalid_interval_range");
+        command_success = false;
       }
     }
   } else if (command == "toggle_sensor") {
-    // Enable/disable specific sensor
+    // Enhanced sensor toggle with all 7 sensors
     if (cmdDoc.containsKey("parameters")) {
       String sensor = cmdDoc["parameters"]["sensor"].as<String>();
       bool enabled = cmdDoc["parameters"]["enabled"].as<bool>();
       
+      bool sensor_found = true;
       if (sensor == "dht22") {
         sensors.dht22_available = enabled;
-      } else if (sensor == "bmp085") {
+      } else if (sensor == "bmp180" || sensor == "bmp085") {
         sensors.bmp180_available = enabled;
-      } else if (sensor == "rain") {
-        sensors.mh_rd_available = enabled;
-      } else if (sensor == "mq7") {
-        sensors.mq7_available = enabled;
-      } else if (sensor == "mq135") {
-        sensors.mq135_available = enabled;
-      } else if (sensor == "dsm501a") {
-        sensors.dsm501a_available = enabled;
-      } else if (sensor == "bh1750") {
+      } else if (sensor == "bh1750" || sensor == "light") {
         sensors.bh1750_available = enabled;
+      } else if (sensor == "rain" || sensor == "mh_rd") {
+        sensors.mh_rd_available = enabled;
+      } else if (sensor == "mq7" || sensor == "co") {
+        sensors.mq7_available = enabled;
+      } else if (sensor == "mq135" || sensor == "air_quality") {
+        sensors.mq135_available = enabled;
+      } else if (sensor == "dsm501a" || sensor == "dust") {
+        sensors.dsm501a_available = enabled;
+      } else {
+        sensor_found = false;
+        command_success = false;
       }
       
-      Serial.println("Sensor " + sensor + " " + (enabled ? "enabled" : "disabled"));
-      saveConfiguration();
-      sendStatusUpdate("sensor_toggled");
+      if (sensor_found) {
+        Serial.println("Sensor " + sensor + " " + (enabled ? "enabled" : "disabled"));
+        saveConfiguration();
+        sendStatusUpdate("sensor_toggled");
+      } else {
+        restoreConfiguration();
+        sendStatusUpdate("unknown_sensor");
+      }
     }
   } else if (command == "set_calibration") {
-    // Set calibration offset for sensors
+    // Enhanced calibration system for all sensor types
     if (cmdDoc.containsKey("parameters")) {
       String sensor = cmdDoc["parameters"]["sensor"].as<String>();
-      float offset = cmdDoc["parameters"]["offset"].as<float>();
       
-      if (sensor == "temperature") {
-        cal.temp_offset = offset;
-      } else if (sensor == "humidity") {
-        cal.humidity_offset = offset;
-      } else if (sensor == "pressure") {
-        cal.pressure_offset = offset;
-      } else if (sensor == "light") {
-        // Light calibration could be implemented as a scaling factor
-        // For now, we'll use temp_offset as a general offset placeholder
-        Serial.println("Light calibration not fully implemented");
+      if (cmdDoc["parameters"].containsKey("offset")) {
+        float offset = cmdDoc["parameters"]["offset"].as<float>();
+        applyCalibrationSafely(sensor, offset);
       }
       
-      Serial.println("Calibration updated for " + sensor + ": " + String(offset));
-      saveConfiguration();
-      sendStatusUpdate("calibration_updated");
+      if (cmdDoc["parameters"].containsKey("scale")) {
+        float scale = cmdDoc["parameters"]["scale"].as<float>();
+        if (sensor == "temperature" && validateParameter("temp_scale", scale, 0.5, 2.0)) {
+          cal.temp_scale = scale;
+        } else if (sensor == "light" && validateParameter("light_scale", scale, 0.1, 10.0)) {
+          cal.light_scale = scale;
+        } else {
+          command_success = false;
+        }
+      }
+      
+      if (command_success) {
+        Serial.println("Calibration updated for " + sensor);
+        saveConfiguration();
+        sendStatusUpdate("calibration_updated");
+      } else {
+        restoreConfiguration();
+        sendStatusUpdate("calibration_error");
+      }
     }
   } else if (command == "set_alert_threshold") {
-    // Set alert thresholds (stored in NVS for future use)
+    // Enhanced alert threshold configuration
     if (cmdDoc.containsKey("parameters")) {
       String parameter = cmdDoc["parameters"]["parameter"].as<String>();
       
-      // For now, just acknowledge the command
-      // In a full implementation, these would be stored and used for local alerting
-      Serial.println("Alert threshold configured for: " + parameter);
-      if (cmdDoc["parameters"].containsKey("min")) {
-        Serial.println("Min threshold: " + String(cmdDoc["parameters"]["min"].as<float>()));
-      }
-      if (cmdDoc["parameters"].containsKey("max")) {
-        Serial.println("Max threshold: " + String(cmdDoc["parameters"]["max"].as<float>()));
+      bool threshold_set = false;
+      if (parameter == "temperature") {
+        if (cmdDoc["parameters"].containsKey("min") && 
+            validateParameter("temp_min", cmdDoc["parameters"]["min"].as<float>(), -50.0, 50.0)) {
+          alert_thresholds.temp_min = cmdDoc["parameters"]["min"].as<float>();
+          threshold_set = true;
+        }
+        if (cmdDoc["parameters"].containsKey("max") && 
+            validateParameter("temp_max", cmdDoc["parameters"]["max"].as<float>(), -40.0, 70.0)) {
+          alert_thresholds.temp_max = cmdDoc["parameters"]["max"].as<float>();
+          threshold_set = true;
+        }
+      } else if (parameter == "humidity") {
+        if (cmdDoc["parameters"].containsKey("min") && 
+            validateParameter("hum_min", cmdDoc["parameters"]["min"].as<float>(), 0.0, 90.0)) {
+          alert_thresholds.humidity_min = cmdDoc["parameters"]["min"].as<float>();
+          threshold_set = true;
+        }
+        if (cmdDoc["parameters"].containsKey("max") && 
+            validateParameter("hum_max", cmdDoc["parameters"]["max"].as<float>(), 10.0, 100.0)) {
+          alert_thresholds.humidity_max = cmdDoc["parameters"]["max"].as<float>();
+          threshold_set = true;
+        }
+      } else if (parameter == "pressure") {
+        if (cmdDoc["parameters"].containsKey("min") && 
+            validateParameter("pres_min", cmdDoc["parameters"]["min"].as<float>(), 800.0, 1100.0)) {
+          alert_thresholds.pressure_min = cmdDoc["parameters"]["min"].as<float>();
+          threshold_set = true;
+        }
+        if (cmdDoc["parameters"].containsKey("max") && 
+            validateParameter("pres_max", cmdDoc["parameters"]["max"].as<float>(), 900.0, 1200.0)) {
+          alert_thresholds.pressure_max = cmdDoc["parameters"]["max"].as<float>();
+          threshold_set = true;
+        }
       }
       
-      saveConfiguration();
-      sendStatusUpdate("alert_threshold_set");
+      if (cmdDoc["parameters"].containsKey("enabled")) {
+        alert_thresholds.alerts_enabled = cmdDoc["parameters"]["enabled"].as<bool>();
+        threshold_set = true;
+      }
+      
+      if (threshold_set) {
+        Serial.println("Alert threshold configured for: " + parameter);
+        saveConfiguration();
+        sendStatusUpdate("alert_threshold_set");
+      } else {
+        restoreConfiguration();
+        sendStatusUpdate("threshold_error");
+        command_success = false;
+      }
     }
   } else if (command == "wifi_config") {
-    // Update WiFi credentials (use with caution!)
+    // Enhanced WiFi configuration with validation
     if (cmdDoc.containsKey("parameters")) {
       String new_ssid = cmdDoc["parameters"]["ssid"].as<String>();
       String new_password = cmdDoc["parameters"]["password"].as<String>();
       
-      // Validate SSID and password lengths
       if (new_ssid.length() > 0 && new_ssid.length() <= 32 && 
           new_password.length() >= 8 && new_password.length() <= 64) {
         
         Serial.println("WiFi credentials updated. Attempting reconnection...");
         
-        // Disconnect current WiFi
         WiFi.disconnect();
         delay(1000);
-        
-        // Try connecting with new credentials
         WiFi.begin(new_ssid.c_str(), new_password.c_str());
         
-        // Wait up to 10 seconds for connection
         int attempts = 0;
         while (WiFi.status() != WL_CONNECTED && attempts < 20) {
           delay(500);
@@ -722,19 +863,34 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
           saveConfiguration();
           sendStatusUpdate("wifi_updated");
         } else {
-          Serial.println("WiFi reconnection failed, reverting to WiFiManager");
-          connectWiFi(); // Fall back to WiFiManager
+          Serial.println("WiFi reconnection failed");
+          restoreConfiguration();
+          connectWiFi();
           sendStatusUpdate("wifi_update_failed");
+          command_success = false;
         }
       } else {
         Serial.println("Invalid WiFi credentials format");
-        sendStatusUpdate("command_error");
+        sendStatusUpdate("invalid_wifi_params");
+        command_success = false;
       }
     }
+  } else if (command == "factory_reset") {
+    // Factory reset command
+    Serial.println("Factory reset initiated");
+    preferences.begin("weather-station", false);
+    preferences.clear();
+    preferences.end();
+    sendStatusUpdate("factory_reset_complete");
+    delay(2000);
+    ESP.restart();
   } else {
     Serial.println("Unknown command: " + command);
     sendStatusUpdate("unknown_command");
+    command_success = false;
   }
+  
+  logCommandExecution(command, command_success);
 }
 
 // Interrupt service routine for rain sensor
@@ -798,4 +954,108 @@ void enterDeepSleep() {
   
   // Enter deep sleep
   esp_deep_sleep_start();
+}
+
+// Configuration backup and rollback functions
+void backupConfiguration() {
+  config_backup.reading_interval_backup = reading_interval;
+  config_backup.cal_backup = cal;
+  config_backup.sensors_backup = sensors;
+  config_backup.deep_sleep_backup = deep_sleep_enabled;
+  config_backup.sleep_duration_backup = sleep_duration_ms;
+}
+
+void restoreConfiguration() {
+  reading_interval = config_backup.reading_interval_backup;
+  cal = config_backup.cal_backup;
+  sensors = config_backup.sensors_backup;
+  deep_sleep_enabled = config_backup.deep_sleep_backup;
+  sleep_duration_ms = config_backup.sleep_duration_backup;
+  Serial.println("Configuration restored from backup");
+}
+
+// Command validation functions
+bool validateCommand(StaticJsonDocument<256>& cmdDoc) {
+  // Basic command structure validation
+  if (!cmdDoc.containsKey("command")) {
+    Serial.println("Command field missing");
+    return false;
+  }
+  
+  String command = cmdDoc["command"];
+  
+  // Validate command against whitelist
+  if (command == "status" || command == "restart" || command == "sensor_check" ||
+      command == "sleep_mode" || command == "wake_up" || command == "set_reading_interval" ||
+      command == "toggle_sensor" || command == "set_calibration" || 
+      command == "set_alert_threshold" || command == "wifi_config" || command == "factory_reset") {
+    return true;
+  }
+  
+  Serial.println("Unknown or unauthorized command: " + command);
+  return false;
+}
+
+bool validateParameter(String param, float value, float min, float max) {
+  if (value >= min && value <= max) {
+    Serial.println("Parameter " + param + " validated: " + String(value));
+    return true;
+  } else {
+    Serial.println("Parameter " + param + " out of range: " + String(value) + 
+                   " (valid: " + String(min) + "-" + String(max) + ")");
+    return false;
+  }
+}
+
+void applyCalibrationSafely(String sensor, float value) {
+  // Apply calibration with safety bounds
+  if (sensor == "temperature") {
+    if (validateParameter("temp_offset", value, -10.0, 10.0)) {
+      cal.temp_offset = value;
+    }
+  } else if (sensor == "humidity") {
+    if (validateParameter("humidity_offset", value, -20.0, 20.0)) {
+      cal.humidity_offset = value;
+    }
+  } else if (sensor == "pressure") {
+    if (validateParameter("pressure_offset", value, -50.0, 50.0)) {
+      cal.pressure_offset = value;
+    }
+  } else if (sensor == "light") {
+    if (validateParameter("light_offset", value, -1000.0, 1000.0)) {
+      cal.light_offset = value;
+    }
+  } else if (sensor == "rain") {
+    if (validateParameter("rain_factor", value, 0.1, 2.0)) {
+      cal.rain_factor = value;
+    }
+  } else if (sensor == "mq7") {
+    if (validateParameter("mq7_offset", value, -5.0, 5.0)) {
+      cal.mq7_offset = value;
+    }
+  } else if (sensor == "mq135") {
+    if (validateParameter("mq135_offset", value, -5.0, 5.0)) {
+      cal.mq135_offset = value;
+    }
+  } else {
+    Serial.println("Unknown sensor for calibration: " + sensor);
+  }
+}
+
+void logCommandExecution(String command, bool success) {
+  Serial.println("Command '" + command + "' execution: " + (success ? "SUCCESS" : "FAILED"));
+  
+  // Send command execution log via MQTT
+  StaticJsonDocument<256> logDoc;
+  logDoc["station_id"] = station_id;
+  logDoc["command"] = command;
+  logDoc["success"] = success;
+  logDoc["timestamp"] = getTimestamp();
+  logDoc["uptime"] = millis() / 1000;
+  
+  String logPayload;
+  serializeJson(logDoc, logPayload);
+  
+  String logTopic = "weather/logs/" + String(station_id);
+  client.publish(logTopic.c_str(), logPayload.c_str());
 }
