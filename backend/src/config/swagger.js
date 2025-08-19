@@ -284,6 +284,179 @@ const options = {
               additionalProperties: true
             }
           }
+        },
+        ConfigCommand: {
+          type: 'object',
+          required: ['command'],
+          properties: {
+            command: {
+              type: 'string',
+              description: 'Configuration command to execute',
+              enum: [
+                'status', 'restart', 'sensor_check', 'wake_up',
+                'set_reading_interval', 'toggle_sensor', 'set_calibration',
+                'set_alert_threshold', 'sleep_mode', 'wifi_config'
+              ],
+              example: 'set_reading_interval'
+            },
+            parameters: {
+              type: 'object',
+              description: 'Command-specific parameters',
+              additionalProperties: true,
+              example: {
+                interval_ms: 300000
+              }
+            }
+          }
+        },
+        ConfigCommandResponse: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              description: 'Whether the command was sent successfully',
+              example: true
+            },
+            message: {
+              type: 'string',
+              description: 'Human-readable response message',
+              example: 'Command "set_reading_interval" sent successfully to station ESP32_STATION_001'
+            },
+            command: {
+              type: 'string',
+              description: 'The command that was executed',
+              example: 'set_reading_interval'
+            },
+            parameters: {
+              type: 'object',
+              description: 'Parameters that were sent with the command',
+              additionalProperties: true,
+              example: {
+                interval_ms: 300000
+              }
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Command execution timestamp',
+              example: '2024-01-01T12:00:00Z'
+            },
+            command_id: {
+              type: 'string',
+              description: 'Unique command identifier for tracking',
+              example: 'cmd_1640995200000_abc123def'
+            }
+          }
+        },
+        AvailableCommands: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            commands: {
+              type: 'object',
+              properties: {
+                basic: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      command: { type: 'string', example: 'status' },
+                      description: { type: 'string', example: 'Get device status and sensor information' },
+                      parameters: { type: 'object', nullable: true }
+                    }
+                  }
+                },
+                measurement: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      command: { type: 'string', example: 'set_reading_interval' },
+                      description: { type: 'string', example: 'Set interval between sensor readings' },
+                      parameters: { type: 'object' }
+                    }
+                  }
+                },
+                alerts: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      command: { type: 'string', example: 'set_alert_threshold' },
+                      description: { type: 'string', example: 'Configure alert thresholds' },
+                      parameters: { type: 'object' }
+                    }
+                  }
+                },
+                power: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      command: { type: 'string', example: 'sleep_mode' },
+                      description: { type: 'string', example: 'Enter deep sleep mode' },
+                      parameters: { type: 'object' }
+                    }
+                  }
+                },
+                connectivity: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      command: { type: 'string', example: 'wifi_config' },
+                      description: { type: 'string', example: 'Update WiFi credentials' },
+                      parameters: { type: 'object' }
+                    }
+                  }
+                }
+              }
+            },
+            total: {
+              type: 'integer',
+              description: 'Total number of available commands',
+              example: 10
+            }
+          }
+        },
+        ConfigStatus: {
+          type: 'object',
+          properties: {
+            success: {
+              type: 'boolean',
+              example: true
+            },
+            station_id: {
+              type: 'string',
+              description: 'Weather station identifier',
+              example: 'ESP32_STATION_001'
+            },
+            last_command_sent: {
+              type: 'string',
+              nullable: true,
+              description: 'Last command sent to this station',
+              example: 'set_reading_interval'
+            },
+            mqtt_connected: {
+              type: 'boolean',
+              description: 'MQTT broker connection status',
+              example: true
+            },
+            available_commands: {
+              type: 'string',
+              description: 'Information about available commands',
+              example: 'Use /api/config/commands endpoint for command list'
+            },
+            timestamp: {
+              type: 'string',
+              format: 'date-time',
+              description: 'Status check timestamp',
+              example: '2024-01-01T12:00:00Z'
+            }
+          }
         }
       },
       responses: {
@@ -345,6 +518,10 @@ const options = {
       {
         name: 'Alerts',
         description: 'Alert management and notification endpoints'
+      },
+      {
+        name: 'Configuration',
+        description: 'Remote device configuration and control endpoints for weather stations'
       },
       {
         name: 'Authentication',

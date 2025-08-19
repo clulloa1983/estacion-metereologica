@@ -387,6 +387,343 @@ If ports are in use:
 - Type checking integration with TypeScript
 - Test scripts for unit, component, and service testing
 
+**Remote Configuration Testing Coverage:**
+- ✅ Unit tests for configuration endpoints (`tests/controllers/configController.test.js`)
+- ✅ MQTT command integration tests (`tests/integration/mqttCommands.test.js`)
+- ✅ Frontend configuration service tests (`src/services/__tests__/configService.test.ts`)
+- ✅ Configuration panel component tests (`src/components/__tests__/RemoteConfigPanel.test.tsx`)
+- ✅ Command validation and error handling coverage
+- ✅ Mock external dependencies (MQTT, InfluxDB, Redis)
+
+## Remote Configuration System
+
+### Overview
+The remote configuration system enables full control of ESP32 weather stations from the web dashboard without physical access. All commands are sent via MQTT and provide real-time feedback to the user interface.
+
+### Available Configuration Commands
+
+#### **Basic Device Commands**
+```bash
+# Get device status and sensor information
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "status"}'
+
+# Restart the ESP32 device
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "restart"}'
+
+# Verify all sensors functionality
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "sensor_check"}'
+
+# Wake up device from sleep mode
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "wake_up"}'
+```
+
+#### **Sensor Measurement Configuration**
+```bash
+# Set interval between sensor readings (30s - 1h)
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "set_reading_interval", "parameters": {"interval_ms": 300000}}'
+
+# Enable or disable specific sensor
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "toggle_sensor", "parameters": {"sensor": "dht22", "enabled": false}}'
+
+# Set calibration offset for sensor readings
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "set_calibration", "parameters": {"sensor": "temperature", "offset": -2.5}}'
+```
+
+**Supported Sensors for toggle_sensor:**
+- `dht22` - Temperature/humidity sensor
+- `bmp085` - Barometric pressure sensor
+- `rain` - Rain detection sensor
+- `mq7` - Carbon monoxide sensor
+- `mq135` - Air quality sensor
+- `dsm501a` - PM2.5 dust sensor
+- `bh1750` - Light intensity sensor
+
+**Supported Parameters for calibration:**
+- `temperature` - Temperature calibration offset
+- `humidity` - Humidity calibration offset  
+- `pressure` - Pressure calibration offset
+- `light` - Light intensity calibration offset
+
+#### **Alert Threshold Configuration**
+```bash
+# Configure alert thresholds for parameters
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "set_alert_threshold", "parameters": {"parameter": "temperature", "min": 10, "max": 35}}'
+
+# Set only maximum threshold
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "set_alert_threshold", "parameters": {"parameter": "humidity", "max": 80}}'
+```
+
+**Supported Alert Parameters:**
+- `temperature` - Temperature monitoring
+- `humidity` - Humidity monitoring
+- `pressure` - Barometric pressure monitoring
+- `co_level` - Carbon monoxide monitoring
+- `air_quality` - Air quality monitoring
+
+#### **Power Management Configuration**
+```bash
+# Enter deep sleep mode for power saving (1min - 24h)
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "sleep_mode", "parameters": {"duration_ms": 3600000}}'
+```
+
+#### **Connectivity Configuration**
+```bash
+# Update WiFi credentials (use with caution - can disconnect device)
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "wifi_config", "parameters": {"ssid": "NewNetwork", "password": "SecretPassword123"}}'
+```
+
+### Configuration API Endpoints
+
+#### **Send Command**
+`POST /api/config/command/:stationId`
+
+Send remote configuration command to specific weather station.
+
+**Authentication:** API Key or Bearer Token required
+**Content-Type:** application/json
+
+**Request Body:**
+```json
+{
+  "command": "set_reading_interval",
+  "parameters": {
+    "interval_ms": 300000
+  }
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Command 'set_reading_interval' sent successfully to station ESP32_STATION_001",
+  "command": "set_reading_interval",
+  "parameters": {"interval_ms": 300000},
+  "timestamp": "2024-01-01T12:00:00Z"
+}
+```
+
+**Response (Error):**
+```json
+{
+  "success": false,
+  "error": "MQTT service unavailable or command failed to send"
+}
+```
+
+#### **Get Available Commands**
+`GET /api/config/commands`
+
+Retrieve list of all available remote configuration commands with their parameters.
+
+**Response:**
+```json
+{
+  "success": true,
+  "commands": {
+    "basic": [...],
+    "measurement": [...],
+    "alerts": [...],
+    "power": [...],
+    "connectivity": [...]
+  },
+  "total": 10
+}
+```
+
+#### **Get Configuration Status**
+`GET /api/config/status/:stationId`
+
+Get current configuration status and connectivity info for specific weather station.
+
+**Response:**
+```json
+{
+  "success": true,
+  "station_id": "ESP32_STATION_001",
+  "last_command_sent": null,
+  "mqtt_connected": true,
+  "available_commands": "Use /api/config/commands endpoint for command list",
+  "timestamp": "2024-01-01T12:00:00Z"
+}
+```
+
+### Frontend Configuration Interface
+
+The frontend provides a comprehensive configuration panel accessible through `RemoteConfigPanel.tsx`:
+
+**Key Features:**
+- Tabbed interface for different configuration categories
+- Real-time command feedback and notifications
+- Input validation and error handling
+- Material-UI components for consistent design
+- TypeScript interfaces for type safety
+
+**Configuration Sections:**
+1. **Sensors** - Reading intervals, sensor toggles, calibration
+2. **Alerts** - Threshold configuration, parameter monitoring
+3. **Power** - Sleep mode, transmission intervals, WiFi power
+4. **Connectivity** - WiFi credentials, MQTT settings
+
+**Configuration Service (`configService.ts`):**
+```typescript
+// Set reading interval
+await configService.setReadingInterval('ESP32_STATION_001', 300000);
+
+// Toggle sensor
+await configService.toggleSensor('ESP32_STATION_001', 'dht22', false);
+
+// Set calibration
+await configService.setSensorCalibration('ESP32_STATION_001', 'temperature', -2.5);
+
+// Configure alerts
+await configService.setAlertThreshold('ESP32_STATION_001', 'temperature', 10, 35);
+
+// Power management
+await configService.setSleepMode('ESP32_STATION_001', true, 3600000);
+
+// WiFi configuration
+await configService.configureWifi('ESP32_STATION_001', 'NewNetwork', 'Password123');
+```
+
+### MQTT Command Structure
+
+All commands are published to topic: `weather/command/{stationId}`
+
+**Command Message Format:**
+```json
+{
+  "command": "set_reading_interval",
+  "parameters": {
+    "interval_ms": 300000
+  },
+  "timestamp": "2024-01-01T12:00:00Z",
+  "id": "cmd_1640995200000_abc123def"
+}
+```
+
+**Command Processing:**
+1. Frontend sends command via API
+2. Backend validates command and parameters
+3. Backend publishes MQTT message to `weather/command/{stationId}`
+4. ESP32 receives and processes command
+5. ESP32 executes configuration change
+6. ESP32 optionally responds with status update
+
+### Security Considerations
+
+**Authentication & Authorization:**
+- API key or JWT token required for all configuration endpoints
+- Role-based access control (user role minimum required)
+- Rate limiting applied to prevent command flooding
+
+**Command Validation:**
+- Strict parameter validation on backend
+- Range checks for numeric values
+- Enum validation for predefined options
+- Input sanitization to prevent injection attacks
+
+**Network Security:**
+- MQTT commands include unique IDs to prevent replay attacks
+- WiFi password configuration logged securely (password not included in logs)
+- Failed command attempts logged for security monitoring
+
+### Error Handling & Recovery
+
+**Backend Error Responses:**
+- `400` - Invalid command or parameters
+- `401` - Authentication required
+- `403` - Insufficient permissions
+- `503` - MQTT service unavailable
+- `500` - Internal server error
+
+**ESP32 Error Recovery:**
+- Configuration rollback on invalid settings
+- WiFi fallback to previous credentials if new ones fail
+- Automatic retry mechanism for failed MQTT connections
+- Watchdog timer prevents infinite loops during configuration
+
+**Frontend Error Handling:**
+- User-friendly error messages with guidance
+- Retry mechanisms for network failures
+- Input validation before sending commands
+- Loading states during command execution
+
+### Testing Configuration Commands
+
+**Backend Unit Tests:**
+```bash
+cd backend
+npm test tests/controllers/configController.test.js
+npm test tests/integration/mqttCommands.test.js
+```
+
+**Frontend Component Tests:**
+```bash
+cd frontend
+npm test src/services/__tests__/configService.test.ts
+npm test src/components/__tests__/RemoteConfigPanel.test.tsx
+```
+
+**Manual Testing:**
+```bash
+# Test command sending
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: dev-device-key-12345" \
+  -d '{"command": "status"}'
+
+# Test available commands
+curl http://localhost:5002/api/config/commands
+
+# Test configuration status
+curl http://localhost:5002/api/config/status/ESP32_STATION_001
+```
+
+### Development Workflow for Configuration Features
+
+1. **Adding New Commands:**
+   - Update `configController.js` with command definition
+   - Add validation schema in `validation.js`
+   - Update ESP32 Arduino code in `mqttCallback()` function
+   - Add frontend service method in `configService.ts`
+   - Create UI component for new configuration option
+   - Write tests for all layers
+
+2. **Testing New Features:**
+   - Unit tests for API endpoints
+   - Integration tests for MQTT command flow
+   - Frontend component tests
+   - End-to-end testing with actual ESP32 device
+
+3. **Documentation Updates:**
+   - Update Swagger/OpenAPI specs
+   - Add command examples to CLAUDE.md
+   - Update user manual with new features
+   - Update frontend component documentation
+
 ### Development & Production Considerations
 **Production-Ready Features:**
 - ✅ Authentication system (JWT + bcryptjs) implemented and configurable
