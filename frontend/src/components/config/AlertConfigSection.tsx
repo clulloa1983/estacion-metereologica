@@ -18,6 +18,7 @@ import {
   InputLabel,
   Alert
 } from '@mui/material';
+import { useTranslation } from 'next-i18next';
 import {
   DeviceThermostat,
   WaterDrop,
@@ -57,86 +58,87 @@ export default function AlertConfigSection({
   stationId,
   onConfigChange
 }: AlertConfigSectionProps) {
+  const { t } = useTranslation(['common', 'dashboard']);
   const [thresholds, setThresholds] = useState<AlertThreshold[]>([
     {
       parameter: 'temperature',
-      displayName: 'Temperature',
+      displayName: t('dashboard:remoteConfig.alertConfig.parameters.temperature.name'),
       icon: <DeviceThermostat />,
       unit: '°C',
       enabled: true,
       minValue: -5,
       maxValue: 35,
       severity: 'HIGH',
-      description: 'Alert when temperature is outside safe range',
+      description: t('dashboard:remoteConfig.alertConfig.parameters.temperature.description'),
       defaultRange: { min: -10, max: 40 }
     },
     {
       parameter: 'humidity',
-      displayName: 'Humidity',
+      displayName: t('dashboard:remoteConfig.alertConfig.parameters.humidity.name'),
       icon: <WaterDrop />,
       unit: '%',
       enabled: true,
       minValue: 20,
       maxValue: 90,
       severity: 'MEDIUM',
-      description: 'Alert when humidity levels are extreme',
+      description: t('dashboard:remoteConfig.alertConfig.parameters.humidity.description'),
       defaultRange: { min: 0, max: 100 }
     },
     {
       parameter: 'pressure',
-      displayName: 'Pressure',
+      displayName: t('dashboard:remoteConfig.alertConfig.parameters.pressure.name'),
       icon: <Compress />,
       unit: 'hPa',
       enabled: true,
       minValue: 980,
       maxValue: 1030,
       severity: 'LOW',
-      description: 'Alert for significant pressure changes',
+      description: t('dashboard:remoteConfig.alertConfig.parameters.pressure.description'),
       defaultRange: { min: 950, max: 1050 }
     },
     {
       parameter: 'co',
-      displayName: 'Carbon Monoxide',
+      displayName: t('dashboard:remoteConfig.alertConfig.parameters.carbonMonoxide.name'),
       icon: <Air />,
       unit: 'ppm',
       enabled: true,
       maxValue: 9,
       severity: 'CRITICAL',
-      description: 'Critical alert for dangerous CO levels',
+      description: t('dashboard:remoteConfig.alertConfig.parameters.carbonMonoxide.description'),
       defaultRange: { min: 0, max: 50 }
     },
     {
       parameter: 'air_quality',
-      displayName: 'Air Quality',
+      displayName: t('dashboard:remoteConfig.alertConfig.parameters.airQuality.name'),
       icon: <Air />,
       unit: 'AQI',
       enabled: true,
       maxValue: 150,
       severity: 'HIGH',
-      description: 'Alert when air quality is unhealthy',
+      description: t('dashboard:remoteConfig.alertConfig.parameters.airQuality.description'),
       defaultRange: { min: 0, max: 500 }
     },
     {
       parameter: 'pm25',
-      displayName: 'PM2.5',
+      displayName: t('dashboard:remoteConfig.alertConfig.parameters.pm25.name'),
       icon: <Speed />,
       unit: 'µg/m³',
       enabled: true,
       maxValue: 35,
       severity: 'HIGH',
-      description: 'Alert for unhealthy particulate matter levels',
+      description: t('dashboard:remoteConfig.alertConfig.parameters.pm25.description'),
       defaultRange: { min: 0, max: 100 }
     },
     {
       parameter: 'light',
-      displayName: 'Light Intensity',
+      displayName: t('dashboard:remoteConfig.alertConfig.parameters.lightIntensity.name'),
       icon: <WbSunny />,
       unit: 'lux',
       enabled: false,
       minValue: 10,
       maxValue: 100000,
       severity: 'LOW',
-      description: 'Alert for extreme light conditions',
+      description: t('dashboard:remoteConfig.alertConfig.parameters.lightIntensity.description'),
       defaultRange: { min: 0, max: 120000 }
     }
   ]);
@@ -184,19 +186,19 @@ export default function AlertConfigSection({
   const getCommonPresets = (parameter: string) => {
     const presets: Record<string, Array<{ label: string; min?: number; max?: number }>> = {
       temperature: [
-        { label: 'Freezing Alert', max: 0 },
-        { label: 'Comfort Range', min: 18, max: 26 },
-        { label: 'Heat Warning', min: 30 }
+        { label: t('dashboard:remoteConfig.alertConfig.presets.freezingAlert'), max: 0 },
+        { label: t('dashboard:remoteConfig.alertConfig.presets.comfortRange'), min: 18, max: 26 },
+        { label: t('dashboard:remoteConfig.alertConfig.presets.heatWarning'), min: 30 }
       ],
       humidity: [
-        { label: 'Dry Air', min: 30 },
-        { label: 'Comfort Range', min: 40, max: 60 },
-        { label: 'High Humidity', max: 80 }
+        { label: t('dashboard:remoteConfig.alertConfig.presets.dryAir'), min: 30 },
+        { label: t('dashboard:remoteConfig.alertConfig.presets.comfortRange'), min: 40, max: 60 },
+        { label: t('dashboard:remoteConfig.alertConfig.presets.highHumidity'), max: 80 }
       ],
       co: [
-        { label: 'WHO Safe Level', max: 9 },
-        { label: 'EPA Warning', max: 35 },
-        { label: 'Dangerous Level', max: 100 }
+        { label: t('dashboard:remoteConfig.alertConfig.presets.whoSafeLevel'), max: 9 },
+        { label: t('dashboard:remoteConfig.alertConfig.presets.epaWarning'), max: 35 },
+        { label: t('dashboard:remoteConfig.alertConfig.presets.dangerousLevel'), max: 100 }
       ]
     };
     return presets[parameter] || [];
@@ -205,7 +207,7 @@ export default function AlertConfigSection({
   return (
     <Box>
       <Alert severity="info" sx={{ mb: 3 }}>
-        Configure alert thresholds for each sensor parameter. Alerts will be triggered when values exceed the specified ranges.
+        {t('dashboard:remoteConfig.alertConfig.description')}
       </Alert>
 
       <Grid container spacing={2}>
@@ -224,7 +226,7 @@ export default function AlertConfigSection({
                         </Typography>
                         <Chip
                           icon={getSeverityIcon(threshold.severity)}
-                          label={threshold.severity}
+                          label={t(`dashboard:remoteConfig.alertConfig.severityLevels.${threshold.severity.toLowerCase()}`)}
                           color={getSeverityColor(threshold.severity)}
                           size="small"
                         />
@@ -236,7 +238,7 @@ export default function AlertConfigSection({
                             onChange={(e) => handleThresholdToggle(threshold.parameter, e.target.checked)}
                           />
                         }
-                        label="Enabled"
+                        label={t('dashboard:remoteConfig.alertConfig.enabled')}
                       />
                     </Box>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -249,7 +251,7 @@ export default function AlertConfigSection({
                       {/* Threshold Configuration */}
                       <Grid item xs={12} sm={3}>
                         <TextField
-                          label="Minimum Value"
+                          label={t('dashboard:remoteConfig.alertConfig.minimumValue')}
                           type="number"
                           value={threshold.minValue || ''}
                           onChange={(e) => handleThresholdChange(
@@ -266,13 +268,13 @@ export default function AlertConfigSection({
                           }}
                           size="small"
                           fullWidth
-                          helperText="Alert below this value"
+                          helperText={t('dashboard:remoteConfig.alertConfig.alertBelowValue')}
                         />
                       </Grid>
 
                       <Grid item xs={12} sm={3}>
                         <TextField
-                          label="Maximum Value"
+                          label={t('dashboard:remoteConfig.alertConfig.maximumValue')}
                           type="number"
                           value={threshold.maxValue || ''}
                           onChange={(e) => handleThresholdChange(
@@ -289,16 +291,16 @@ export default function AlertConfigSection({
                           }}
                           size="small"
                           fullWidth
-                          helperText="Alert above this value"
+                          helperText={t('dashboard:remoteConfig.alertConfig.alertAboveValue')}
                         />
                       </Grid>
 
                       <Grid item xs={12} sm={3}>
                         <FormControl size="small" fullWidth>
-                          <InputLabel>Severity</InputLabel>
+                          <InputLabel>{t('dashboard:remoteConfig.alertConfig.severity')}</InputLabel>
                           <Select
                             value={threshold.severity}
-                            label="Severity"
+                            label={t('dashboard:remoteConfig.alertConfig.severity')}
                             onChange={(e) => handleThresholdChange(
                               threshold.parameter, 
                               'severity', 
@@ -308,25 +310,25 @@ export default function AlertConfigSection({
                             <MenuItem value="LOW">
                               <Box display="flex" alignItems="center" gap={1}>
                                 <Info color="info" fontSize="small" />
-                                Low
+                                {t('dashboard:remoteConfig.alertConfig.severityLevels.low')}
                               </Box>
                             </MenuItem>
                             <MenuItem value="MEDIUM">
                               <Box display="flex" alignItems="center" gap={1}>
                                 <Warning color="warning" fontSize="small" />
-                                Medium
+                                {t('dashboard:remoteConfig.alertConfig.severityLevels.medium')}
                               </Box>
                             </MenuItem>
                             <MenuItem value="HIGH">
                               <Box display="flex" alignItems="center" gap={1}>
                                 <Error color="error" fontSize="small" />
-                                High
+                                {t('dashboard:remoteConfig.alertConfig.severityLevels.high')}
                               </Box>
                             </MenuItem>
                             <MenuItem value="CRITICAL">
                               <Box display="flex" alignItems="center" gap={1}>
                                 <Error sx={{ color: '#d32f2f' }} fontSize="small" />
-                                Critical
+                                {t('dashboard:remoteConfig.alertConfig.severityLevels.critical')}
                               </Box>
                             </MenuItem>
                           </Select>
@@ -341,7 +343,7 @@ export default function AlertConfigSection({
                           fullWidth
                           size="small"
                         >
-                          Save Threshold
+                          {t('dashboard:remoteConfig.alertConfig.saveThreshold')}
                         </Button>
                       </Grid>
 
@@ -349,7 +351,7 @@ export default function AlertConfigSection({
                       {getCommonPresets(threshold.parameter).length > 0 && (
                         <Grid item xs={12}>
                           <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                            Common presets:
+                            {t('dashboard:remoteConfig.alertConfig.commonPresets')}
                           </Typography>
                           <Box display="flex" gap={1} flexWrap="wrap">
                             {getCommonPresets(threshold.parameter).map((preset, index) => (
@@ -377,11 +379,11 @@ export default function AlertConfigSection({
                       <Grid item xs={12}>
                         <Box sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
                           <Typography variant="caption" color="text.secondary">
-                            Current alert range: 
-                            {threshold.minValue !== undefined && ` Below ${threshold.minValue}${threshold.unit}`}
-                            {threshold.minValue !== undefined && threshold.maxValue !== undefined && ' or'}
-                            {threshold.maxValue !== undefined && ` Above ${threshold.maxValue}${threshold.unit}`}
-                            {!threshold.minValue && !threshold.maxValue && ' No thresholds set'}
+                            {t('dashboard:remoteConfig.alertConfig.currentAlertRange')}
+                            {threshold.minValue !== undefined && ` ${t('dashboard:remoteConfig.alertConfig.below')} ${threshold.minValue}${threshold.unit}`}
+                            {threshold.minValue !== undefined && threshold.maxValue !== undefined && ` ${t('dashboard:remoteConfig.alertConfig.or')}`}
+                            {threshold.maxValue !== undefined && ` ${t('dashboard:remoteConfig.alertConfig.above')} ${threshold.maxValue}${threshold.unit}`}
+                            {!threshold.minValue && !threshold.maxValue && ` ${t('dashboard:remoteConfig.alertConfig.noThresholdsSet')}`}
                           </Typography>
                         </Box>
                       </Grid>

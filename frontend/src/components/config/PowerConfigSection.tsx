@@ -18,6 +18,7 @@ import {
   ButtonGroup,
   LinearProgress
 } from '@mui/material';
+import { useTranslation } from 'next-i18next';
 import {
   Battery3Bar,
   PowerSettingsNew,
@@ -42,6 +43,7 @@ export default function PowerConfigSection({
   stationId,
   onConfigChange
 }: PowerConfigSectionProps) {
+  const { t } = useTranslation(['common', 'dashboard']);
   const [sleepModeEnabled, setSleepModeEnabled] = useState(false);
   const [sleepDuration, setSleepDuration] = useState(300); // seconds
   const [wifiPowerLevel, setWifiPowerLevel] = useState(20); // dBm
@@ -80,11 +82,11 @@ export default function PowerConfigSection({
   ];
 
   const getWifiPowerDescription = (power: number) => {
-    if (power >= 18) return 'Maximum range, highest consumption';
-    if (power >= 15) return 'High range, high consumption';
-    if (power >= 10) return 'Medium range, moderate consumption';
-    if (power >= 5) return 'Low range, low consumption';
-    return 'Minimum range, lowest consumption';
+    if (power >= 18) return t('dashboard:remoteConfig.powerConfig.wifiPowerManagement.powerDescriptions.maximum');
+    if (power >= 15) return t('dashboard:remoteConfig.powerConfig.wifiPowerManagement.powerDescriptions.high');
+    if (power >= 10) return t('dashboard:remoteConfig.powerConfig.wifiPowerManagement.powerDescriptions.medium');
+    if (power >= 5) return t('dashboard:remoteConfig.powerConfig.wifiPowerManagement.powerDescriptions.low');
+    return t('dashboard:remoteConfig.powerConfig.wifiPowerManagement.powerDescriptions.minimum');
   };
 
   const getBatteryColor = (level: number) => {
@@ -106,7 +108,7 @@ export default function PowerConfigSection({
     const wifiMultiplier = wifiPowerLevel / 20; // Power scaling factor
     
     if (!sleepModeEnabled) {
-      return 'Continuous operation: ~12-24 hours';
+      return t('dashboard:remoteConfig.powerConfig.batteryStatus.continuousOperation');
     }
     
     const sleepRatio = sleepDuration / (sleepDuration + transmissionInterval);
@@ -114,22 +116,22 @@ export default function PowerConfigSection({
     const estimatedHours = (3000 / avgConsumption); // Assuming 3000mAh battery
     
     if (estimatedHours > 24) {
-      return `~${Math.floor(estimatedHours / 24)} days`;
+      return `~${Math.floor(estimatedHours / 24)} ${t('dashboard:remoteConfig.powerConfig.batteryStatus.days')}`;
     }
-    return `~${Math.floor(estimatedHours)} hours`;
+    return `~${Math.floor(estimatedHours)} ${t('dashboard:remoteConfig.powerConfig.batteryStatus.hours')}`;
   };
 
   return (
     <Box>
       <Alert severity="info" sx={{ mb: 3 }}>
-        Configure power management settings to optimize battery life for remote deployments. Deep sleep mode can extend battery life significantly.
+        {t('dashboard:remoteConfig.powerConfig.description')}
       </Alert>
 
       {/* Battery Status */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Battery Status
+            {t('dashboard:remoteConfig.powerConfig.batteryStatus.title')}
           </Typography>
           
           <Grid container spacing={2} alignItems="center">
@@ -137,7 +139,7 @@ export default function PowerConfigSection({
               <Box display="flex" alignItems="center" gap={1} mb={1}>
                 <BatteryCharging60 color={getBatteryColor(batteryLevel)} />
                 <Typography variant="body1">
-                  Battery Level: {batteryLevel}%
+                  {t('dashboard:remoteConfig.powerConfig.batteryStatus.batteryLevel')}: {batteryLevel}%
                 </Typography>
               </Box>
               <LinearProgress 
@@ -149,7 +151,7 @@ export default function PowerConfigSection({
             </Grid>
             <Grid item xs={12} sm={6}>
               <Typography variant="body2" color="text.secondary">
-                Estimated battery life: {estimateBatteryLife()}
+                {t('dashboard:remoteConfig.powerConfig.batteryStatus.estimatedBatteryLife')}: {estimateBatteryLife()}
               </Typography>
             </Grid>
           </Grid>
@@ -160,10 +162,10 @@ export default function PowerConfigSection({
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Deep Sleep Mode
+            {t('dashboard:remoteConfig.powerConfig.deepSleepMode.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Enable deep sleep to significantly reduce power consumption between readings
+            {t('dashboard:remoteConfig.powerConfig.deepSleepMode.description')}
           </Typography>
 
           <Grid container spacing={2}>
@@ -178,10 +180,10 @@ export default function PowerConfigSection({
                 label={
                   <Box>
                     <Typography variant="body1">
-                      Enable Deep Sleep Mode
+                      {t('dashboard:remoteConfig.powerConfig.deepSleepMode.enableDeepSleep')}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Device will sleep between measurements to save power
+                      {t('dashboard:remoteConfig.powerConfig.deepSleepMode.deviceWillSleep')}
                     </Typography>
                   </Box>
                 }
@@ -192,26 +194,26 @@ export default function PowerConfigSection({
               <>
                 <Grid item xs={12} sm={6}>
                   <TextField
-                    label="Sleep Duration"
+                    label={t('dashboard:remoteConfig.powerConfig.deepSleepMode.sleepDuration')}
                     type="number"
                     value={sleepDuration}
                     onChange={(e) => setSleepDuration(Number(e.target.value))}
                     InputProps={{
-                      endAdornment: <InputAdornment position="end">seconds</InputAdornment>,
+                      endAdornment: <InputAdornment position="end">{t('dashboard:remoteConfig.powerConfig.deepSleepMode.seconds')}</InputAdornment>,
                     }}
                     inputProps={{
                       min: 30,
                       max: 86400 // 24 hours
                     }}
                     fullWidth
-                    helperText={`Duration: ${formatDuration(sleepDuration)}`}
+                    helperText={`${t('dashboard:remoteConfig.powerConfig.deepSleepMode.duration')}: ${formatDuration(sleepDuration)}`}
                   />
                 </Grid>
                 
                 <Grid item xs={12} sm={6}>
                   <Box>
                     <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                      Quick presets:
+                      {t('dashboard:remoteConfig.powerConfig.deepSleepMode.quickPresets')}
                     </Typography>
                     <ButtonGroup size="small" variant="outlined">
                       {getSleepDurationPresets().map((preset) => (
@@ -234,7 +236,7 @@ export default function PowerConfigSection({
                     startIcon={<Timer />}
                     fullWidth
                   >
-                    Apply Sleep Configuration
+                    {t('dashboard:remoteConfig.powerConfig.deepSleepMode.applySleepConfiguration')}
                   </Button>
                 </Grid>
               </>
@@ -247,16 +249,16 @@ export default function PowerConfigSection({
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            WiFi Power Management
+            {t('dashboard:remoteConfig.powerConfig.wifiPowerManagement.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Adjust WiFi transmission power to balance range and power consumption
+            {t('dashboard:remoteConfig.powerConfig.wifiPowerManagement.description')}
           </Typography>
 
           <Grid container spacing={2}>
             <Grid item xs={12}>
               <Typography gutterBottom>
-                WiFi Power Level: {wifiPowerLevel} dBm
+                {t('dashboard:remoteConfig.powerConfig.wifiPowerManagement.wifiPowerLevel')}: {wifiPowerLevel} dBm
               </Typography>
               <Slider
                 value={wifiPowerLevel}
@@ -286,7 +288,7 @@ export default function PowerConfigSection({
                 startIcon={<Wifi />}
                 fullWidth
               >
-                Apply WiFi Power Settings
+                {t('dashboard:remoteConfig.powerConfig.wifiPowerManagement.applyWifiPowerSettings')}
               </Button>
             </Grid>
           </Grid>
@@ -297,35 +299,35 @@ export default function PowerConfigSection({
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Transmission Scheduling
+            {t('dashboard:remoteConfig.powerConfig.transmissionScheduling.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Configure how often the device transmits data when not in sleep mode
+            {t('dashboard:remoteConfig.powerConfig.transmissionScheduling.description')}
           </Typography>
 
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Transmission Interval"
+                label={t('dashboard:remoteConfig.powerConfig.transmissionScheduling.transmissionInterval')}
                 type="number"
                 value={transmissionInterval}
                 onChange={(e) => setTransmissionInterval(Number(e.target.value))}
                 InputProps={{
-                  endAdornment: <InputAdornment position="end">seconds</InputAdornment>,
+                  endAdornment: <InputAdornment position="end">{t('dashboard:remoteConfig.powerConfig.deepSleepMode.seconds')}</InputAdornment>,
                 }}
                 inputProps={{
                   min: 10,
                   max: 3600
                 }}
                 fullWidth
-                helperText={`Interval: ${formatDuration(transmissionInterval)}`}
+                helperText={`${t('dashboard:remoteConfig.powerConfig.transmissionScheduling.interval')}: ${formatDuration(transmissionInterval)}`}
               />
             </Grid>
             
             <Grid item xs={12} sm={6}>
               <Box>
                 <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                  Quick presets:
+                  {t('dashboard:remoteConfig.powerConfig.transmissionScheduling.quickPresets')}
                 </Typography>
                 <ButtonGroup size="small" variant="outlined">
                   {getTransmissionPresets().map((preset) => (
@@ -347,27 +349,27 @@ export default function PowerConfigSection({
           {/* Power Consumption Summary */}
           <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Power Configuration Summary
+              {t('dashboard:remoteConfig.powerConfig.powerSummary.title')}
             </Typography>
             <Grid container spacing={1}>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Sleep Mode: {sleepModeEnabled ? 'Enabled' : 'Disabled'}
+                  {t('dashboard:remoteConfig.powerConfig.powerSummary.sleepMode')}: {sleepModeEnabled ? t('dashboard:remoteConfig.powerConfig.powerSummary.enabled') : t('dashboard:remoteConfig.powerConfig.powerSummary.disabled')}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">
-                  WiFi Power: {wifiPowerLevel} dBm
+                  {t('dashboard:remoteConfig.powerConfig.powerSummary.wifiPower')}: {wifiPowerLevel} dBm
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Sleep Duration: {formatDuration(sleepDuration)}
+                  {t('dashboard:remoteConfig.powerConfig.powerSummary.sleepDuration')}: {formatDuration(sleepDuration)}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">
-                  TX Interval: {formatDuration(transmissionInterval)}
+                  {t('dashboard:remoteConfig.powerConfig.powerSummary.txInterval')}: {formatDuration(transmissionInterval)}
                 </Typography>
               </Grid>
             </Grid>

@@ -20,6 +20,7 @@ import {
   DialogActions,
   DialogContentText
 } from '@mui/material';
+import { useTranslation } from 'next-i18next';
 import {
   Wifi,
   Router,
@@ -45,6 +46,7 @@ export default function ConnectivityConfigSection({
   stationId,
   onConfigChange
 }: ConnectivityConfigSectionProps) {
+  const { t } = useTranslation(['common', 'dashboard']);
   const [wifiConfig, setWifiConfig] = useState({
     ssid: '',
     password: '',
@@ -75,8 +77,8 @@ export default function ConnectivityConfigSection({
     setConfirmDialog({
       open: true,
       type: 'wifi',
-      title: 'Confirm WiFi Configuration Change',
-      message: `Are you sure you want to change WiFi settings to network "${wifiConfig.ssid}"? The device may temporarily lose connection.`
+      title: t('dashboard:remoteConfig.connectivityConfig.confirmDialog.wifiTitle'),
+      message: t('dashboard:remoteConfig.connectivityConfig.confirmDialog.wifiMessage', { ssid: wifiConfig.ssid })
     });
   };
 
@@ -84,8 +86,8 @@ export default function ConnectivityConfigSection({
     setConfirmDialog({
       open: true,
       type: 'mqtt',
-      title: 'Confirm MQTT Configuration Change',
-      message: `Are you sure you want to change MQTT settings to server "${mqttConfig.server}:${mqttConfig.port}"? This may affect data transmission.`
+      title: t('dashboard:remoteConfig.connectivityConfig.confirmDialog.mqttTitle'),
+      message: t('dashboard:remoteConfig.connectivityConfig.confirmDialog.mqttMessage', { server: mqttConfig.server, port: mqttConfig.port })
     });
   };
 
@@ -128,48 +130,47 @@ export default function ConnectivityConfigSection({
 
   const validateWifiConfig = () => {
     const errors = [];
-    if (!wifiConfig.ssid.trim()) errors.push('SSID is required');
-    if (wifiConfig.ssid.length > 32) errors.push('SSID must be 32 characters or less');
-    if (wifiConfig.password && wifiConfig.password.length < 8) errors.push('Password must be at least 8 characters');
+    if (!wifiConfig.ssid.trim()) errors.push(t('dashboard:remoteConfig.connectivityConfig.wifiConfig.validation.ssidRequired'));
+    if (wifiConfig.ssid.length > 32) errors.push(t('dashboard:remoteConfig.connectivityConfig.wifiConfig.validation.ssidMaxLength'));
+    if (wifiConfig.password && wifiConfig.password.length < 8) errors.push(t('dashboard:remoteConfig.connectivityConfig.wifiConfig.validation.passwordMinLength'));
     return errors;
   };
 
   const validateMqttConfig = () => {
     const errors = [];
-    if (!mqttConfig.server.trim()) errors.push('MQTT server is required');
-    if (mqttConfig.port < 1 || mqttConfig.port > 65535) errors.push('Port must be between 1 and 65535');
+    if (!mqttConfig.server.trim()) errors.push(t('dashboard:remoteConfig.connectivityConfig.mqttConfig.validation.serverRequired'));
+    if (mqttConfig.port < 1 || mqttConfig.port > 65535) errors.push(t('dashboard:remoteConfig.connectivityConfig.mqttConfig.validation.portRange'));
     return errors;
   };
 
   const getCommonMqttServers = () => [
-    { label: 'Local (localhost)', server: 'localhost', port: 1883 },
-    { label: 'Eclipse Mosquitto', server: 'test.mosquitto.org', port: 1883 },
-    { label: 'HiveMQ', server: 'broker.hivemq.com', port: 1883 },
-    { label: 'EMQX Cloud', server: 'broker.emqx.io', port: 1883 }
+    { label: t('dashboard:remoteConfig.connectivityConfig.mqttConfig.brokers.local'), server: 'localhost', port: 1883 },
+    { label: t('dashboard:remoteConfig.connectivityConfig.mqttConfig.brokers.eclipseMosquitto'), server: 'test.mosquitto.org', port: 1883 },
+    { label: t('dashboard:remoteConfig.connectivityConfig.mqttConfig.brokers.hivemq'), server: 'broker.hivemq.com', port: 1883 },
+    { label: t('dashboard:remoteConfig.connectivityConfig.mqttConfig.brokers.emqxCloud'), server: 'broker.emqx.io', port: 1883 }
   ];
 
   return (
     <Box>
       <Alert severity="warning" sx={{ mb: 3 }}>
-        <strong>Warning:</strong> Changing connectivity settings may temporarily disconnect the device. 
-        Ensure you have alternative access methods if configuration fails.
+        <strong>{t('dashboard:remoteConfig.connectivityConfig.warningTitle')}</strong> {t('dashboard:remoteConfig.connectivityConfig.warning')}
       </Alert>
 
       {/* Connection Status */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Current Connection Status
+            {t('dashboard:remoteConfig.connectivityConfig.connectionStatus.title')}
           </Typography>
           
           <Grid container spacing={2}>
             <Grid item xs={6}>
               <Box display="flex" alignItems="center" gap={1}>
                 <Wifi />
-                <Typography variant="body2">WiFi:</Typography>
+                <Typography variant="body2">{t('dashboard:remoteConfig.connectivityConfig.connectionStatus.wifi')}:</Typography>
                 <Chip
                   icon={getStatusIcon(connectionStatus.wifi)}
-                  label={connectionStatus.wifi}
+                  label={t(`dashboard:remoteConfig.connectivityConfig.connectionStatus.${connectionStatus.wifi}`)}
                   color={getStatusColor(connectionStatus.wifi)}
                   size="small"
                 />
@@ -178,10 +179,10 @@ export default function ConnectivityConfigSection({
             <Grid item xs={6}>
               <Box display="flex" alignItems="center" gap={1}>
                 <Router />
-                <Typography variant="body2">MQTT:</Typography>
+                <Typography variant="body2">{t('dashboard:remoteConfig.connectivityConfig.connectionStatus.mqtt')}:</Typography>
                 <Chip
                   icon={getStatusIcon(connectionStatus.mqtt)}
-                  label={connectionStatus.mqtt}
+                  label={t(`dashboard:remoteConfig.connectivityConfig.connectionStatus.${connectionStatus.mqtt}`)}
                   color={getStatusColor(connectionStatus.mqtt)}
                   size="small"
                 />
@@ -195,27 +196,27 @@ export default function ConnectivityConfigSection({
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            WiFi Configuration
+            {t('dashboard:remoteConfig.connectivityConfig.wifiConfig.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Configure WiFi network credentials for the ESP32 device
+            {t('dashboard:remoteConfig.connectivityConfig.wifiConfig.description')}
           </Typography>
 
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="WiFi Network (SSID)"
+                label={t('dashboard:remoteConfig.connectivityConfig.wifiConfig.ssid')}
                 value={wifiConfig.ssid}
                 onChange={(e) => setWifiConfig(prev => ({ ...prev, ssid: e.target.value }))}
                 fullWidth
-                helperText="Enter the WiFi network name"
+                helperText={t('dashboard:remoteConfig.connectivityConfig.wifiConfig.enterNetworkName')}
                 inputProps={{ maxLength: 32 }}
               />
             </Grid>
             
             <Grid item xs={12} sm={6}>
               <TextField
-                label="WiFi Password"
+                label={t('dashboard:remoteConfig.connectivityConfig.wifiConfig.password')}
                 type={wifiConfig.showPassword ? 'text' : 'password'}
                 value={wifiConfig.password}
                 onChange={(e) => setWifiConfig(prev => ({ ...prev, password: e.target.value }))}
@@ -232,7 +233,7 @@ export default function ConnectivityConfigSection({
                   ),
                 }}
                 fullWidth
-                helperText="Minimum 8 characters for WPA/WPA2"
+                helperText={t('dashboard:remoteConfig.connectivityConfig.wifiConfig.minimumCharacters')}
               />
             </Grid>
 
@@ -256,7 +257,7 @@ export default function ConnectivityConfigSection({
                 disabled={validateWifiConfig().length > 0}
                 fullWidth
               >
-                Update WiFi Configuration
+                {t('dashboard:remoteConfig.connectivityConfig.wifiConfig.updateWifiConfiguration')}
               </Button>
             </Grid>
           </Grid>
@@ -267,38 +268,38 @@ export default function ConnectivityConfigSection({
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            MQTT Broker Configuration
+            {t('dashboard:remoteConfig.connectivityConfig.mqttConfig.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Configure MQTT broker settings for data transmission
+            {t('dashboard:remoteConfig.connectivityConfig.mqttConfig.description')}
           </Typography>
 
           <Grid container spacing={2}>
             <Grid item xs={12} sm={8}>
               <TextField
-                label="MQTT Server"
+                label={t('dashboard:remoteConfig.connectivityConfig.mqttConfig.server')}
                 value={mqttConfig.server}
                 onChange={(e) => setMqttConfig(prev => ({ ...prev, server: e.target.value }))}
                 fullWidth
-                helperText="IP address or hostname of MQTT broker"
+                helperText={t('dashboard:remoteConfig.connectivityConfig.mqttConfig.serverHelperText')}
               />
             </Grid>
             
             <Grid item xs={12} sm={4}>
               <TextField
-                label="Port"
+                label={t('dashboard:remoteConfig.connectivityConfig.mqttConfig.port')}
                 type="number"
                 value={mqttConfig.port}
                 onChange={(e) => setMqttConfig(prev => ({ ...prev, port: Number(e.target.value) }))}
                 inputProps={{ min: 1, max: 65535 }}
                 fullWidth
-                helperText="Default: 1883"
+                helperText={t('dashboard:remoteConfig.connectivityConfig.mqttConfig.portHelperText')}
               />
             </Grid>
 
             <Grid item xs={12}>
               <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                Common MQTT brokers:
+                {t('dashboard:remoteConfig.connectivityConfig.mqttConfig.commonBrokers')}
               </Typography>
               <Box display="flex" gap={1} flexWrap="wrap">
                 {getCommonMqttServers().map((broker, index) => (
@@ -321,23 +322,23 @@ export default function ConnectivityConfigSection({
             <Grid item xs={12}>
               <Divider sx={{ my: 1 }} />
               <Typography variant="subtitle2" gutterBottom>
-                Authentication (Optional)
+                {t('dashboard:remoteConfig.connectivityConfig.mqttConfig.authentication')}
               </Typography>
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Username"
+                label={t('dashboard:remoteConfig.connectivityConfig.mqttConfig.username')}
                 value={mqttConfig.username}
                 onChange={(e) => setMqttConfig(prev => ({ ...prev, username: e.target.value }))}
                 fullWidth
-                helperText="Leave empty if not required"
+                helperText={t('dashboard:remoteConfig.connectivityConfig.mqttConfig.leaveEmpty')}
               />
             </Grid>
             
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Password"
+                label={t('dashboard:remoteConfig.connectivityConfig.mqttConfig.password')}
                 type={mqttConfig.showPassword ? 'text' : 'password'}
                 value={mqttConfig.password}
                 onChange={(e) => setMqttConfig(prev => ({ ...prev, password: e.target.value }))}
@@ -354,7 +355,7 @@ export default function ConnectivityConfigSection({
                   ),
                 }}
                 fullWidth
-                helperText="Leave empty if not required"
+                helperText={t('dashboard:remoteConfig.connectivityConfig.mqttConfig.leaveEmpty')}
               />
             </Grid>
 
@@ -378,7 +379,7 @@ export default function ConnectivityConfigSection({
                 disabled={validateMqttConfig().length > 0}
                 fullWidth
               >
-                Update MQTT Configuration
+                {t('dashboard:remoteConfig.connectivityConfig.mqttConfig.updateMqttConfiguration')}
               </Button>
             </Grid>
           </Grid>
@@ -388,27 +389,27 @@ export default function ConnectivityConfigSection({
           {/* Current Configuration Summary */}
           <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Current Configuration
+              {t('dashboard:remoteConfig.connectivityConfig.currentConfiguration.title')}
             </Typography>
             <Grid container spacing={1}>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">
-                  MQTT Server: {mqttConfig.server}
+                  {t('dashboard:remoteConfig.connectivityConfig.currentConfiguration.mqttServer')}: {mqttConfig.server}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Port: {mqttConfig.port}
+                  {t('dashboard:remoteConfig.connectivityConfig.currentConfiguration.port')}: {mqttConfig.port}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Authentication: {mqttConfig.username ? 'Enabled' : 'Disabled'}
+                  {t('dashboard:remoteConfig.connectivityConfig.currentConfiguration.authentication')}: {mqttConfig.username ? t('dashboard:remoteConfig.connectivityConfig.currentConfiguration.enabled') : t('dashboard:remoteConfig.connectivityConfig.currentConfiguration.disabled')}
                 </Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="caption" color="text.secondary">
-                  Station ID: {stationId}
+                  {t('dashboard:remoteConfig.connectivityConfig.currentConfiguration.stationId')}: {stationId}
                 </Typography>
               </Grid>
             </Grid>
@@ -431,14 +432,14 @@ export default function ConnectivityConfigSection({
           <Button 
             onClick={() => setConfirmDialog({ open: false, type: '', title: '', message: '' })}
           >
-            Cancel
+            {t('dashboard:remoteConfig.connectivityConfig.confirmDialog.cancel')}
           </Button>
           <Button 
             onClick={handleConfirmAction} 
             variant="contained"
             color="primary"
           >
-            Confirm
+            {t('dashboard:remoteConfig.connectivityConfig.confirmDialog.confirm')}
           </Button>
         </DialogActions>
       </Dialog>

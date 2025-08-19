@@ -15,6 +15,7 @@ import {
   FormHelperText,
   ButtonGroup
 } from '@mui/material';
+import { useTranslation } from 'next-i18next';
 import {
   DeviceThermostat,
   WaterDrop,
@@ -60,11 +61,12 @@ export default function SensorConfigSection({
   onConfigChange,
   onDeviceControl
 }: SensorConfigSectionProps) {
+  const { t } = useTranslation(['common', 'dashboard']);
   const [readingInterval, setReadingInterval] = useState(60); // seconds
   const [sensors, setSensors] = useState<SensorConfig[]>([
     {
       name: 'dht22',
-      displayName: 'Temperature & Humidity',
+      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.temperatureHumidity'),
       icon: <DeviceThermostat />,
       enabled: true,
       calibrationOffset: 0,
@@ -74,7 +76,7 @@ export default function SensorConfigSection({
     },
     {
       name: 'bmp085',
-      displayName: 'Pressure',
+      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.pressure'),
       icon: <Compress />,
       enabled: true,
       calibrationOffset: 0,
@@ -84,7 +86,7 @@ export default function SensorConfigSection({
     },
     {
       name: 'rain_sensor',
-      displayName: 'Rain Sensor',
+      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.rainSensor'),
       icon: <WaterDrop />,
       enabled: true,
       calibrationOffset: 0,
@@ -94,7 +96,7 @@ export default function SensorConfigSection({
     },
     {
       name: 'mq7',
-      displayName: 'CO Sensor',
+      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.coSensor'),
       icon: <Air />,
       enabled: true,
       calibrationOffset: 0,
@@ -104,7 +106,7 @@ export default function SensorConfigSection({
     },
     {
       name: 'mq135',
-      displayName: 'Air Quality',
+      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.airQuality'),
       icon: <Air />,
       enabled: true,
       calibrationOffset: 0,
@@ -114,7 +116,7 @@ export default function SensorConfigSection({
     },
     {
       name: 'dsm501a',
-      displayName: 'PM2.5 Dust',
+      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.pm25Dust'),
       icon: <Speed />,
       enabled: true,
       calibrationOffset: 0,
@@ -124,7 +126,7 @@ export default function SensorConfigSection({
     },
     {
       name: 'bh1750',
-      displayName: 'Light Intensity',
+      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.lightIntensity'),
       icon: <WbSunny />,
       enabled: true,
       calibrationOffset: 0,
@@ -167,34 +169,34 @@ export default function SensorConfigSection({
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Reading Interval Configuration
+            {t('dashboard:remoteConfig.sensorConfig.readingInterval.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Configure how frequently the ESP32 reads and transmits sensor data
+            {t('dashboard:remoteConfig.sensorConfig.readingInterval.description')}
           </Typography>
           
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Reading Interval"
+                label={t('dashboard:remoteConfig.sensorConfig.readingInterval.label')}
                 type="number"
                 value={readingInterval}
                 onChange={(e) => setReadingInterval(Number(e.target.value))}
                 InputProps={{
-                  endAdornment: <InputAdornment position="end">seconds</InputAdornment>,
+                  endAdornment: <InputAdornment position="end">{t('dashboard:remoteConfig.sensorConfig.readingInterval.unit')}</InputAdornment>,
                 }}
                 inputProps={{
                   min: 10,
                   max: 3600
                 }}
                 fullWidth
-                helperText="Minimum: 10 seconds, Maximum: 1 hour"
+                helperText={t('dashboard:remoteConfig.sensorConfig.readingInterval.minimum')}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <Box sx={{ mb: 1 }}>
                 <Typography variant="caption" color="text.secondary">
-                  Quick presets:
+                  {t('dashboard:remoteConfig.sensorConfig.readingInterval.quickPresets')}
                 </Typography>
               </Box>
               <ButtonGroup size="small" variant="outlined">
@@ -216,7 +218,7 @@ export default function SensorConfigSection({
                 startIcon={<Refresh />}
                 fullWidth
               >
-                Apply Reading Interval
+                {t('dashboard:remoteConfig.sensorConfig.readingInterval.apply')}
               </Button>
             </Grid>
           </Grid>
@@ -227,10 +229,10 @@ export default function SensorConfigSection({
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Sensor Configuration
+            {t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Enable/disable individual sensors and adjust calibration offsets
+            {t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.description')}
           </Typography>
 
           <Grid container spacing={2}>
@@ -247,7 +249,7 @@ export default function SensorConfigSection({
                               {sensor.displayName}
                             </Typography>
                             <Chip 
-                              label={sensor.enabled ? 'Enabled' : 'Disabled'}
+                              label={sensor.enabled ? t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.enabled') : t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.disabled')}
                               color={sensor.enabled ? 'success' : 'default'}
                               size="small"
                             />
@@ -263,13 +265,13 @@ export default function SensorConfigSection({
                               onChange={(e) => handleSensorToggle(sensor.name, e.target.checked)}
                             />
                           }
-                          label="Enabled"
+                          label={t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.enabled')}
                         />
                       </Grid>
                       
                       <Grid item xs={12} sm={5}>
                         <TextField
-                          label="Calibration Offset"
+                          label={t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.calibrationOffset')}
                           type="number"
                           value={sensor.calibrationOffset}
                           onChange={(e) => {
@@ -291,7 +293,7 @@ export default function SensorConfigSection({
                           disabled={!sensor.enabled}
                         />
                         <FormHelperText>
-                          Range: {sensor.minOffset} to {sensor.maxOffset} {sensor.unit}
+                          {t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.range')}: {sensor.minOffset} to {sensor.maxOffset} {sensor.unit}
                         </FormHelperText>
                       </Grid>
                     </Grid>
@@ -307,10 +309,10 @@ export default function SensorConfigSection({
       <Card>
         <CardContent>
           <Typography variant="h6" gutterBottom>
-            Device Control
+            {t('dashboard:remoteConfig.sensorConfig.deviceControl.title')}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Control and monitor the ESP32 device remotely
+            {t('dashboard:remoteConfig.sensorConfig.deviceControl.description')}
           </Typography>
 
           <Grid container spacing={2}>
@@ -321,7 +323,7 @@ export default function SensorConfigSection({
                 onClick={onDeviceControl.getStatus}
                 fullWidth
               >
-                Get Status
+                {t('dashboard:remoteConfig.sensorConfig.deviceControl.getStatus')}
               </Button>
             </Grid>
             
@@ -332,7 +334,7 @@ export default function SensorConfigSection({
                 onClick={onDeviceControl.sensorCheck}
                 fullWidth
               >
-                Sensor Check
+                {t('dashboard:remoteConfig.sensorConfig.deviceControl.sensorCheck')}
               </Button>
             </Grid>
             
@@ -343,7 +345,7 @@ export default function SensorConfigSection({
                 onClick={onDeviceControl.wakeUp}
                 fullWidth
               >
-                Wake Up
+                {t('dashboard:remoteConfig.sensorConfig.deviceControl.wakeUp')}
               </Button>
             </Grid>
             
@@ -355,7 +357,7 @@ export default function SensorConfigSection({
                 onClick={onDeviceControl.restart}
                 fullWidth
               >
-                Restart
+                {t('dashboard:remoteConfig.sensorConfig.deviceControl.restart')}
               </Button>
             </Grid>
           </Grid>

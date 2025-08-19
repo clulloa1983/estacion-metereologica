@@ -44,5 +44,249 @@
     "title": "Ubicación de la Estación",
     "loading": "Cargando mapa...",
     "error": "Error al cargar el mapa"
+  },
+  "remoteConfig": {
+    "title": "Configuración Remota",
+    "station": "Estación",
+    "tabs": {
+      "sensors": "Sensores",
+      "alerts": "Alertas",
+      "power": "Energía",
+      "connectivity": "Conectividad"
+    },
+    "sensorConfig": {
+      "title": "Configuración de Sensores",
+      "readingInterval": {
+        "title": "Configuración del Intervalo de Lectura",
+        "description": "Configure la frecuencia con la que el ESP32 lee y transmite los datos de sensores",
+        "label": "Intervalo de Lectura",
+        "unit": "segundos",
+        "quickPresets": "Ajustes rápidos:",
+        "apply": "APLICAR INTERVALO DE LECTURA",
+        "minimum": "Mínimo: 10 segundos, Máximo: 1 hora"
+      },
+      "sensorConfiguration": {
+        "title": "Configuración de Sensores",
+        "description": "Habilitar/deshabilitar sensores individuales y ajustar desplazamientos de calibración",
+        "enabled": "Habilitado",
+        "disabled": "Deshabilitado",
+        "calibrationOffset": "Desplazamiento de Calibración",
+        "range": "Rango",
+        "sensors": {
+          "temperatureHumidity": "Temperatura y Humedad",
+          "pressure": "Presión",
+          "rainSensor": "Sensor de Lluvia",
+          "coSensor": "Sensor de CO",
+          "airQuality": "Calidad del Aire",
+          "pm25Dust": "Polvo PM2.5",
+          "lightIntensity": "Intensidad de Luz"
+        }
+      },
+      "deviceControl": {
+        "title": "Control del Dispositivo",
+        "description": "Controlar y monitorear el dispositivo ESP32 de forma remota",
+        "getStatus": "OBTENER ESTADO",
+        "sensorCheck": "VERIFICAR SENSORES",
+        "wakeUp": "DESPERTAR",
+        "restart": "REINICIAR"
+      }
+    },
+    "messages": {
+      "readingIntervalUpdated": "Intervalo de lectura actualizado a {seconds} segundos",
+      "sensorEnabled": "Sensor {sensor} habilitado",
+      "sensorDisabled": "Sensor {sensor} deshabilitado",
+      "calibrationSet": "Desplazamiento de calibración para {sensor} establecido en {offset}",
+      "deviceRestarted": "Comando de reinicio del dispositivo enviado",
+      "statusRequested": "Estado del dispositivo solicitado",
+      "sensorCheckInitiated": "Verificación de sensores iniciada",
+      "wakeUpSent": "Comando de despertar enviado",
+      "failedToUpdateInterval": "Error al actualizar el intervalo de lectura",
+      "failedToToggleSensor": "Error al {action} el sensor {sensor}",
+      "failedToSetCalibration": "Error al establecer la calibración para el sensor {sensor}",
+      "failedToRestartDevice": "Error al reiniciar el dispositivo",
+      "failedToGetStatus": "Error al obtener el estado del dispositivo",
+      "failedToPerformSensorCheck": "Error al realizar la verificación de sensores",
+      "failedToWakeUp": "Error al despertar el dispositivo"
+    },
+    "alertConfig": {
+      "description": "Configure los umbrales de alerta para cada parámetro del sensor. Las alertas se activarán cuando los valores excedan los rangos especificados.",
+      "enabled": "Habilitado",
+      "minimumValue": "Valor Mínimo",
+      "maximumValue": "Valor Máximo",
+      "severity": "Gravedad",
+      "saveThreshold": "GUARDAR UMBRAL",
+      "alertBelowValue": "Alerta debajo de este valor",
+      "alertAboveValue": "Alerta encima de este valor",
+      "currentAlertRange": "Rango de alerta actual:",
+      "below": "Debajo de",
+      "above": "Encima de",
+      "or": "o",
+      "noThresholdsSet": "Sin umbrales establecidos",
+      "commonPresets": "Ajustes comunes:",
+      "severityLevels": {
+        "low": "Bajo",
+        "medium": "Medio",
+        "high": "Alto",
+        "critical": "Crítico"
+      },
+      "parameters": {
+        "temperature": {
+          "name": "Temperatura",
+          "description": "Alerta cuando la temperatura esté fuera del rango seguro"
+        },
+        "humidity": {
+          "name": "Humedad",
+          "description": "Alerta cuando los niveles de humedad sean extremos"
+        },
+        "pressure": {
+          "name": "Presión",
+          "description": "Alerta por cambios significativos de presión"
+        },
+        "carbonMonoxide": {
+          "name": "Monóxido de Carbono",
+          "description": "Alerta crítica por niveles peligrosos de CO"
+        },
+        "airQuality": {
+          "name": "Calidad del Aire",
+          "description": "Alerta cuando la calidad del aire sea insalubre"
+        },
+        "pm25": {
+          "name": "PM2.5",
+          "description": "Alerta por niveles insalubres de material particulado"
+        },
+        "lightIntensity": {
+          "name": "Intensidad de Luz",
+          "description": "Alerta por condiciones extremas de luz"
+        }
+      },
+      "presets": {
+        "freezingAlert": "ALERTA DE CONGELACIÓN",
+        "comfortRange": "RANGO DE CONFORT",
+        "heatWarning": "ALERTA DE CALOR",
+        "dryAir": "AIRE SECO",
+        "highHumidity": "HUMEDAD ALTA",
+        "whoSafeLevel": "NIVEL SEGURO OMS",
+        "epaWarning": "ALERTA EPA",
+        "dangerousLevel": "NIVEL PELIGROSO"
+      }
+    },
+    "powerConfig": {
+      "description": "Configure los ajustes de gestión de energía para optimizar la duración de la batería en despliegues remotos. El modo de suspensión profunda puede extender significativamente la duración de la batería.",
+      "batteryStatus": {
+        "title": "Estado de la Batería",
+        "batteryLevel": "Nivel de Batería",
+        "estimatedBatteryLife": "Vida útil estimada de la batería",
+        "continuousOperation": "Operación continua: ~12-24 horas",
+        "days": "días",
+        "hours": "horas"
+      },
+      "deepSleepMode": {
+        "title": "Modo de Suspensión Profunda",
+        "description": "Habilite la suspensión profunda para reducir significativamente el consumo de energía entre lecturas",
+        "enableDeepSleep": "Habilitar Modo de Suspensión Profunda",
+        "deviceWillSleep": "El dispositivo dormirá entre mediciones para ahorrar energía",
+        "sleepDuration": "Duración de Suspensión",
+        "duration": "Duración",
+        "seconds": "segundos",
+        "quickPresets": "Ajustes rápidos:",
+        "applySleepConfiguration": "APLICAR CONFIGURACIÓN DE SUSPENSIÓN"
+      },
+      "wifiPowerManagement": {
+        "title": "Gestión de Energía WiFi",
+        "description": "Ajuste la potencia de transmisión WiFi para equilibrar el alcance y el consumo de energía",
+        "wifiPowerLevel": "Nivel de Potencia WiFi",
+        "applyWifiPowerSettings": "APLICAR CONFIGURACIÓN DE POTENCIA WIFI",
+        "powerDescriptions": {
+          "maximum": "Alcance máximo, mayor consumo",
+          "high": "Alto alcance, alto consumo",
+          "medium": "Alcance medio, consumo moderado",
+          "low": "Bajo alcance, bajo consumo",
+          "minimum": "Alcance mínimo, menor consumo"
+        }
+      },
+      "transmissionScheduling": {
+        "title": "Programación de Transmisión",
+        "description": "Configure la frecuencia con la que el dispositivo transmite datos cuando no está en modo de suspensión",
+        "transmissionInterval": "Intervalo de Transmisión",
+        "interval": "Intervalo",
+        "quickPresets": "Ajustes rápidos:"
+      },
+      "powerSummary": {
+        "title": "Resumen de Configuración de Energía",
+        "sleepMode": "Modo de Suspensión",
+        "enabled": "Habilitado",
+        "disabled": "Deshabilitado",
+        "wifiPower": "Potencia WiFi",
+        "sleepDuration": "Duración de Suspensión",
+        "txInterval": "Intervalo TX"
+      }
+    },
+    "connectivityConfig": {
+      "warning": "Cambiar la configuración de conectividad puede desconectar temporalmente el dispositivo. Asegúrese de tener métodos de acceso alternativos si la configuración falla.",
+      "warningTitle": "Advertencia:",
+      "connectionStatus": {
+        "title": "Estado de Conexión Actual",
+        "wifi": "WiFi",
+        "mqtt": "MQTT",
+        "connected": "conectado",
+        "connecting": "conectando",
+        "disconnected": "desconectado"
+      },
+      "wifiConfig": {
+        "title": "Configuración WiFi",
+        "description": "Configure las credenciales de red WiFi para el dispositivo ESP32",
+        "ssid": "Red WiFi (SSID)",
+        "password": "Contraseña WiFi",
+        "enterNetworkName": "Ingrese el nombre de la red WiFi",
+        "minimumCharacters": "Mínimo 8 caracteres para WPA/WPA2",
+        "updateWifiConfiguration": "ACTUALIZAR CONFIGURACIÓN WIFI",
+        "validation": {
+          "ssidRequired": "El SSID es requerido",
+          "ssidMaxLength": "El SSID debe ser de 32 caracteres o menos",
+          "passwordMinLength": "La contraseña debe tener al menos 8 caracteres"
+        }
+      },
+      "mqttConfig": {
+        "title": "Configuración del Broker MQTT",
+        "description": "Configure los ajustes del broker MQTT para la transmisión de datos",
+        "server": "Servidor MQTT",
+        "port": "Puerto",
+        "serverHelperText": "Dirección IP o nombre de host del broker MQTT",
+        "portHelperText": "Por defecto: 1883",
+        "commonBrokers": "Brokers MQTT comunes:",
+        "authentication": "Autenticación (Opcional)",
+        "username": "Nombre de Usuario",
+        "password": "Contraseña",
+        "leaveEmpty": "Dejar vacío si no es requerido",
+        "updateMqttConfiguration": "ACTUALIZAR CONFIGURACIÓN MQTT",
+        "validation": {
+          "serverRequired": "El servidor MQTT es requerido",
+          "portRange": "El puerto debe estar entre 1 y 65535"
+        },
+        "brokers": {
+          "local": "Local (localhost)",
+          "eclipseMosquitto": "Eclipse Mosquitto",
+          "hivemq": "HiveMQ",
+          "emqxCloud": "EMQX Cloud"
+        }
+      },
+      "currentConfiguration": {
+        "title": "Configuración Actual",
+        "mqttServer": "Servidor MQTT",
+        "port": "Puerto",
+        "authentication": "Autenticación",
+        "enabled": "Habilitada",
+        "disabled": "Deshabilitada",
+        "stationId": "ID de Estación"
+      },
+      "confirmDialog": {
+        "wifiTitle": "Confirmar Cambio de Configuración WiFi",
+        "wifiMessage": "¿Está seguro de que desea cambiar la configuración WiFi a la red \"{ssid}\"? El dispositivo puede perder la conexión temporalmente.",
+        "mqttTitle": "Confirmar Cambio de Configuración MQTT",
+        "mqttMessage": "¿Está seguro de que desea cambiar la configuración MQTT al servidor \"{server}:{port}\"? Esto puede afectar la transmisión de datos.",
+        "cancel": "Cancelar",
+        "confirm": "Confirmar"
+      }
+    }
   }
 }

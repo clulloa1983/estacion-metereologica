@@ -18,6 +18,7 @@ import {
   Battery3Bar, 
   Wifi 
 } from '@mui/icons-material';
+import { useTranslation } from 'next-i18next';
 import SensorConfigSection from './config/SensorConfigSection';
 import AlertConfigSection from './config/AlertConfigSection';
 import PowerConfigSection from './config/PowerConfigSection';
@@ -55,6 +56,7 @@ interface RemoteConfigPanelProps {
 }
 
 export default function RemoteConfigPanel({ stationId }: RemoteConfigPanelProps) {
+  const { t } = useTranslation(['common', 'dashboard']);
   const [currentTab, setCurrentTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState<{
@@ -213,10 +215,10 @@ export default function RemoteConfigPanel({ stationId }: RemoteConfigPanelProps)
   };
 
   const tabs = [
-    { label: 'Sensors', icon: <Sensors />, component: SensorConfigSection },
-    { label: 'Alerts', icon: <NotificationsActive />, component: AlertConfigSection },
-    { label: 'Power', icon: <Battery3Bar />, component: PowerConfigSection },
-    { label: 'Connectivity', icon: <Wifi />, component: ConnectivityConfigSection }
+    { label: t('dashboard:remoteConfig.tabs.sensors'), icon: <Sensors />, component: SensorConfigSection },
+    { label: t('dashboard:remoteConfig.tabs.alerts'), icon: <NotificationsActive />, component: AlertConfigSection },
+    { label: t('dashboard:remoteConfig.tabs.power'), icon: <Battery3Bar />, component: PowerConfigSection },
+    { label: t('dashboard:remoteConfig.tabs.connectivity'), icon: <Wifi />, component: ConnectivityConfigSection }
   ];
 
   return (
@@ -225,10 +227,10 @@ export default function RemoteConfigPanel({ stationId }: RemoteConfigPanelProps)
         title={
           <Box display="flex" alignItems="center" gap={1}>
             <Typography variant="h6" component="div">
-              Remote Configuration
+              {t('dashboard:remoteConfig.title')}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Station: {stationId}
+              {t('dashboard:remoteConfig.station')}: {stationId}
             </Typography>
           </Box>
         }
