@@ -11,7 +11,7 @@ const weatherDataSchema = Joi.object({
     .optional(),
   temperature: Joi.number().min(-50).max(60).precision(2).required(),
   humidity: Joi.number().min(0).max(100).precision(2).required(),
-  pressure: Joi.number().min(800).max(1200).precision(2).required(),
+  pressure: Joi.number().min(800).max(1200).precision(2).optional(),
   wind_speed: Joi.number().min(0).max(200).precision(2).optional(),
   wind_direction: Joi.number().min(0).max(360).precision(2).optional(),
   rainfall: Joi.number().min(0).max(1000).precision(2).optional(),
@@ -20,7 +20,8 @@ const weatherDataSchema = Joi.object({
   battery_voltage: Joi.number().min(0).max(5).precision(3).optional(),
   signal_strength: Joi.number().min(-100).max(0).optional(),
   uptime: Joi.number().min(0).optional(),
-  status: Joi.string().valid('online', 'offline', 'low_battery', 'error').optional()
+  free_heap: Joi.number().min(0).optional(),
+  status: Joi.string().valid('online', 'offline', 'low_battery', 'error', 'going_to_sleep').optional()
 });
 
 // Schema para datos de estado del dispositivo
@@ -32,12 +33,22 @@ const statusDataSchema = Joi.object({
       Joi.string().pattern(/^\d+$/)
     )
     .optional(),
-  battery_voltage: Joi.number().min(0).max(5).precision(3).required(),
-  signal_strength: Joi.number().min(-100).max(0).required(),
-  uptime: Joi.number().min(0).required(),
-  status: Joi.string().valid('online', 'offline', 'low_battery', 'error').required(),
+  battery_voltage: Joi.number().min(0).max(5).precision(3).optional(),
+  signal_strength: Joi.number().min(-100).max(0).optional(),
+  uptime: Joi.number().min(0).optional(),
+  status: Joi.string().valid('online', 'offline', 'low_battery', 'error', 'going_to_sleep').optional(),
   memory_usage: Joi.number().min(0).max(100).optional(),
-  temperature_internal: Joi.number().min(-10).max(80).optional()
+  temperature_internal: Joi.number().min(-10).max(80).optional(),
+  free_heap: Joi.number().min(0).optional(),
+  sensors: Joi.object({
+    dht22: Joi.boolean().optional(),
+    bmp180: Joi.boolean().optional(),
+    bh1750: Joi.boolean().optional(),
+    mh_rd: Joi.boolean().optional(),
+    mq7: Joi.boolean().optional(),
+    mq135: Joi.boolean().optional(),
+    dsm501a: Joi.boolean().optional()
+  }).optional()
 });
 
 // Schema para alertas

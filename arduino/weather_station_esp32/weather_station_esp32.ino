@@ -37,6 +37,52 @@ Preferences preferences;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+// Calibration factors structure
+struct CalibrationFactors {
+  float temp_offset = 0.0;
+  float temp_scale = 1.0;
+  float humidity_offset = 0.0;
+  float pressure_offset = 0.0;
+  float rain_factor = 0.2; // mm per pulse
+  float mq7_offset = 0.0;
+  float mq135_offset = 0.0;
+  float light_scale = 1.0;
+  float light_offset = 0.0;
+};
+
+// Available sensors flags structure
+struct SensorFlags {
+  bool dht22_available = true;
+  bool bmp180_available = false;
+  bool bh1750_available = false;
+  bool mh_rd_available = false;
+  bool mq7_available = false;
+  bool mq135_available = false;
+  bool dsm501a_available = false;
+};
+
+// Alert thresholds storage structure
+struct AlertThresholds {
+  float temp_min = -40.0;
+  float temp_max = 60.0;
+  float humidity_min = 0.0;
+  float humidity_max = 100.0;
+  float pressure_min = 800.0;
+  float pressure_max = 1200.0;
+  float light_min = 0.0;
+  float light_max = 100000.0;
+  bool alerts_enabled = false;
+};
+
+// Configuration backup structure
+struct ConfigBackup {
+  unsigned long reading_interval_backup;
+  CalibrationFactors cal_backup;
+  SensorFlags sensors_backup;
+  bool deep_sleep_backup;
+  unsigned long sleep_duration_backup;
+};
+
 // Global variables
 volatile int rain_pulses = 0;
 unsigned long last_reading = 0;
@@ -45,13 +91,7 @@ unsigned long last_wifi_check = 0;
 int wifi_check_interval = 30000; // 30 seconds
 
 // Configuration backup for rollback
-struct ConfigBackup {
-  unsigned long reading_interval_backup;
-  CalibrationFactors cal_backup;
-  SensorFlags sensors_backup;
-  bool deep_sleep_backup;
-  unsigned long sleep_duration_backup;
-} config_backup;
+ConfigBackup config_backup;
 
 // Deep Sleep configuration
 bool deep_sleep_enabled = true;
@@ -65,42 +105,14 @@ unsigned long starttime;
 unsigned long sampletime_ms = 30000; // 30 seconds sampling
 unsigned long lowpulseoccupancy = 0;
 
-// Calibration factors
-struct CalibrationFactors {
-  float temp_offset = 0.0;
-  float temp_scale = 1.0;
-  float humidity_offset = 0.0;
-  float pressure_offset = 0.0;
-  float rain_factor = 0.2; // mm per pulse
-  float mq7_offset = 0.0;
-  float mq135_offset = 0.0;
-  float light_scale = 1.0;
-  float light_offset = 0.0;
-} cal;
+// Calibration factors instance
+CalibrationFactors cal;
 
-// Alert thresholds storage
-struct AlertThresholds {
-  float temp_min = -40.0;
-  float temp_max = 60.0;
-  float humidity_min = 0.0;
-  float humidity_max = 100.0;
-  float pressure_min = 800.0;
-  float pressure_max = 1200.0;
-  float light_min = 0.0;
-  float light_max = 100000.0;
-  bool alerts_enabled = false;
-} alert_thresholds;
+// Alert thresholds instance
+AlertThresholds alert_thresholds;
 
-// Available sensors flags
-struct SensorFlags {
-  bool dht22_available = true;
-  bool bmp180_available = false;
-  bool bh1750_available = false;
-  bool mh_rd_available = false;
-  bool mq7_available = false;
-  bool mq135_available = false;
-  bool dsm501a_available = false;
-} sensors;
+// Available sensors flags instance
+SensorFlags sensors;
 
 // Function declarations
 void IRAM_ATTR rainPulseISR();
