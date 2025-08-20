@@ -72,6 +72,13 @@ function WeatherMap({ stationId, currentData }: WeatherMapProps) {
     // Por ahora usamos coordenadas por defecto
   }, [stationId]);
 
+  const handleCenterOnStation = () => {
+    // Verificar si la función global está disponible
+    if (typeof window !== 'undefined' && (window as any).centerMapOnStation) {
+      (window as any).centerMapOnStation();
+    }
+  };
+
   const getWindDirectionText = (degrees: number): string => {
     const directions = [
       'Norte', 'Nor-Noreste', 'Noreste', 'Este-Noreste', 
@@ -101,7 +108,7 @@ function WeatherMap({ stationId, currentData }: WeatherMapProps) {
             Ubicación de la Estación
           </Typography>
           <Tooltip title="Centrar en la estación">
-            <IconButton color="primary">
+            <IconButton color="primary" onClick={handleCenterOnStation}>
               <MyLocation />
             </IconButton>
           </Tooltip>

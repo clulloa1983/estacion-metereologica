@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, LayersControl } from 'react-leaflet';
+import React, { useEffect, useState, useRef, useImperativeHandle, forwardRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, LayersControl, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -22,6 +22,31 @@ interface WeatherMapClientProps {
   coordinates: { lat: number; lng: number };
   stationId: string;
   currentData: WeatherData | null;
+}
+
+export interface WeatherMapRef {
+  centerOnStation: () => void;
+}
+
+// Componente para controlar el mapa desde el exterior
+function MapController({ coordinates }: { coordinates: { lat: number; lng: number } }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    // Función global para centrar el mapa que puede ser llamada desde el exterior
+    (window as any).centerMapOnStation = () => {
+      map.setView([coordinates.lat, coordinates.lng], 18, {
+        animate: true,
+        duration: 1
+      });
+    };
+    
+    return () => {
+      delete (window as any).centerMapOnStation;
+    };
+  }, [map, coordinates]);
+  
+  return null;
 }
 
 // Configurar iconos por defecto de Leaflet
@@ -52,6 +77,7 @@ function WeatherMapClient({ coordinates, stationId, currentData }: WeatherMapCli
       maxBounds={[[-90, -180], [90, 180]]}
       maxBoundsViscosity={1.0}
     >
+      <MapController coordinates={coordinates} />
       <LayersControl position="topright">
         {/* Capa Satélite */}
         <LayersControl.BaseLayer name="Satélite">

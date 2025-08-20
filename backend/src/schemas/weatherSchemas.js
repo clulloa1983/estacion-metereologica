@@ -9,9 +9,9 @@ const weatherDataSchema = Joi.object({
       Joi.string().pattern(/^\d+$/)
     )
     .optional(),
-  // Core temperature and humidity (required)
-  temperature: Joi.number().min(-50).max(60).precision(2).required(),
-  humidity: Joi.number().min(0).max(100).precision(2).required(),
+  // Core temperature and humidity (optional to allow status-only messages)
+  temperature: Joi.number().min(-50).max(60).precision(2).optional(),
+  humidity: Joi.number().min(0).max(100).precision(2).optional(),
   
   // BMP180 sensors
   pressure: Joi.number().min(800).max(1200).precision(2).optional(),
