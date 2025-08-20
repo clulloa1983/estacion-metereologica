@@ -48,6 +48,8 @@ influxdb-data/
 ehthumbs.db
 Thumbs.db
 
+arduino/esp32-dht22-bmp180-mh-rd
+arduino/weather_station_simple
 # Arduino/ESP32
 *.bin
 *.elf

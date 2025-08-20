@@ -53,9 +53,9 @@ struct CalibrationFactors {
 // Available sensors flags structure
 struct SensorFlags {
   bool dht22_available = true;
-  bool bmp180_available = false;
+  bool bmp180_available = true;
   bool bh1750_available = false;
-  bool mh_rd_available = false;
+  bool mh_rd_available = true;
   bool mq7_available = false;
   bool mq135_available = false;
   bool dsm501a_available = false;
@@ -116,6 +116,7 @@ SensorFlags sensors;
 
 // Function declarations
 void IRAM_ATTR rainPulseISR();
+void loadConfigurationSimple();
 void backupConfiguration();
 void restoreConfiguration();
 bool validateCommand(StaticJsonDocument<256>& cmdDoc);
@@ -125,32 +126,59 @@ void logCommandExecution(String command, bool success);
 
 void setup() {
   Serial.begin(115200);
+  Serial.println("=== Estación Meteorológica ESP32 ===");
   
+  // Initialize I2C for BMP180 - FIRST, before anything else
+  Wire.begin();
+  delay(100); // Give I2C time to initialize
+  
+  if (!bmp.begin()) {
+    Serial.println("ERROR: No se pudo encontrar el sensor BMP180!");
+    sensors.bmp180_available = false;
+    // Try again after a delay
+    delay(1000);
+    if (!bmp.begin()) {
+      Serial.println("BMP180 segunda prueba también falló");
+    } else {
+      sensors.bmp180_available = true;
+      Serial.println("BMP180 inicializado en segundo intento");
+    }
+  } else {
+    sensors.bmp180_available = true;
+    Serial.println("BMP180 inicializado");
+  }
+  
+  // Initialize DHT22
+  dht.begin();
+  delay(2000); // DHT22 needs time to initialize 
+  Serial.println("DHT22 inicializado");
+  
+  // Configure rain sensor
+  pinMode(RAIN_DIGITAL_PIN, INPUT);
+  sensors.mh_rd_available = true;
+  Serial.println("Sensor de lluvia MH-RD inicializado");
+  
+  // Setup interrupt for rain sensor
+  attachInterrupt(digitalPinToInterrupt(RAIN_DIGITAL_PIN), rainPulseISR, FALLING);
+
+  // Set sensor availability flags
+  sensors.dht22_available = true;
+  sensors.bh1750_available = false;
+  sensors.mq7_available = false;
+  sensors.mq135_available = false;
+  sensors.dsm501a_available = false;
+  
+  Serial.println("====================================");
+
   // Increment boot count and handle wake up
   ++boot_count;
   handleWakeUp();
 
-  // Initialize I2C
-  Wire.begin(SDA_PIN, SCL_PIN);
-
-  // Initialize pins
-  pinMode(RAIN_DIGITAL_PIN, INPUT_PULLUP);
-  pinMode(MQ135_PIN, INPUT);
-  pinMode(DSM501A_PIN, INPUT);
-
   // Restore rain pulse count from RTC memory
   rain_pulses = persistent_rain_pulses;
 
-  // Initialize sensors and check availability
-  initializeSensors();
-
-  // Setup interrupt for rain sensor
-  if (sensors.mh_rd_available) {
-    attachInterrupt(digitalPinToInterrupt(RAIN_DIGITAL_PIN), rainPulseISR, FALLING);
-  }
-
-  // Load configuration from NVS
-  loadConfiguration();
+  // Load configuration from NVS - but don't override sensor availability
+  loadConfigurationSimple();
   
   // Connect to WiFi using WiFiManager
   connectWiFi();
@@ -231,43 +259,7 @@ void loop() {
   delay(100);
 }
 
-void initializeSensors() {
-  Serial.println("Initializing sensors...");
-
-  // Test DHT22
-  dht.begin();
-  delay(2000);
-  float testTemp = dht.readTemperature();
-  sensors.dht22_available = !isnan(testTemp);
-  Serial.println(sensors.dht22_available ? "✓ DHT22 detected" : "✗ DHT22 not found");
-
-  // Test BMP180
-  sensors.bmp180_available = bmp.begin();
-  if (sensors.bmp180_available) {
-    Serial.println("✓ BMP180 detected");
-    // Test reading to ensure sensor is working
-    float testPressure = bmp.readPressure();
-    Serial.print("  Test pressure reading: ");
-    Serial.print(testPressure / 100.0F);
-    Serial.println(" hPa");
-  } else {
-    Serial.println("✗ BMP180 not found - Check I2C wiring (SDA=21, SCL=22)");
-  }
-
-  // Test BH1750
-  sensors.bh1750_available = lightMeter.begin();
-  Serial.println(sensors.bh1750_available ? "✓ BH1750 detected" : "✗ BH1750 not found");
-
-  // Test rain sensor MH-RD
-  sensors.mh_rd_available = true;
-  Serial.println("✓ MH-RD rain sensor enabled");
-
-  // Test analog sensors (disable for initial testing)
-  sensors.mq7_available = false;
-  sensors.mq135_available = false;
-  sensors.dsm501a_available = false;
-  Serial.println("✗ Analog sensors (MQ7, MQ135, DSM501A) disabled for testing");
-}
+// Function removed - initialization moved directly to setup()
 
 void printAvailableSensors() {
   Serial.println("\n=== Available Sensors ===");
@@ -279,6 +271,35 @@ void printAvailableSensors() {
   if (sensors.mq135_available) Serial.println("🏭 MQ135 - Air Quality");
   if (sensors.dsm501a_available) Serial.println("🌫️ DSM501A - Dust Particles");
   Serial.println("========================\n");
+}
+
+void loadConfigurationSimple() {
+  preferences.begin("weather-station", false);
+  
+  // Load only essential configuration - don't touch sensor flags
+  preferences.getString("mqtt_server", mqtt_server, sizeof(mqtt_server));
+  preferences.getString("mqtt_port", mqtt_port, sizeof(mqtt_port));
+  preferences.getString("station_id", station_id, sizeof(station_id));
+  preferences.getString("api_token", api_token, sizeof(api_token));
+  
+  // Load deep sleep configuration
+  deep_sleep_enabled = preferences.getBool("deep_sleep_enabled", true);
+  sleep_duration_ms = preferences.getULong("sleep_duration_ms", 60000);
+  reading_interval = preferences.getULong("reading_interval", 60000);
+  
+  // Load calibration factors
+  cal.temp_offset = preferences.getFloat("temp_offset", 0.0);
+  cal.temp_scale = preferences.getFloat("temp_scale", 1.0);
+  cal.humidity_offset = preferences.getFloat("humidity_offset", 0.0);
+  cal.pressure_offset = preferences.getFloat("pressure_offset", 0.0);
+  cal.rain_factor = preferences.getFloat("rain_factor", 0.2);
+  
+  preferences.end();
+  
+  Serial.println("Configuration loaded:");
+  Serial.println("MQTT Server: " + String(mqtt_server));
+  Serial.println("MQTT Port: " + String(mqtt_port));
+  Serial.println("Station ID: " + String(station_id));
 }
 
 void loadConfiguration() {
@@ -306,9 +327,9 @@ void loadConfiguration() {
   
   // Load sensor availability flags
   sensors.dht22_available = preferences.getBool("sensor_dht22", true);
-  sensors.bmp180_available = preferences.getBool("sensor_bmp180", false);
+  sensors.bmp180_available = preferences.getBool("sensor_bmp180", true);
   sensors.bh1750_available = preferences.getBool("sensor_bh1750", false);
-  sensors.mh_rd_available = preferences.getBool("sensor_rain", false);
+  sensors.mh_rd_available = preferences.getBool("sensor_rain", true);
   sensors.mq7_available = preferences.getBool("sensor_mq7", false);
   sensors.mq135_available = preferences.getBool("sensor_mq135", false);
   sensors.dsm501a_available = preferences.getBool("sensor_dsm501a", false);
@@ -484,41 +505,57 @@ void reconnectMQTT() {
 }
 
 void readAndSendData() {
-  Serial.println("Reading sensors...");
+  Serial.println("📊 LECTURAS DE SENSORES:");
+  Serial.println("");
   
-  // Create JSON document (reduced size for testing)
+  // Create JSON document
   StaticJsonDocument<512> doc;
   doc["station_id"] = station_id;
   doc["timestamp"] = getTimestamp();
 
-  // Read DHT22 (Temperature and Humidity)
-  if (sensors.dht22_available) {
-    float temperature = dht.readTemperature();
-    float humidity = dht.readHumidity();
+  // ==================== DHT22 ====================
+  float humidity = dht.readHumidity();
+  float temp_dht = dht.readTemperature();
+  
+  Serial.println("🌡️  DHT22:");
+  if (isnan(humidity) || isnan(temp_dht)) {
+    Serial.println("   ❌ Error leyendo DHT22");
+  } else {
+    temp_dht = calibrateTemperature(temp_dht);
+    humidity = calibrateHumidity(humidity);
+    doc["temperature"] = round(temp_dht * 100.0) / 100.0;
+    doc["humidity"] = round(humidity * 100.0) / 100.0;
     
-    if (!isnan(temperature)) {
-      temperature = calibrateTemperature(temperature);
-      doc["temperature"] = round(temperature * 100.0) / 100.0;
-    }
-    
-    if (!isnan(humidity)) {
-      humidity = calibrateHumidity(humidity);
-      doc["humidity"] = round(humidity * 100.0) / 100.0;
-    }
+    Serial.print("   Temperatura: ");
+    Serial.print(temp_dht);
+    Serial.println(" °C");
+    Serial.print("   Humedad: ");
+    Serial.print(humidity);
+    Serial.println(" %");
   }
 
-  // Read BMP180 (Pressure)
+  // ==================== BMP180 ====================
   if (sensors.bmp180_available) {
-    float pressure = bmp.readPressure() / 100.0F; // Convert Pa to hPa
-    if (pressure > 0) {
-      pressure = calibratePressure(pressure);
-      doc["pressure"] = round(pressure * 100.0) / 100.0;
-      Serial.print("BMP180 Pressure: ");
-      Serial.print(pressure);
-      Serial.println(" hPa");
-    } else {
-      Serial.println("BMP180 pressure reading failed");
-    }
+    float temp_bmp = bmp.readTemperature();
+    float presion = bmp.readPressure();
+    float altitud = bmp.readAltitude();
+    
+    Serial.println("🌤️  BMP180:");
+    Serial.print("   Temperatura: ");
+    Serial.print(temp_bmp);
+    Serial.println(" °C");
+    Serial.print("   Presión: ");
+    Serial.print(presion / 100.0);
+    Serial.println(" hPa");
+    Serial.print("   Altitud: ");
+    Serial.print(altitud);
+    Serial.println(" m");
+    
+    // Apply calibration and add to JSON
+    float pressure_hpa = calibratePressure(presion / 100.0);
+    doc["pressure"] = round(pressure_hpa * 100.0) / 100.0;
+    doc["bmp_temperature"] = round(temp_bmp * 100.0) / 100.0;
+    doc["altitude"] = round(altitud * 100.0) / 100.0;
   }
 
   // Read BH1750 (Light)
@@ -530,19 +567,47 @@ void readAndSendData() {
     }
   }
 
-  // Read MH-RD rain sensor (both analog and digital)
+  // ==================== SENSOR LLUVIA ====================
   if (sensors.mh_rd_available) {
-    // Digital reading (pulse count for rainfall amount)
-    float rainfall = calculateRainfall();
+    int lluvia_analog = analogRead(RAIN_ANALOG_PIN);
+    int lluvia_digital = digitalRead(RAIN_DIGITAL_PIN);
+    
+    // Convertir lectura analógica a porcentaje (0-100%)
+    int lluvia_porcentaje = map(lluvia_analog, 0, 4095, 0, 100);
+    
+    // Determinar estado de lluvia
+    String estado_lluvia;
+    if (lluvia_porcentaje < 20) {
+      estado_lluvia = "Lluvia INTENSA";
+    } else if (lluvia_porcentaje < 40) {
+      estado_lluvia = "Lluvia MODERADA";
+    } else if (lluvia_porcentaje < 60) {
+      estado_lluvia = "Lluvia LIGERA";
+    } else {
+      estado_lluvia = "SIN LLUVIA";
+    }
+    
+    Serial.println("🌧️  SENSOR LLUVIA:");
+    Serial.print("   Valor analógico: ");
+    Serial.println(lluvia_analog);
+    Serial.print("   Intensidad: ");
+    Serial.print(lluvia_porcentaje);
+    Serial.println("%");
+    Serial.print("   Estado: ");
+    Serial.println(estado_lluvia);
+    Serial.print("   Digital: ");
+    Serial.println(lluvia_digital == LOW ? "DETECTA LLUVIA" : "SIN LLUVIA");
+    
+    // Add to JSON
+    doc["rain_analog"] = lluvia_analog;
+    doc["rain_percentage"] = lluvia_porcentaje;
+    doc["rain_digital"] = lluvia_digital;
+    doc["rain_detected"] = (lluvia_digital == LOW);
+    
+    // Also include pulse count for compatibility
+    float rainfall = rain_pulses * cal.rain_factor;
     doc["rainfall"] = round(rainfall * 100.0) / 100.0;
-    
-    // Analog reading (rain intensity level 0-4095)
-    int rain_analog = analogRead(RAIN_ANALOG_PIN);
-    doc["rain_intensity"] = rain_analog;
-    
-    // Convert to percentage (inverted: higher analog value = less rain)
-    float rain_percentage = map(rain_analog, 0, 4095, 100, 0);
-    doc["rain_level_percent"] = constrain(rain_percentage, 0, 100);
+    rain_pulses = 0; // Reset counter
   }
 
   // Read MQ7 (Carbon Monoxide) - ESP32 has 12-bit ADC (0-4095)
@@ -572,11 +637,14 @@ void readAndSendData() {
   doc["signal_strength"] = WiFi.RSSI();
   doc["free_heap"] = ESP.getFreeHeap();
 
+  Serial.println("==========================================");
+  Serial.println("");
+
   // Convert to string and send
   String payload;
   serializeJson(doc, payload);
   
-  Serial.println("Sending data: " + payload);
+  Serial.println("Sending MQTT data: " + payload);
   
   String topic = "weather/data/" + String(station_id);
   if (client.publish(topic.c_str(), payload.c_str())) {
@@ -602,11 +670,7 @@ float calibrateLight(float raw_light) {
   return (raw_light * cal.light_scale) + cal.light_offset;
 }
 
-float calculateRainfall() {
-  float rainfall = rain_pulses * cal.rain_factor;
-  rain_pulses = 0; // Reset counter
-  return rainfall;
-}
+// Function removed - rainfall calculation moved to readAndSendData() to match simple version
 
 String getTimestamp() {
   // Simple timestamp - in production use NTP
@@ -681,7 +745,8 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     delay(1000);
     ESP.restart();
   } else if (command == "sensor_check") {
-    initializeSensors();
+    // Re-check sensor availability
+    sensors.bmp180_available = bmp.begin();
     printAvailableSensors();
     sendStatusUpdate("sensor_check_complete");
   } else if (command == "sleep_mode") {
