@@ -8,18 +8,20 @@ This is an IoT Weather Station system with Arduino/ESP32 hardware sensors that c
 
 **Architecture Flow**: Arduino/ESP32 → MQTT → Backend API → InfluxDB → Frontend Dashboard + Grafana
 
-**Current Status**: SYSTEM FULLY OPERATIONAL & PRODUCTION-READY ARCHITECTURE - All components integrated and tested. Backend API (port 5002) with comprehensive middleware stack, frontend (port 3001+) with TypeScript and Material-UI 7.3.1, ESP32 DevKit V1 with WiFiManager and 8 sensors, Docker services with health checks. Authentication, caching, and WebSocket systems implemented and ready for activation. Requires only production security configuration for deployment.
+**Current Status**: PRODUCTION-READY IoT WEATHER STATION SYSTEM - Fully operational architecture with advanced remote configuration capabilities. Backend API (port 5002) with comprehensive middleware stack, internationalized frontend (port 3001+) with TypeScript and Material-UI 7.3.1, ESP32 DevKit V1 with advanced MQTT command system and 8 sensors. Complete Docker infrastructure with health checks, comprehensive testing framework, and user documentation. Authentication, caching, WebSocket, and i18n systems fully implemented. Ready for production deployment with security configuration.
 
 ## System Components
 
-1. **Hardware**: ESP32 DevKit V1 with 8 environmental sensors and WiFiManager
-2. **Backend**: Node.js/Express API with comprehensive middleware, authentication, and monitoring
-3. **Frontend**: React 19/Next.js 15 with TypeScript, Material-UI 7.3.1, and theme support
+1. **Hardware**: ESP32 DevKit V1 with 8 environmental sensors, WiFiManager, and advanced MQTT command system
+2. **Backend**: Node.js/Express API with comprehensive middleware, authentication, monitoring, and remote configuration
+3. **Frontend**: React 19/Next.js 15 with TypeScript, Material-UI 7.3.1, theme support, and internationalization (i18n)
 4. **Database**: InfluxDB 2.7 for time-series data with automated field detection
 5. **Infrastructure**: Docker Compose with health checks (InfluxDB, Grafana, MQTT, Redis)
-6. **Testing**: Jest framework for both backend and frontend with coverage reporting
-7. **Documentation**: Swagger/OpenAPI automatic API documentation
-8. **Monitoring**: Winston logging with multiple transport levels
+6. **Testing**: Jest framework for both backend and frontend with comprehensive coverage reporting
+7. **Documentation**: Swagger/OpenAPI automatic API documentation, user manuals, and technical guides
+8. **Monitoring**: Winston logging with multiple transport levels and performance tracking
+9. **Configuration**: Advanced remote configuration system for ESP32 devices via MQTT
+10. **Internationalization**: Multi-language support (English/Spanish) with next-i18next
 
 ## Development Commands
 
@@ -202,6 +204,11 @@ Data points use `station_id` as primary tag for device identification.
 - ✅ Socket.IO Client 4.8.1 ready for real-time updates
 - ✅ Frontend dashboard fully operational on auto-assigned port 3001+
 - ✅ Real-time data updates with configurable polling intervals
+- ✅ Internationalization (i18n) with next-i18next 15.4.2 (English/Spanish)
+- ✅ Language selector component with dynamic switching
+- ✅ Remote configuration panel with tabbed interface
+- ✅ PWA (Progressive Web App) capabilities with next-pwa 5.6.0
+- ✅ Advanced testing suite with comprehensive component coverage
 
 ### API Endpoints Structure
 - **Weather Data**: `/api/weather/*` - CRUD operations for sensor data
@@ -217,6 +224,10 @@ Data points use `station_id` as primary tag for device identification.
   - `POST /api/alerts` - Create new alert
   - `PUT /api/alerts/:alertId/acknowledge` - Acknowledge alert
 - **Authentication**: `/api/auth/*` - User authentication (configured)
+- **Remote Configuration**: `/api/config/*` - ESP32 remote configuration commands
+  - `POST /api/config/command/:stationId` - Send configuration command (actively used)
+  - `GET /api/config/commands` - List available commands
+  - `GET /api/config/status/:stationId` - Configuration status
 - **Monitoring**: `/api/monitoring/*` - System monitoring endpoints
 - **Health**: `/health` - API health check with detailed status
 - **API Documentation**: Swagger/OpenAPI documentation configured (swagger-jsdoc ^6.2.8, swagger-ui-express ^5.0.1)
@@ -228,11 +239,16 @@ Data points use `station_id` as primary tag for device identification.
 - **Data Flow**: ESP32 → MQTT → Backend → InfluxDB (FULLY OPERATIONAL)
 - **Sensor Data**: Temperature, humidity, pressure, light, rainfall, CO levels, air quality, PM2.5
 - **Connection Status**: Stable MQTT connection with WiFiManager dynamic configuration
-- **Power Management**: Deep sleep support for battery-powered deployments
-- **Configuration**: NVS storage for persistent settings
+- **Power Management**: Advanced deep sleep support with configurable wake intervals
+- **Configuration**: NVS storage for persistent settings with backup/rollback capabilities
+- **Remote Control**: Full remote configuration via MQTT commands from web dashboard
+- **Command System**: Advanced MQTT command processing with validation and error handling
 
 ### Hardware Files Location
 - **Arduino Code**: `arduino/weather_station_esp32/weather_station_esp32.ino`
+- **Advanced Commands Guide**: `arduino/weather_station_esp32/ADVANCED_COMMANDS.md`
+- **Test Scripts**: `arduino/weather_station_esp32/test_commands.bat` & `test_commands.sh`
+- **Python Testing**: `arduino/weather_station_esp32/test_mqtt_commands.py`
 - **Documentation**: `arduino/weather_station_wemos/README.md` (legacy - ESP8266/WEMOS)
 - **Sensor Guide**: `arduino/sensores-microcontroladores.md`
 
@@ -248,6 +264,8 @@ The ESP32 DevKit V1 code handles 8 environmental sensors with comprehensive moni
 - **WiFiManager**: Dynamic WiFi configuration portal with fallback AP mode
 - **Preferences**: NVS storage for MQTT settings and calibration factors
 - **Calibration System**: Runtime adjustable sensor calibration without code changes
+- **Advanced Features**: Configuration backup/rollback, alert thresholds, power management
+- **Remote Commands**: Full MQTT-based remote configuration from web dashboard
 
 ### Calibration System
 Sensor readings use calibration factors defined in `CalibrationFactors` struct. Modify these values for field calibration without code changes.
@@ -724,6 +742,78 @@ curl http://localhost:5002/api/config/status/ESP32_STATION_001
    - Update user manual with new features
    - Update frontend component documentation
 
+## Documentation & User Guides
+
+### Available Documentation
+- **Technical Documentation**: 
+  - `CLAUDE.md` - Complete development guide (this file)
+  - `README.md` - Project overview and quick start
+  - `TESTING.md` - Testing strategies and coverage
+- **User Manuals**:
+  - `docs/REMOTE_CONFIGURATION_USER_MANUAL.md` - End-user guide for remote configuration
+  - `docs/weather_station_plan.md` - System architecture and planning
+- **Hardware Documentation**:
+  - `arduino/weather_station_esp32/README.md` - ESP32 setup and configuration
+  - `arduino/weather_station_esp32/ADVANCED_COMMANDS.md` - MQTT command reference
+  - `arduino/sensores-microcontroladores.md` - Sensor specifications
+
+### Internationalization (i18n) Support
+
+The frontend supports multiple languages with dynamic switching:
+
+**Supported Languages:**
+- 🇪🇸 **Spanish (es)** - Default language
+- 🇺🇸 **English (en)** - Full translation support
+
+**Translation Files:**
+- `frontend/public/locales/es/` - Spanish translations
+- `frontend/public/locales/en/` - English translations
+- `frontend/public/locales/*/common.json` - Common UI elements
+- `frontend/public/locales/*/dashboard.json` - Dashboard-specific terms
+
+**i18n Configuration:**
+- **Framework**: next-i18next ^15.4.2 with react-i18next ^15.6.1
+- **Configuration**: `next-i18next.config.js` for language detection and routing
+- **Components**: `LanguageSelector.tsx` for dynamic language switching
+- **Usage**: `useTranslation()` hook for component translations
+
+**Adding New Languages:**
+1. Create new locale directory in `frontend/public/locales/`
+2. Copy translation files from existing locale
+3. Translate JSON values (keep keys unchanged)
+4. Add language option to `LanguageSelector.tsx`
+5. Update `next-i18next.config.js` with new locale
+
+**Translation Keys Structure:**
+```json
+{
+  "navigation": {
+    "dashboard": "Dashboard",
+    "alerts": "Alerts",
+    "configuration": "Configuration"
+  },
+  "sensors": {
+    "temperature": "Temperature",
+    "humidity": "Humidity"
+  }
+}
+```
+
+### PWA (Progressive Web App) Features
+
+**PWA Capabilities:**
+- **Service Worker**: Automatic caching and offline support
+- **Manifest**: App installation on mobile devices
+- **Icons**: Multiple resolution icons for different devices
+- **Offline Mode**: Basic functionality available without internet
+- **Installation**: Add to home screen functionality
+
+**PWA Configuration:**
+- **Framework**: next-pwa ^5.6.0 with workbox-webpack-plugin ^7.3.0
+- **Icons**: Generated icons in `frontend/public/icons/`
+- **Manifest**: `frontend/public/manifest.json`
+- **Generation**: `frontend/scripts/generate-icons.js` for icon creation
+
 ### Development & Production Considerations
 **Production-Ready Features:**
 - ✅ Authentication system (JWT + bcryptjs) implemented and configurable
@@ -735,6 +825,10 @@ curl http://localhost:5002/api/config/status/ESP32_STATION_001
 - ✅ Comprehensive logging with Winston
 - ✅ API documentation with Swagger/OpenAPI
 - ✅ Testing framework with coverage reporting
+- ✅ Internationalization (i18n) with English/Spanish support
+- ✅ PWA capabilities for mobile and offline usage
+- ✅ User documentation and configuration guides
+- ✅ Advanced remote configuration system
 
 **Deployment Considerations:**
 - 🔒 SSL/TLS certificates for production endpoints
@@ -743,3 +837,4 @@ curl http://localhost:5002/api/config/status/ESP32_STATION_001
 - 🗄️ Database backup and retention policies
 - 🌐 Load balancing for horizontal scaling
 - 🔐 Network security and firewall configuration
+- 🌍 CDN configuration for i18n assets and PWA resources

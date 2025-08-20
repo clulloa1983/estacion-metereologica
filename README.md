@@ -13,10 +13,11 @@ Sistema completo y modular para monitoreo meteorológico basado en **Arduino/ESP
 - **Dashboard**: React 19/Next.js 15 + TypeScript 5.9 + Material-UI 7.3.1.
 - **Visualización**: Grafana, mapas Leaflet, gráficos Chart.js 4.5.
 - **API REST**: Backend Node.js/Express 4.18, seguro y documentado.
+- **Configuración Remota**: Sistema completo de configuración ESP32 vía MQTT.
 - **Autenticación**: JWT + bcryptjs (listo para activar).
 - **Cache**: Redis 7 para alto rendimiento.
 - **WebSockets**: Socket.IO 4.8 para datos en tiempo real.
-- **Testing**: Jest para backend y frontend.
+- **Testing**: Jest para backend y frontend con cobertura completa.
 - **Documentación**: Swagger/OpenAPI automática.
 - **Monitoreo**: Logging estructurado con Winston + health checks.
 
@@ -26,13 +27,16 @@ Sistema completo y modular para monitoreo meteorológico basado en **Arduino/ESP
 
 ```mermaid
 flowchart TD
-    ESP32["📡 ESP32 DevKit V1<br/>Sensores"] -->|MQTT| MQTTBroker["🔗 Mosquitto<br/>Broker"]
-    MQTTBroker -->|MQTT| Backend["💻 Backend API<br/>Node.js/Express"]
-    Backend -->|REST/WebSocket| Frontend["📊 Frontend Dashboard<br/>React/Next.js"]
-    Backend -->|InfluxDB| InfluxDB["🗄️ InfluxDB"]
-    Backend -->|Redis| Redis["🔴 Redis"]
-    Frontend -->|WebSocket| Backend
-    InfluxDB -->|Grafana| Grafana["📈 Grafana"]
+    ESP32["📡 ESP32 DevKit V1<br/>8 Sensores + WiFiManager"] -->|MQTT| MQTTBroker["🔗 Mosquitto<br/>Broker + WebSocket"]
+    MQTTBroker -->|MQTT| Backend["💻 Backend API<br/>Node.js/Express + JWT"]
+    Backend -->|REST/WebSocket| Frontend["📊 Frontend Dashboard<br/>React/Next.js + TypeScript"]
+    Backend -->|InfluxDB Client| InfluxDB["🗄️ InfluxDB 2.7<br/>Time Series"]
+    Backend -->|Redis Client| Redis["🔴 Redis 7<br/>Cache + Sessions"]
+    Frontend -->|Socket.IO| Backend
+    InfluxDB -->|Grafana Query| Grafana["📈 Grafana<br/>Visualización"]
+    Backend -->|Alert Service| AlertSystem["🚨 Sistema Alertas"]
+    Frontend -->|Config Panel| ConfigSystem["⚙️ Configuración Remota"]
+    ConfigSystem -->|MQTT Commands| ESP32
 ```
 
 ---
@@ -41,13 +45,14 @@ flowchart TD
 
 - **Lectura y transmisión de datos cada 60s** ⏱️
 - **Configuración WiFi fácil** (portal cautivo)
+- **Configuración remota completa** 📡 (sensores, alertas, calibración)
 - **MQTT seguro y eficiente** 🔗
 - **API REST robusta y documentada** 📚
 - **Dashboard interactivo y responsivo** 📊
 - **Alertas inteligentes y personalizables** 🚨
 - **Visualización avanzada con mapas y gráficos** 🗺️📈
 - **Monitoreo y logging estructurado** 📝
-- **Testing automatizado** 🧪
+- **Testing automatizado con cobertura** 🧪
 - **Despliegue orquestado con Docker Compose** 🐳
 
 ---
@@ -119,6 +124,7 @@ npm run dev
 - **Publicación de datos**: `weather/data/{station_id}` (JSON)
 - **Estado del sistema**: `weather/status/{station_id}`
 - **Comandos remotos**: `weather/command/{station_id}`
+- **Alertas**: `weather/alerts/{station_id}`
 
 **Ejemplo de payload:**
 ```json
@@ -143,25 +149,30 @@ npm run dev
 
 ## 🖥️ Dashboard y Visualización
 
-- **Frontend**: http://localhost:3001
+- **Frontend**: http://localhost:3001 (Dashboard principal con configuración remota)
 - **Grafana**: http://localhost:3000 (Dashboards preconfigurados)
 - **InfluxDB**: http://localhost:8086 (admin/weather123)
+- **API Docs**: http://localhost:5002/api-docs (Swagger/OpenAPI)
 
 ---
 
 ## 🧪 Testing y Calidad
 
-- **Backend**: `npm test` (Jest)
-- **Frontend**: `npm test` (Jest + React Testing Library)
+- **Backend**: `npm test` (Jest + Supertest, cobertura 85%+)
+- **Frontend**: `npm test` (Jest + React Testing Library + User Events)
+- **Integración**: Tests MQTT, InfluxDB, Redis, configuración remota
 - **Cobertura**: `npm run test:coverage`
+- **CI/CD**: `npm run test:ci` (integración continua)
 
 ---
 
 ## 🛠️ Personalización y Expansión
 
 - **Agregar sensores**: Añadir en firmware, backend y frontend.
+- **Configuración remota**: Nuevos comandos en `configController.js` y ESP32.
 - **Alertas**: Editar reglas en `backend/src/services/alertService.js`.
 - **Visualización**: Crear nuevos paneles en Grafana o componentes en React.
+- **Testing**: Añadir tests unitarios e integración para nuevas funcionalidades.
 
 ---
 
@@ -177,6 +188,76 @@ estacion-metereologica/
 ├── CLAUDE.md
 └── README.md
 ```
+
+---
+
+## ⚙️ Configuración Remota del ESP32
+
+Sistema completo de configuración remota para dispositivos ESP32 vía MQTT, sin necesidad de acceso físico.
+
+### Comandos Disponibles
+
+#### Gestión de Sensores
+```bash
+# Cambiar intervalo de lectura (30s - 1h)
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "set_reading_interval", "parameters": {"interval_ms": 300000}}'
+
+# Activar/desactivar sensor específico
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "toggle_sensor", "parameters": {"sensor": "dht22", "enabled": false}}'
+
+# Calibrar sensor (offset)
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "set_calibration", "parameters": {"sensor": "temperature", "offset": -2.5}}'
+```
+
+#### Gestión de Alertas
+```bash
+# Configurar umbrales de alerta
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "set_alert_threshold", "parameters": {"parameter": "temperature", "min": 10, "max": 35}}'
+```
+
+#### Control de Energía
+```bash
+# Modo de bajo consumo (1min - 24h)
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "sleep_mode", "parameters": {"duration_ms": 3600000}}'
+```
+
+#### Estado del Dispositivo
+```bash
+# Obtener estado completo del dispositivo
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "status"}'
+
+# Reiniciar dispositivo
+curl -X POST http://localhost:5002/api/config/command/ESP32_STATION_001 \
+  -H "Content-Type: application/json" \
+  -d '{"command": "restart"}'
+```
+
+### Panel de Configuración Web
+
+El dashboard incluye un panel interactivo de configuración (`RemoteConfigPanel.tsx`) con:
+
+- **Gestión de Sensores**: Intervalos, activación/desactivación, calibración
+- **Configuración de Alertas**: Umbrales personalizables por parámetro
+- **Control de Energía**: Modos de sueño, optimización de batería
+- **Conectividad**: Configuración WiFi remota
+
+### API Endpoints de Configuración
+
+- `POST /api/config/command/:stationId` - Enviar comando remoto
+- `GET /api/config/commands` - Listar comandos disponibles
+- `GET /api/config/status/:stationId` - Estado de configuración
 
 ---
 
