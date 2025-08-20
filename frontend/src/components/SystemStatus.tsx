@@ -21,7 +21,10 @@ import {
   WifiOff,
   Schedule,
   LocationOn,
-  Memory
+  Memory,
+  SignalWifi4Bar,
+  SignalWifi2Bar,
+  SignalWifiOff
 } from '@mui/icons-material';
 
 interface WeatherData {
@@ -36,6 +39,9 @@ interface WeatherData {
   pm10?: number;
   uv_index?: number;
   battery_voltage?: number;
+  signal_strength?: number;
+  free_heap?: number;
+  uptime?: number;
   timestamp: string;
 }
 
@@ -104,6 +110,42 @@ function SystemStatus({ data }: SystemStatusProps) {
     
     const diffDays = Math.floor(diffHours / 24);
     return `Hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+  };
+
+  const getSignalIcon = (signalStrength?: number) => {
+    if (!signalStrength) return <SignalWifiOff color="error" />;
+    
+    // Clasificación típica de fuerza de señal WiFi (dBm)
+    if (signalStrength > -50) return <SignalWifi4Bar color="success" />;
+    if (signalStrength > -70) return <SignalWifi4Bar color="warning" />;
+    if (signalStrength > -80) return <SignalWifi2Bar color="warning" />;
+    return <SignalWifiOff color="error" />;
+  };
+
+  const getSignalQuality = (signalStrength?: number): string => {
+    if (!signalStrength) return 'Sin señal';
+    
+    if (signalStrength > -50) return 'Excelente';
+    if (signalStrength > -70) return 'Buena';
+    if (signalStrength > -80) return 'Débil';
+    return 'Muy débil';
+  };
+
+  const formatHeapMemory = (bytes?: number): string => {
+    if (!bytes) return 'N/A';
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  };
+
+  const formatUptime = (seconds?: number): string => {
+    if (!seconds) return 'N/A';
+    
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    if (minutes > 0) return `${minutes}m ${secs}s`;
+    return `${secs}s`;
   };
 
   const getActiveSensorsCount = () => {
@@ -200,23 +242,44 @@ function SystemStatus({ data }: SystemStatusProps) {
             />
           </ListItem>
 
-          {/* Memoria/Estado */}
-          <ListItem>
-            <ListItemIcon>
-              <Memory color="primary" />
-            </ListItemIcon>
-            <ListItemText 
-              primary="Estado operativo" 
-              secondary="Sistema funcionando correctamente"
-            />
-            <ListItemSecondaryAction>
-              <Chip 
-                label="OK" 
-                color="success" 
-                size="small"
+          {/* Señal WiFi */}
+          {data?.signal_strength && (
+            <ListItem>
+              <ListItemIcon>
+                {getSignalIcon(data.signal_strength)}
+              </ListItemIcon>
+              <ListItemText 
+                primary="Señal WiFi" 
+                secondary={`${data.signal_strength} dBm (${getSignalQuality(data.signal_strength)})`}
               />
-            </ListItemSecondaryAction>
-          </ListItem>
+            </ListItem>
+          )}
+
+          {/* Memoria libre */}
+          {data?.free_heap && (
+            <ListItem>
+              <ListItemIcon>
+                <Memory color="primary" />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Memoria libre" 
+                secondary={formatHeapMemory(data.free_heap)}
+              />
+            </ListItem>
+          )}
+
+          {/* Uptime */}
+          {data?.uptime && (
+            <ListItem>
+              <ListItemIcon>
+                <Schedule color="primary" />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Tiempo funcionamiento" 
+                secondary={formatUptime(data.uptime)}
+              />
+            </ListItem>
+          )}
         </List>
 
         {/* Información adicional */}
@@ -227,7 +290,9 @@ function SystemStatus({ data }: SystemStatusProps) {
           <Typography variant="body2" color="text.secondary">
             • Sensores activos: {data ? `${getActiveSensorsCount().active}/${getActiveSensorsCount().total}` : '0/7'}<br />
             • Frecuencia de medición: 1 minuto<br />
-            • Uptime estimado: {connectionStatus.status === 'online' ? '99.5%' : 'N/A'}
+            • Uptime estimado: {connectionStatus.status === 'online' ? '99.5%' : 'N/A'}<br />
+            {data?.signal_strength && `• Señal WiFi: ${data.signal_strength} dBm`}<br />
+            {data?.free_heap && `• Memoria libre: ${formatHeapMemory(data.free_heap)}`}
           </Typography>
         </Box>
       </CardContent>

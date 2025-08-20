@@ -16,7 +16,8 @@ import {
   Navigation,
   WaterOutlined,
   BatteryFull,
-  WbSunny
+  WbSunny,
+  Landscape
 } from '@mui/icons-material';
 
 interface WeatherData {
@@ -31,6 +32,8 @@ interface WeatherData {
   pm10?: number;
   uv_index?: number;
   battery_voltage?: number;
+  altitude?: number;
+  bmp_temperature?: number;
   timestamp: string;
 }
 
@@ -304,6 +307,32 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
                 value={data.uv_index}
                 unit=""
                 icon={<WbSunny />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+          
+          {/* Altitud */}
+          {data?.altitude !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title="Altitud"
+                value={data.altitude}
+                unit="m"
+                icon={<Landscape />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+          
+          {/* Temperatura BMP */}
+          {data?.bmp_temperature !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title="Temp. BMP"
+                value={data.bmp_temperature}
+                unit="°C"
+                icon={<Thermostat />}
                 loading={loading}
               />
             </Grid>
