@@ -18,11 +18,13 @@ import {
   Air
 } from '@mui/icons-material';
 import dynamic from 'next/dynamic';
+import { useTranslation } from 'next-i18next';
+import { useRouter } from 'next/router';
 
-// Cargar todo el mapa dinámicamente para evitar problemas de SSR
-const DynamicMap = dynamic(() => import('./WeatherMapClient'), { 
-  ssr: false,
-  loading: () => (
+// Componente de carga para el mapa
+const MapLoading = () => {
+  const { t } = useTranslation('dashboard');
+  return (
     <Box sx={{ 
       height: 400, 
       display: 'flex', 
@@ -32,10 +34,16 @@ const DynamicMap = dynamic(() => import('./WeatherMapClient'), {
       borderRadius: 1
     }}>
       <Typography color="text.secondary">
-        Cargando mapa...
+        {t('weatherMap.loading')}
       </Typography>
     </Box>
-  )
+  );
+};
+
+// Cargar todo el mapa dinámicamente para evitar problemas de SSR
+const DynamicMap = dynamic(() => import('./WeatherMapClient'), { 
+  ssr: false,
+  loading: () => <MapLoading />
 });
 
 interface WeatherData {
@@ -65,6 +73,8 @@ const DEFAULT_COORDINATES = {
 };
 
 function WeatherMap({ stationId, currentData }: WeatherMapProps) {
+  const { t } = useTranslation('dashboard');
+  const router = useRouter();
   const [stationCoordinates, setStationCoordinates] = useState(DEFAULT_COORDINATES);
   
   useEffect(() => {
@@ -105,9 +115,9 @@ function WeatherMap({ stationId, currentData }: WeatherMapProps) {
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h5" component="h2">
-            Ubicación de la Estación
+            {t('weatherMap.title')}
           </Typography>
-          <Tooltip title="Centrar en la estación">
+          <Tooltip title={t('weatherMap.centerOnStation')}>
             <IconButton color="primary" onClick={handleCenterOnStation}>
               <MyLocation />
             </IconButton>
@@ -119,13 +129,13 @@ function WeatherMap({ stationId, currentData }: WeatherMapProps) {
           <Grid container spacing={2} alignItems="center">
             <Grid size={{ xs: 12, sm: 6 }}>
               <Typography variant="subtitle2" gutterBottom>
-                Coordenadas de la estación:
+                {t('weatherMap.stationCoordinates')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Latitud: {stationCoordinates.lat.toFixed(6)}°
+                {t('weatherMap.latitude')}: {stationCoordinates.lat.toFixed(6)}°
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Longitud: {stationCoordinates.lng.toFixed(6)}°
+                {t('weatherMap.longitude')}: {stationCoordinates.lng.toFixed(6)}°
               </Typography>
             </Grid>
             
@@ -162,6 +172,13 @@ function WeatherMap({ stationId, currentData }: WeatherMapProps) {
             coordinates={stationCoordinates}
             stationId={stationId}
             currentData={currentData}
+            translations={{
+              weatherStation: t('weatherMap.popup.weatherStation'),
+              currentConditions: t('weatherMap.popup.currentConditions'),
+              stationId: t('weatherMap.popup.stationId'),
+              noData: t('weatherMap.popup.noData')
+            }}
+            locale={router.locale || 'es'}
           />
         </Box>
 
@@ -169,7 +186,7 @@ function WeatherMap({ stationId, currentData }: WeatherMapProps) {
         <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
           <Info color="info" fontSize="small" />
           <Typography variant="caption" color="text.secondary">
-            Haz clic en el marcador para ver información detallada de la estación
+            {t('weatherMap.clickMarkerInfo')}
           </Typography>
         </Box>
       </CardContent>

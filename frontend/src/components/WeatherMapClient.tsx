@@ -22,6 +22,13 @@ interface WeatherMapClientProps {
   coordinates: { lat: number; lng: number };
   stationId: string;
   currentData: WeatherData | null;
+  translations: {
+    weatherStation: string;
+    currentConditions: string;
+    stationId: string;
+    noData: string;
+  };
+  locale: string;
 }
 
 export interface WeatherMapRef {
@@ -68,7 +75,7 @@ const weatherStationIcon = L.icon({
   shadowAnchor: [12, 41]
 });
 
-function WeatherMapClient({ coordinates, stationId, currentData }: WeatherMapClientProps) {
+function WeatherMapClient({ coordinates, stationId, currentData, translations, locale }: WeatherMapClientProps) {
   return (
     <MapContainer
       center={[coordinates.lat, coordinates.lng]}
@@ -140,10 +147,10 @@ function WeatherMapClient({ coordinates, stationId, currentData }: WeatherMapCli
               borderBottom: '1px solid #eee',
               paddingBottom: '4px'
             }}>
-              🏠 Estación Meteorológica
+              🏠 {translations.weatherStation}
             </div>
             <div style={{ fontSize: '12px', color: '#666', marginBottom: '8px' }}>
-              ID: {stationId}
+              {translations.stationId}: {stationId}
             </div>
             
             {currentData && (
@@ -154,23 +161,23 @@ function WeatherMapClient({ coordinates, stationId, currentData }: WeatherMapCli
                   marginBottom: '6px',
                   color: '#333'
                 }}>
-                  📊 Condiciones Actuales:
+                  📊 {translations.currentConditions}
                 </div>
                 <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
                   <div style={{ marginBottom: '3px' }}>
-                    🌡️ <strong>{currentData?.temperature?.toFixed(1) ?? 'N/A'}°C</strong>
+                    🌡️ <strong>{currentData?.temperature?.toFixed(1) ?? translations.noData}°C</strong>
                   </div>
                   <div style={{ marginBottom: '3px' }}>
-                    💧 {currentData?.humidity?.toFixed(0) ?? 'N/A'}%
+                    💧 {currentData?.humidity?.toFixed(0) ?? translations.noData}%
                   </div>
                   <div style={{ marginBottom: '3px' }}>
-                    🌀 {currentData?.pressure?.toFixed(1) ?? 'N/A'} hPa
+                    🌀 {currentData?.pressure?.toFixed(1) ?? translations.noData} hPa
                   </div>
                   <div style={{ marginBottom: '3px' }}>
-                    💨 {currentData?.wind_speed?.toFixed(1) ?? 'N/A'} km/h
+                    💨 {currentData?.wind_speed?.toFixed(1) ?? translations.noData} km/h
                   </div>
                   <div style={{ marginBottom: '6px' }}>
-                    🌧️ {currentData?.rainfall?.toFixed(1) ?? 'N/A'} mm
+                    🌧️ {currentData?.rainfall?.toFixed(1) ?? translations.noData} mm
                   </div>
                 </div>
                 
@@ -181,12 +188,12 @@ function WeatherMapClient({ coordinates, stationId, currentData }: WeatherMapCli
                   paddingTop: '4px',
                   marginTop: '6px'
                 }}>
-                  🕒 {currentData?.timestamp ? new Date(currentData.timestamp).toLocaleString('es-ES', {
+                  🕒 {currentData?.timestamp ? new Date(currentData.timestamp).toLocaleString(locale, {
                     day: '2-digit',
                     month: '2-digit',
                     hour: '2-digit',
                     minute: '2-digit'
-                  }) : 'N/A'}
+                  }) : translations.noData}
                 </div>
               </div>
             )}

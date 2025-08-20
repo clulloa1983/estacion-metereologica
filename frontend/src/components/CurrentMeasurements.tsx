@@ -8,6 +8,7 @@ import {
   Skeleton,
   Chip
 } from '@mui/material';
+import { useTranslation } from 'next-i18next';
 import {
   Thermostat,
   WaterDrop,
@@ -169,6 +170,8 @@ const getWindDirection = (degrees: number): string => {
 };
 
 const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }: CurrentMeasurementsProps) {
+  const { t } = useTranslation('dashboard');
+  
   const lastUpdate = useMemo(() => 
     data ? new Date(data.timestamp).toLocaleString() : null, 
     [data?.timestamp]
@@ -193,11 +196,11 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
               fontWeight: 600
             }}
           >
-            Mediciones Actuales
+            {t('currentMeasurements.title')}
           </Typography>
           {data && (
             <Chip 
-              label={`Última actualización: ${lastUpdate}`}
+              label={`${t('currentMeasurements.lastUpdate')}: ${lastUpdate}`}
               variant="outlined"
               size="small"
               sx={{
@@ -212,7 +215,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {/* Temperatura */}
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
-              title="Temperatura"
+              title={t('currentMeasurements.temperature')}
               value={data?.temperature}
               unit="°C"
               icon={<Thermostat />}
@@ -223,7 +226,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {/* Humedad */}
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
-              title="Humedad"
+              title={t('currentMeasurements.humidity')}
               value={data?.humidity}
               unit="%"
               icon={<WaterDrop />}
@@ -234,7 +237,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {/* Presión */}
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
-              title="Presión"
+              title={t('currentMeasurements.pressure')}
               value={data?.pressure}
               unit="hPa"
               icon={<Speed />}
@@ -245,7 +248,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {/* Velocidad del Viento */}
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
-              title="Viento"
+              title={t('currentMeasurements.windSpeed')}
               value={data?.wind_speed}
               unit="km/h"
               icon={<Air />}
@@ -259,7 +262,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                   <Navigation sx={{ mr: 1, color: '#1976d2' }} />
-                  <Typography variant="h6">Dirección</Typography>
+                  <Typography variant="h6">{t('currentMeasurements.windDirection')}</Typography>
                 </Box>
                 {loading ? (
                   <Skeleton variant="text" height={40} />
@@ -278,7 +281,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {/* Precipitación */}
           <Grid size={{ xs: 12, sm: 6, md: 3 }}>
             <MeasurementCard
-              title="Lluvia"
+              title={t('currentMeasurements.precipitation')}
               value={data?.rainfall}
               unit="mm"
               icon={<WaterOutlined />}
@@ -290,7 +293,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {data?.pm25 !== undefined && (
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <MeasurementCard
-                title="PM2.5"
+                title={t('currentMeasurements.pm25')}
                 value={data.pm25}
                 unit="μg/m³"
                 icon={<Air />}
@@ -303,7 +306,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {data?.uv_index !== undefined && (
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <MeasurementCard
-                title="Índice UV"
+                title={t('currentMeasurements.uvIndex', 'Índice UV')}
                 value={data.uv_index}
                 unit=""
                 icon={<WbSunny />}
@@ -316,7 +319,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {data?.altitude !== undefined && (
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <MeasurementCard
-                title="Altitud"
+                title={t('currentMeasurements.altitude', 'Altitud')}
                 value={data.altitude}
                 unit="m"
                 icon={<Landscape />}
@@ -329,7 +332,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {data?.bmp_temperature !== undefined && (
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <MeasurementCard
-                title="Temp. BMP"
+                title={t('currentMeasurements.bmpTemperature', 'Temp. BMP')}
                 value={data.bmp_temperature}
                 unit="°C"
                 icon={<Thermostat />}
@@ -342,7 +345,7 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
           {data?.battery_voltage !== undefined && (
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <MeasurementCard
-                title="Batería"
+                title={t('currentMeasurements.battery', 'Batería')}
                 value={data.battery_voltage}
                 unit="V"
                 icon={<BatteryFull />}

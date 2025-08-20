@@ -4,46 +4,149 @@
     "lastUpdate": "Última actualización",
     "temperature": "Temperatura",
     "humidity": "Humedad",
-    "pressure": "Presión Atmosférica",
-    "windSpeed": "Velocidad del Viento",
-    "precipitation": "Precipitación",
+    "pressure": "Presión",
+    "windSpeed": "Viento",
+    "windDirection": "Dirección",
+    "precipitation": "Lluvia",
     "lightIntensity": "Intensidad de Luz",
     "airQuality": "Calidad del Aire",
     "carbonMonoxide": "Monóxido de Carbono",
-    "pm25": "Material Particulado PM2.5"
+    "pm25": "PM2.5",
+    "uvIndex": "Índice UV",
+    "altitude": "Altitud",
+    "bmpTemperature": "Temp. BMP",
+    "battery": "Batería"
   },
   "historicalCharts": {
     "title": "Gráficos Históricos",
     "selectTimeRange": "Seleccionar rango de tiempo",
+    "timeRange": "Rango de tiempo",
     "selectParameters": "Seleccionar parámetros",
     "noDataMessage": "No hay datos disponibles para el rango seleccionado",
-    "errorMessage": "Error al cargar los datos históricos"
+    "errorMessage": "Error al cargar los datos históricos",
+    "tabs": {
+      "temperature": "Temperatura",
+      "humidity": "Humedad",
+      "airQuality": "Calidad del Aire",
+      "memoryUptime": "Memoria y Uptime",
+      "signal": "Señal",
+      "precipitation": "Precipitación"
+    },
+    "timeRanges": {
+      "30m": "Últimos 30 minutos",
+      "1h": "Última hora",
+      "6h": "Últimas 6 horas",
+      "24h": "Último día",
+      "7d": "Última semana",
+      "30d": "Último mes"
+    },
+    "charts": {
+      "temperature": "Temperatura (°C)",
+      "humidity": "Humedad (%)",
+      "coLevel": "CO Level (ppm)",
+      "pm25": "PM2.5 (µg/m³)",
+      "freeHeap": "Memoria Libre (bytes)",
+      "signalStrength": "Intensidad de Señal (dBm)",
+      "rainfall": "Precipitación (mm)"
+    }
   },
   "systemStatus": {
     "title": "Estado del Sistema",
-    "stationStatus": "Estado de la Estación",
-    "connectionStatus": "Estado de Conexión",
-    "lastReading": "Última Lectura",
-    "batteryLevel": "Nivel de Batería",
-    "signalStrength": "Intensidad de Señal",
-    "uptime": "Tiempo de Actividad"
+    "connectivity": "Conectividad",
+    "battery": "Batería",
+    "lastUpdate": "Última actualización",
+    "stationId": "ID de Estación",
+    "wifiSignal": "Señal WiFi",
+    "freeMemory": "Memoria libre",
+    "uptime": "Tiempo funcionamiento",
+    "systemSummary": "Resumen del sistema:",
+    "activeSensors": "Sensores activos",
+    "measurementFrequency": "Frecuencia de medición",
+    "estimatedUptime": "Uptime estimado",
+    "statuses": {
+      "online": "En línea",
+      "active": "Activo",
+      "delayed": "Retrasado",
+      "inactive": "Inactivo",
+      "offline": "Desconectado",
+      "disconnected": "Desconectado",
+      "noData": "Sin datos",
+      "never": "Nunca"
+    },
+    "timeFormats": {
+      "lessThanMinute": "Hace menos de 1 minuto",
+      "minutesAgo": "Hace {{count}} minuto",
+      "minutesAgo_plural": "Hace {{count}} minutos",
+      "hoursAgo": "Hace {{count}} hora",
+      "hoursAgo_plural": "Hace {{count}} horas",
+      "daysAgo": "Hace {{count}} día",
+      "daysAgo_plural": "Hace {{count}} días"
+    },
+    "signalQuality": {
+      "excellent": "Excelente",
+      "good": "Buena",
+      "weak": "Débil",
+      "veryWeak": "Muy débil",
+      "noSignal": "Sin señal"
+    },
+    "summary": {
+      "activeSensors": "Sensores activos: {{active}}/{{total}}",
+      "measurementFrequency": "Frecuencia de medición: 1 minuto",
+      "estimatedUptime": "Uptime estimado: {{uptime}}",
+      "wifiSignal": "Señal WiFi: {{signal}} dBm",
+      "freeMemory": "Memoria libre: {{memory}}"
+    }
   },
   "alerts": {
     "title": "Alertas Activas",
+    "alertsAndNotifications": "Alertas y Notificaciones",
     "noActiveAlerts": "No hay alertas activas",
+    "noAlertsInCategory": "No hay alertas en esta categoría",
+    "alertSummary": "Resumen de alertas (últimas 24h):",
+    "criticalAlertsActive": "⚠️ Alertas Críticas Activas:",
+    "acknowledgeAllAlerts": "Reconocer todas las alertas",
     "severity": {
       "low": "Baja",
       "medium": "Media",
       "high": "Alta",
       "critical": "Crítica"
     },
+    "severityLabels": {
+      "critical": "Críticas: {{count}}",
+      "high": "Altas: {{count}}",
+      "medium": "Medias: {{count}}",
+      "low": "Bajas: {{count}}"
+    },
     "acknowledge": "Reconocer",
-    "viewAll": "Ver todas las alertas"
+    "viewAll": "Ver todas las alertas",
+    "tabs": {
+      "pending": "Pendientes",
+      "acknowledged": "Reconocidas",
+      "all": "Todas"
+    },
+    "timeFormats": {
+      "lessThanMinute": "Hace menos de 1 minuto",
+      "minutesAgo": "Hace {{count}} minuto",
+      "minutesAgo_plural": "Hace {{count}} minutos",
+      "hoursAgo": "Hace {{count}} hora",
+      "hoursAgo_plural": "Hace {{count}} horas"
+    }
   },
   "weatherMap": {
     "title": "Ubicación de la Estación",
     "loading": "Cargando mapa...",
-    "error": "Error al cargar el mapa"
+    "error": "Error al cargar el mapa",
+    "centerOnStation": "Centrar en la estación",
+    "stationCoordinates": "Coordenadas de la estación:",
+    "latitude": "Latitud",
+    "longitude": "Longitud",
+    "clickMarkerInfo": "Haz clic en el marcador para ver información detallada de la estación",
+    "popup": {
+      "weatherStation": "Estación Meteorológica",
+      "currentConditions": "Condiciones Actuales:",
+      "stationId": "ID",
+      "noData": "N/A"
+    }
   },
   "remoteConfig": {
     "title": "Configuración Remota",

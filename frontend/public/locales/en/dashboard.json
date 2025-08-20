@@ -4,45 +4,392 @@
     "lastUpdate": "Last update",
     "temperature": "Temperature",
     "humidity": "Humidity",
-    "pressure": "Atmospheric Pressure",
-    "windSpeed": "Wind Speed",
-    "precipitation": "Precipitation",
+    "pressure": "Pressure",
+    "windSpeed": "Wind",
+    "windDirection": "Direction",
+    "precipitation": "Rain",
     "lightIntensity": "Light Intensity",
     "airQuality": "Air Quality",
     "carbonMonoxide": "Carbon Monoxide",
-    "pm25": "Particulate Matter PM2.5"
+    "pm25": "PM2.5",
+    "uvIndex": "UV Index",
+    "altitude": "Altitude",
+    "bmpTemperature": "BMP Temp.",
+    "battery": "Battery"
   },
   "historicalCharts": {
     "title": "Historical Charts",
     "selectTimeRange": "Select time range",
+    "timeRange": "Time range",
     "selectParameters": "Select parameters",
     "noDataMessage": "No data available for selected range",
-    "errorMessage": "Error loading historical data"
+    "errorMessage": "Error loading historical data",
+    "tabs": {
+      "temperature": "Temperature",
+      "humidity": "Humidity",
+      "airQuality": "Air Quality",
+      "memoryUptime": "Memory & Uptime",
+      "signal": "Signal",
+      "precipitation": "Precipitation"
+    },
+    "timeRanges": {
+      "30m": "Last 30 minutes",
+      "1h": "Last hour",
+      "6h": "Last 6 hours",
+      "24h": "Last day",
+      "7d": "Last week",
+      "30d": "Last month"
+    },
+    "charts": {
+      "temperature": "Temperature (°C)",
+      "humidity": "Humidity (%)",
+      "coLevel": "CO Level (ppm)",
+      "pm25": "PM2.5 (µg/m³)",
+      "freeHeap": "Free Memory (bytes)",
+      "signalStrength": "Signal Strength (dBm)",
+      "rainfall": "Rainfall (mm)"
+    }
   },
   "systemStatus": {
     "title": "System Status",
-    "stationStatus": "Station Status",
-    "connectionStatus": "Connection Status",
-    "lastReading": "Last Reading",
-    "batteryLevel": "Battery Level",
-    "signalStrength": "Signal Strength",
-    "uptime": "Uptime"
+    "connectivity": "Connectivity",
+    "battery": "Battery",
+    "lastUpdate": "Last update",
+    "stationId": "Station ID",
+    "wifiSignal": "WiFi Signal",
+    "freeMemory": "Free memory",
+    "uptime": "Runtime",
+    "systemSummary": "System summary:",
+    "activeSensors": "Active sensors",
+    "measurementFrequency": "Measurement frequency",
+    "estimatedUptime": "Estimated uptime",
+    "statuses": {
+      "online": "Online",
+      "active": "Active",
+      "delayed": "Delayed",
+      "inactive": "Inactive",
+      "offline": "Offline",
+      "disconnected": "Disconnected",
+      "noData": "No data",
+      "never": "Never"
+    },
+    "timeFormats": {
+      "lessThanMinute": "Less than 1 minute ago",
+      "minutesAgo": "{{count}} minute ago",
+      "minutesAgo_plural": "{{count}} minutes ago",
+      "hoursAgo": "{{count}} hour ago", 
+      "hoursAgo_plural": "{{count}} hours ago",
+      "daysAgo": "{{count}} day ago",
+      "daysAgo_plural": "{{count}} days ago"
+    },
+    "signalQuality": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "weak": "Weak",
+      "veryWeak": "Very weak",
+      "noSignal": "No signal"
+    },
+    "summary": {
+      "activeSensors": "Active sensors: {{active}}/{{total}}",
+      "measurementFrequency": "Measurement frequency: 1 minute",
+      "estimatedUptime": "Estimated uptime: {{uptime}}",
+      "wifiSignal": "WiFi signal: {{signal}} dBm",
+      "freeMemory": "Free memory: {{memory}}"
+    }
   },
   "alerts": {
     "title": "Active Alerts",
+    "alertsAndNotifications": "Alerts and Notifications",
     "noActiveAlerts": "No active alerts",
+    "noAlertsInCategory": "No alerts in this category",
+    "alertSummary": "Alert summary (last 24h):",
+    "criticalAlertsActive": "⚠️ Critical Alerts Active:",
+    "acknowledgeAllAlerts": "Acknowledge all alerts",
     "severity": {
       "low": "Low",
       "medium": "Medium",
       "high": "High",
       "critical": "Critical"
     },
+    "severityLabels": {
+      "critical": "Critical: {{count}}",
+      "high": "High: {{count}}",
+      "medium": "Medium: {{count}}",
+      "low": "Low: {{count}}"
+    },
     "acknowledge": "Acknowledge",
-    "viewAll": "View all alerts"
+    "viewAll": "View all alerts",
+    "tabs": {
+      "pending": "Pending",
+      "acknowledged": "Acknowledged", 
+      "all": "All"
+    },
+    "timeFormats": {
+      "lessThanMinute": "Less than 1 minute ago",
+      "minutesAgo": "{{count}} minute ago",
+      "minutesAgo_plural": "{{count}} minutes ago",
+      "hoursAgo": "{{count}} hour ago",
+      "hoursAgo_plural": "{{count}} hours ago"
+    }
   },
   "weatherMap": {
     "title": "Station Location",
     "loading": "Loading map...",
-    "error": "Error loading map"
+    "error": "Error loading map",
+    "centerOnStation": "Center on station",
+    "stationCoordinates": "Station coordinates:",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "clickMarkerInfo": "Click on the marker to see detailed station information",
+    "popup": {
+      "weatherStation": "Weather Station",
+      "currentConditions": "Current Conditions:",
+      "stationId": "ID",
+      "noData": "N/A"
+    }
+  },
+  "remoteConfig": {
+    "title": "Remote Configuration",
+    "station": "Station",
+    "tabs": {
+      "sensors": "Sensors",
+      "alerts": "Alerts",
+      "power": "Power",
+      "connectivity": "Connectivity"
+    },
+    "sensorConfig": {
+      "title": "Sensor Configuration",
+      "readingInterval": {
+        "title": "Reading Interval Configuration",
+        "description": "Configure how frequently the ESP32 reads and transmits sensor data",
+        "label": "Reading Interval",
+        "unit": "seconds",
+        "quickPresets": "Quick presets:",
+        "apply": "APPLY READING INTERVAL",
+        "minimum": "Minimum: 10 seconds, Maximum: 1 hour"
+      },
+      "sensorConfiguration": {
+        "title": "Sensor Configuration",
+        "description": "Enable/disable individual sensors and adjust calibration offsets",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "calibrationOffset": "Calibration Offset",
+        "range": "Range",
+        "sensors": {
+          "temperatureHumidity": "Temperature and Humidity",
+          "pressure": "Pressure",
+          "rainSensor": "Rain Sensor",
+          "coSensor": "CO Sensor",
+          "airQuality": "Air Quality",
+          "pm25Dust": "PM2.5 Dust",
+          "lightIntensity": "Light Intensity"
+        }
+      },
+      "deviceControl": {
+        "title": "Device Control",
+        "description": "Control and monitor the ESP32 device remotely",
+        "getStatus": "GET STATUS",
+        "sensorCheck": "SENSOR CHECK",
+        "wakeUp": "WAKE UP",
+        "restart": "RESTART"
+      }
+    },
+    "messages": {
+      "readingIntervalUpdated": "Reading interval updated to {seconds} seconds",
+      "sensorEnabled": "Sensor {sensor} enabled",
+      "sensorDisabled": "Sensor {sensor} disabled",
+      "calibrationSet": "Calibration offset for {sensor} set to {offset}",
+      "deviceRestarted": "Device restart command sent",
+      "statusRequested": "Device status requested",
+      "sensorCheckInitiated": "Sensor check initiated",
+      "wakeUpSent": "Wake up command sent",
+      "failedToUpdateInterval": "Failed to update reading interval",
+      "failedToToggleSensor": "Failed to {action} sensor {sensor}",
+      "failedToSetCalibration": "Failed to set calibration for sensor {sensor}",
+      "failedToRestartDevice": "Failed to restart device",
+      "failedToGetStatus": "Failed to get device status",
+      "failedToPerformSensorCheck": "Failed to perform sensor check",
+      "failedToWakeUp": "Failed to wake up device"
+    },
+    "alertConfig": {
+      "description": "Configure alert thresholds for each sensor parameter. Alerts will be triggered when values exceed specified ranges.",
+      "enabled": "Enabled",
+      "minimumValue": "Minimum Value",
+      "maximumValue": "Maximum Value",
+      "severity": "Severity",
+      "saveThreshold": "SAVE THRESHOLD",
+      "alertBelowValue": "Alert below this value",
+      "alertAboveValue": "Alert above this value",
+      "currentAlertRange": "Current alert range:",
+      "below": "Below",
+      "above": "Above",
+      "or": "or",
+      "noThresholdsSet": "No thresholds set",
+      "commonPresets": "Common presets:",
+      "severityLevels": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+      },
+      "parameters": {
+        "temperature": {
+          "name": "Temperature",
+          "description": "Alert when temperature is outside safe range"
+        },
+        "humidity": {
+          "name": "Humidity",
+          "description": "Alert when humidity levels are extreme"
+        },
+        "pressure": {
+          "name": "Pressure",
+          "description": "Alert for significant pressure changes"
+        },
+        "carbonMonoxide": {
+          "name": "Carbon Monoxide",
+          "description": "Critical alert for dangerous CO levels"
+        },
+        "airQuality": {
+          "name": "Air Quality",
+          "description": "Alert when air quality is unhealthy"
+        },
+        "pm25": {
+          "name": "PM2.5",
+          "description": "Alert for unhealthy particulate matter levels"
+        },
+        "lightIntensity": {
+          "name": "Light Intensity",
+          "description": "Alert for extreme light conditions"
+        }
+      },
+      "presets": {
+        "freezingAlert": "FREEZING ALERT",
+        "comfortRange": "COMFORT RANGE",
+        "heatWarning": "HEAT WARNING",
+        "dryAir": "DRY AIR",
+        "highHumidity": "HIGH HUMIDITY",
+        "whoSafeLevel": "WHO SAFE LEVEL",
+        "epaWarning": "EPA WARNING",
+        "dangerousLevel": "DANGEROUS LEVEL"
+      }
+    },
+    "powerConfig": {
+      "description": "Configure power management settings to optimize battery life in remote deployments. Deep sleep mode can significantly extend battery duration.",
+      "batteryStatus": {
+        "title": "Battery Status",
+        "batteryLevel": "Battery Level",
+        "estimatedBatteryLife": "Estimated battery life",
+        "continuousOperation": "Continuous operation: ~12-24 hours",
+        "days": "days",
+        "hours": "hours"
+      },
+      "deepSleepMode": {
+        "title": "Deep Sleep Mode",
+        "description": "Enable deep sleep to significantly reduce power consumption between readings",
+        "enableDeepSleep": "Enable Deep Sleep Mode",
+        "deviceWillSleep": "Device will sleep between measurements to save power",
+        "sleepDuration": "Sleep Duration",
+        "duration": "Duration",
+        "seconds": "seconds",
+        "quickPresets": "Quick presets:",
+        "applySleepConfiguration": "APPLY SLEEP CONFIGURATION"
+      },
+      "wifiPowerManagement": {
+        "title": "WiFi Power Management",
+        "description": "Adjust WiFi transmission power to balance range and power consumption",
+        "wifiPowerLevel": "WiFi Power Level",
+        "applyWifiPowerSettings": "APPLY WIFI POWER SETTINGS",
+        "powerDescriptions": {
+          "maximum": "Maximum range, higher consumption",
+          "high": "High range, high consumption",
+          "medium": "Medium range, moderate consumption",
+          "low": "Low range, low consumption",
+          "minimum": "Minimum range, lowest consumption"
+        }
+      },
+      "transmissionScheduling": {
+        "title": "Transmission Scheduling",
+        "description": "Configure how frequently the device transmits data when not in sleep mode",
+        "transmissionInterval": "Transmission Interval",
+        "interval": "Interval",
+        "quickPresets": "Quick presets:"
+      },
+      "powerSummary": {
+        "title": "Power Configuration Summary",
+        "sleepMode": "Sleep Mode",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "wifiPower": "WiFi Power",
+        "sleepDuration": "Sleep Duration",
+        "txInterval": "TX Interval"
+      }
+    },
+    "connectivityConfig": {
+      "warning": "Changing connectivity settings may temporarily disconnect the device. Ensure you have alternative access methods if configuration fails.",
+      "warningTitle": "Warning:",
+      "connectionStatus": {
+        "title": "Current Connection Status",
+        "wifi": "WiFi",
+        "mqtt": "MQTT",
+        "connected": "connected",
+        "connecting": "connecting",
+        "disconnected": "disconnected"
+      },
+      "wifiConfig": {
+        "title": "WiFi Configuration",
+        "description": "Configure WiFi network credentials for the ESP32 device",
+        "ssid": "WiFi Network (SSID)",
+        "password": "WiFi Password",
+        "enterNetworkName": "Enter WiFi network name",
+        "minimumCharacters": "Minimum 8 characters for WPA/WPA2",
+        "updateWifiConfiguration": "UPDATE WIFI CONFIGURATION",
+        "validation": {
+          "ssidRequired": "SSID is required",
+          "ssidMaxLength": "SSID must be 32 characters or less",
+          "passwordMinLength": "Password must be at least 8 characters"
+        }
+      },
+      "mqttConfig": {
+        "title": "MQTT Broker Configuration",
+        "description": "Configure MQTT broker settings for data transmission",
+        "server": "MQTT Server",
+        "port": "Port",
+        "serverHelperText": "IP address or hostname of the MQTT broker",
+        "portHelperText": "Default: 1883",
+        "commonBrokers": "Common MQTT brokers:",
+        "authentication": "Authentication (Optional)",
+        "username": "Username",
+        "password": "Password",
+        "leaveEmpty": "Leave empty if not required",
+        "updateMqttConfiguration": "UPDATE MQTT CONFIGURATION",
+        "validation": {
+          "serverRequired": "MQTT server is required",
+          "portRange": "Port must be between 1 and 65535"
+        },
+        "brokers": {
+          "local": "Local (localhost)",
+          "eclipseMosquitto": "Eclipse Mosquitto",
+          "hivemq": "HiveMQ",
+          "emqxCloud": "EMQX Cloud"
+        }
+      },
+      "currentConfiguration": {
+        "title": "Current Configuration",
+        "mqttServer": "MQTT Server",
+        "port": "Port",
+        "authentication": "Authentication",
+        "enabled": "Enabled",
+        "disabled": "Disabled",
+        "stationId": "Station ID"
+      },
+      "confirmDialog": {
+        "wifiTitle": "Confirm WiFi Configuration Change",
+        "wifiMessage": "Are you sure you want to change the WiFi configuration to network \"{ssid}\"? The device may temporarily lose connection.",
+        "mqttTitle": "Confirm MQTT Configuration Change",
+        "mqttMessage": "Are you sure you want to change the MQTT configuration to server \"{server}:{port}\"? This may affect data transmission.",
+        "cancel": "Cancel",
+        "confirm": "Confirm"
+      }
+    }
   }
 }

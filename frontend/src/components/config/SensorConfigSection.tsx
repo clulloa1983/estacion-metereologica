@@ -63,78 +63,87 @@ export default function SensorConfigSection({
 }: SensorConfigSectionProps) {
   const { t } = useTranslation(['common', 'dashboard']);
   const [readingInterval, setReadingInterval] = useState(60); // seconds
-  const [sensors, setSensors] = useState<SensorConfig[]>([
+  // Base sensor configuration (without translations)
+  const baseSensorConfigs = [
     {
       name: 'dht22',
-      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.temperatureHumidity'),
+      translationKey: 'temperatureHumidity',
       icon: <DeviceThermostat />,
-      enabled: true,
-      calibrationOffset: 0,
       unit: '°C / %',
       minOffset: -10,
       maxOffset: 10
     },
     {
       name: 'bmp085',
-      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.pressure'),
+      translationKey: 'pressure',
       icon: <Compress />,
-      enabled: true,
-      calibrationOffset: 0,
       unit: 'hPa',
       minOffset: -50,
       maxOffset: 50
     },
     {
       name: 'rain_sensor',
-      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.rainSensor'),
+      translationKey: 'rainSensor',
       icon: <WaterDrop />,
-      enabled: true,
-      calibrationOffset: 0,
       unit: 'mm',
       minOffset: -5,
       maxOffset: 5
     },
     {
       name: 'mq7',
-      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.coSensor'),
+      translationKey: 'coSensor',
       icon: <Air />,
-      enabled: true,
-      calibrationOffset: 0,
       unit: 'ppm',
       minOffset: -100,
       maxOffset: 100
     },
     {
       name: 'mq135',
-      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.airQuality'),
+      translationKey: 'airQuality',
       icon: <Air />,
-      enabled: true,
-      calibrationOffset: 0,
       unit: 'AQI',
       minOffset: -50,
       maxOffset: 50
     },
     {
       name: 'dsm501a',
-      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.pm25Dust'),
+      translationKey: 'pm25Dust',
       icon: <Speed />,
-      enabled: true,
-      calibrationOffset: 0,
       unit: 'µg/m³',
       minOffset: -20,
       maxOffset: 20
     },
     {
       name: 'bh1750',
-      displayName: t('dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.lightIntensity'),
+      translationKey: 'lightIntensity',
       icon: <WbSunny />,
-      enabled: true,
-      calibrationOffset: 0,
       unit: 'lux',
       minOffset: -1000,
       maxOffset: 1000
     }
-  ]);
+  ];
+
+  const [sensorStates, setSensorStates] = useState<{[key: string]: {enabled: boolean, calibrationOffset: number}}>({
+    'dht22': { enabled: true, calibrationOffset: 0 },
+    'bmp085': { enabled: true, calibrationOffset: 0 },
+    'rain_sensor': { enabled: true, calibrationOffset: 0 },
+    'mq7': { enabled: true, calibrationOffset: 0 },
+    'mq135': { enabled: true, calibrationOffset: 0 },
+    'dsm501a': { enabled: true, calibrationOffset: 0 },
+    'bh1750': { enabled: true, calibrationOffset: 0 }
+  });
+
+  // Create sensors array with current translations
+  const sensors: SensorConfig[] = baseSensorConfigs.map(config => ({
+    name: config.name,
+    displayName: t(`dashboard:remoteConfig.sensorConfig.sensorConfiguration.sensors.${config.translationKey}`),
+    icon: config.icon,
+    enabled: sensorStates[config.name]?.enabled || false,
+    calibrationOffset: sensorStates[config.name]?.calibrationOffset || 0,
+    unit: config.unit,
+    minOffset: config.minOffset,
+    maxOffset: config.maxOffset
+  }));
 
   const handleIntervalChange = async () => {
     const intervalMs = readingInterval * 1000;
@@ -142,16 +151,18 @@ export default function SensorConfigSection({
   };
 
   const handleSensorToggle = async (sensorName: string, enabled: boolean) => {
-    setSensors(prev => prev.map(sensor =>
-      sensor.name === sensorName ? { ...sensor, enabled } : sensor
-    ));
+    setSensorStates(prev => ({
+      ...prev,
+      [sensorName]: { ...prev[sensorName], enabled }
+    }));
     await onConfigChange.toggleSensor(sensorName, enabled);
   };
 
   const handleCalibrationChange = async (sensorName: string, offset: number) => {
-    setSensors(prev => prev.map(sensor =>
-      sensor.name === sensorName ? { ...sensor, calibrationOffset: offset } : sensor
-    ));
+    setSensorStates(prev => ({
+      ...prev,
+      [sensorName]: { ...prev[sensorName], calibrationOffset: offset }
+    }));
     await onConfigChange.setSensorCalibration(sensorName, offset);
   };
 

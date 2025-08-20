@@ -28,6 +28,7 @@ import {
   Refresh,
   MarkEmailRead
 } from '@mui/icons-material';
+import { useTranslation } from 'next-i18next';
 import { weatherService, Alert } from '../services/weatherService';
 
 interface AlertsPanelProps {
@@ -57,6 +58,7 @@ function TabPanel(props: TabPanelProps) {
 }
 
 function AlertsPanel({ stationId }: AlertsPanelProps) {
+  const { t } = useTranslation('dashboard');
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState(0);
@@ -134,11 +136,11 @@ function AlertsPanel({ stationId }: AlertsPanelProps) {
     const now = new Date();
     const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
     
-    if (diffMinutes < 1) return 'Hace menos de 1 minuto';
-    if (diffMinutes < 60) return `Hace ${diffMinutes} minuto${diffMinutes !== 1 ? 's' : ''}`;
+    if (diffMinutes < 1) return t('alerts.timeFormats.lessThanMinute');
+    if (diffMinutes < 60) return t('alerts.timeFormats.minutesAgo', { count: diffMinutes });
     
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `Hace ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
+    if (diffHours < 24) return t('alerts.timeFormats.hoursAgo', { count: diffHours });
     
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
   };
@@ -153,7 +155,7 @@ function AlertsPanel({ stationId }: AlertsPanelProps) {
         <Box sx={{ textAlign: 'center', py: 3 }}>
           <CheckCircle color="success" sx={{ fontSize: 48, mb: 2 }} />
           <Typography variant="body2" color="text.secondary">
-            No hay alertas en esta categoría
+            {t('alerts.noAlertsInCategory')}
           </Typography>
         </Box>
       );
@@ -215,7 +217,7 @@ function AlertsPanel({ stationId }: AlertsPanelProps) {
       <Card>
         <CardContent>
           <Typography variant="h5" component="h2" gutterBottom>
-            Alertas y Notificaciones
+            {t('alerts.alertsAndNotifications')}
           </Typography>
           <Skeleton variant="rectangular" height={300} />
         </CardContent>
@@ -228,7 +230,7 @@ function AlertsPanel({ stationId }: AlertsPanelProps) {
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <Typography variant="h5" component="h2">
-            Alertas y Notificaciones
+            {t('alerts.alertsAndNotifications')}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <IconButton onClick={fetchAlerts} color="primary">
@@ -244,27 +246,27 @@ function AlertsPanel({ stationId }: AlertsPanelProps) {
         {alertSummary && (
           <Box sx={{ mb: 2, p: 2, backgroundColor: 'background.default', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
-              Resumen de alertas (últimas 24h):
+              {t('alerts.alertSummary')}
             </Typography>
             <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
               <Chip 
-                label={`Críticas: ${alertSummary.critical || 0}`} 
+                label={t('alerts.severityLabels.critical', { count: alertSummary.critical || 0 })}
                 color="error" 
                 size="small"
               />
               <Chip 
-                label={`Altas: ${alertSummary.high || 0}`} 
+                label={t('alerts.severityLabels.high', { count: alertSummary.high || 0 })}
                 color="error" 
                 variant="outlined" 
                 size="small"
               />
               <Chip 
-                label={`Medias: ${alertSummary.medium || 0}`} 
+                label={t('alerts.severityLabels.medium', { count: alertSummary.medium || 0 })}
                 color="warning" 
                 size="small"
               />
               <Chip 
-                label={`Bajas: ${alertSummary.low || 0}`} 
+                label={t('alerts.severityLabels.low', { count: alertSummary.low || 0 })}
                 color="info" 
                 size="small"
               />
@@ -276,7 +278,7 @@ function AlertsPanel({ stationId }: AlertsPanelProps) {
         {criticalAlerts.length > 0 && (
           <Box sx={{ mb: 2, p: 2, border: 2, borderColor: 'error.main', borderRadius: 1, backgroundColor: 'error.light', color: 'error.contrastText' }}>
             <Typography variant="subtitle2" gutterBottom>
-              ⚠️ Alertas Críticas Activas:
+              {t('alerts.criticalAlertsActive')}
             </Typography>
             {criticalAlerts.map(alert => (
               <Typography key={alert.id} variant="body2">
@@ -291,12 +293,12 @@ function AlertsPanel({ stationId }: AlertsPanelProps) {
             <Tab 
               label={
                 <Badge badgeContent={unacknowledgedAlerts.length} color="error">
-                  Pendientes
+                  {t('alerts.tabs.pending')}
                 </Badge>
               } 
             />
-            <Tab label="Reconocidas" />
-            <Tab label="Todas" />
+            <Tab label={t('alerts.tabs.acknowledged')} />
+            <Tab label={t('alerts.tabs.all')} />
           </Tabs>
         </Box>
 
@@ -321,7 +323,7 @@ function AlertsPanel({ stationId }: AlertsPanelProps) {
                 unacknowledgedAlerts.forEach(alert => handleAcknowledgeAlert(alert.id));
               }}
             >
-              Reconocer todas las alertas
+              {t('alerts.acknowledgeAllAlerts')}
             </Button>
           </Box>
         )}

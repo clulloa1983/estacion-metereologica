@@ -25,6 +25,7 @@ import {
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import 'chartjs-adapter-date-fns';
+import { useTranslation } from 'next-i18next';
 import { weatherService, WeatherDataPoint } from '../services/weatherService';
 
 ChartJS.register(
@@ -65,6 +66,7 @@ const TabPanel = memo(function TabPanel(props: TabPanelProps) {
 });
 
 const HistoricalCharts = memo(function HistoricalCharts({ stationId }: HistoricalChartsProps) {
+  const { t } = useTranslation('dashboard');
   const [data, setData] = useState<WeatherDataPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('30m');
@@ -83,14 +85,14 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
     return date;
   }, []);
 
-  const timeRangeOptions = [
-    { value: '30m', label: 'Últimos 30 minutos' },
-    { value: '1h', label: 'Última hora' },
-    { value: '6h', label: 'Últimas 6 horas' },
-    { value: '24h', label: 'Último día' },
-    { value: '7d', label: 'Última semana' },
-    { value: '30d', label: 'Último mes' }
-  ];
+  const timeRangeOptions = useMemo(() => [
+    { value: '30m', label: t('historicalCharts.timeRanges.30m') },
+    { value: '1h', label: t('historicalCharts.timeRanges.1h') },
+    { value: '6h', label: t('historicalCharts.timeRanges.6h') },
+    { value: '24h', label: t('historicalCharts.timeRanges.24h') },
+    { value: '7d', label: t('historicalCharts.timeRanges.7d') },
+    { value: '30d', label: t('historicalCharts.timeRanges.30d') }
+  ], [t]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -177,7 +179,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
     labels: data.map(d => parseTimestamp(d.timestamp)),
     datasets: [
       {
-        label: 'CO Level (ppm)',
+        label: t('historicalCharts.charts.coLevel'),
         data: data.map(d => d.co_level || 0),
         borderColor: '#f44336',
         backgroundColor: '#f4433620',
@@ -185,7 +187,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         tension: 0.1,
       },
       {
-        label: 'PM2.5 (µg/m³)',
+        label: t('historicalCharts.charts.pm25'),
         data: data.map(d => d.dust_pm25 || 0),
         borderColor: '#2196f3',
         backgroundColor: '#2196f320',
@@ -193,7 +195,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         tension: 0.1,
       }
     ]
-  }), [data, parseTimestamp]);
+  }), [data, parseTimestamp, t]);
 
   const airQualityOptions = useMemo(() => ({
     ...chartOptions,
@@ -205,7 +207,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         position: 'left' as const,
         title: {
           display: true,
-          text: 'CO Level (ppm)'
+          text: t('historicalCharts.charts.coLevel')
         }
       },
       y1: {
@@ -214,27 +216,27 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         position: 'right' as const,
         title: {
           display: true,
-          text: 'PM2.5 (µg/m³)'
+          text: t('historicalCharts.charts.pm25')
         },
         grid: {
           drawOnChartArea: false,
         },
       },
     },
-  }), [chartOptions]);
+  }), [chartOptions, t]);
 
   const signalData = useMemo(() => ({
     labels: data.map(d => parseTimestamp(d.timestamp)),
     datasets: [
       {
-        label: 'Intensidad de Señal (dBm)',
+        label: t('historicalCharts.charts.signalStrength'),
         data: data.map(d => d.signal_strength || 0),
         borderColor: '#4caf50',
         backgroundColor: '#4caf5020',
         tension: 0.1,
       }
     ]
-  }), [data, parseTimestamp]);
+  }), [data, parseTimestamp, t]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setSelectedTab(newValue);
@@ -245,7 +247,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
       <Card>
         <CardContent>
           <Typography variant="h5" component="h2" gutterBottom>
-            Gráficos Históricos
+            {t('historicalCharts.title')}
           </Typography>
           <Skeleton variant="rectangular" height={400} />
         </CardContent>
@@ -272,16 +274,16 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
               fontWeight: 600
             }}
           >
-            Gráficos Históricos
+            {t('historicalCharts.title')}
           </Typography>
           <FormControl sx={{ 
             minWidth: { xs: '100%', sm: 180 },
             maxWidth: { xs: '100%', sm: 'none' }
           }}>
-            <InputLabel>Rango de tiempo</InputLabel>
+            <InputLabel>{t('historicalCharts.timeRange')}</InputLabel>
             <Select
               value={timeRange}
-              label="Rango de tiempo"
+              label={t('historicalCharts.timeRange')}
               onChange={(e) => setTimeRange(e.target.value)}
             >
               {timeRangeOptions.map(option => (
@@ -307,19 +309,19 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
               }
             }}
           >
-            <Tab label="Temperatura" />
-            <Tab label="Humedad" />
-            <Tab label="Calidad del Aire" />
-            <Tab label="Memoria y Uptime" />
-            <Tab label="Señal" />
-            <Tab label="Precipitación" />
+            <Tab label={t('historicalCharts.tabs.temperature')} />
+            <Tab label={t('historicalCharts.tabs.humidity')} />
+            <Tab label={t('historicalCharts.tabs.airQuality')} />
+            <Tab label={t('historicalCharts.tabs.memoryUptime')} />
+            <Tab label={t('historicalCharts.tabs.signal')} />
+            <Tab label={t('historicalCharts.tabs.precipitation')} />
           </Tabs>
         </Box>
 
         <TabPanel value={selectedTab} index={0}>
           <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line 
-              data={prepareChartData('temperature', 'Temperatura (°C)', '#f44336')} 
+              data={prepareChartData('temperature', t('historicalCharts.charts.temperature'), '#f44336')} 
               options={chartOptions} 
             />
           </Box>
@@ -328,7 +330,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         <TabPanel value={selectedTab} index={1}>
           <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line 
-              data={prepareChartData('humidity', 'Humedad (%)', '#2196f3')} 
+              data={prepareChartData('humidity', t('historicalCharts.charts.humidity'), '#2196f3')} 
               options={chartOptions} 
             />
           </Box>
@@ -343,7 +345,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         <TabPanel value={selectedTab} index={3}>
           <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line 
-              data={prepareChartData('free_heap', 'Memoria Libre (bytes)', '#ff9800')} 
+              data={prepareChartData('free_heap', t('historicalCharts.charts.freeHeap'), '#ff9800')} 
               options={chartOptions} 
             />
           </Box>
@@ -358,7 +360,7 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
         <TabPanel value={selectedTab} index={5}>
           <Box sx={{ height: { xs: 250, sm: 300, md: 400 } }}>
             <Line 
-              data={prepareChartData('rainfall', 'Precipitación (mm)', '#3f51b5')} 
+              data={prepareChartData('rainfall', t('historicalCharts.charts.rainfall'), '#3f51b5')} 
               options={chartOptions} 
             />
           </Box>

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Card,
   CardContent,
@@ -50,6 +51,18 @@ interface SystemStatusProps {
 }
 
 function SystemStatus({ data }: SystemStatusProps) {
+  const { t } = useTranslation('dashboard');
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
+
+  // Helper function para evitar errores de hidratación
+  const safeT = (key: string, options?: any, fallback?: string) => {
+    if (!isHydrated) return fallback || key;
+    return t(key, options);
+  };
   const getBatteryIcon = (voltage?: number) => {
     if (!voltage) return <BatteryAlert color="error" />;
     
@@ -79,15 +92,15 @@ function SystemStatus({ data }: SystemStatusProps) {
   };
 
   const getLastUpdateStatus = () => {
-    if (!data?.timestamp) return { status: 'offline', text: 'Sin datos' };
+    if (!data?.timestamp) return { status: 'offline', text: safeT('systemStatus.statuses.noData', {}, 'Sin datos') };
     
     const lastUpdate = new Date(data.timestamp);
     const now = new Date();
     const diffMinutes = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
     
-    if (diffMinutes < 2) return { status: 'online', text: 'En línea' };
-    if (diffMinutes < 10) return { status: 'warning', text: 'Retrasado' };
-    return { status: 'offline', text: 'Desconectado' };
+    if (diffMinutes < 2) return { status: 'online', text: safeT('systemStatus.statuses.online', {}, 'En línea') };
+    if (diffMinutes < 10) return { status: 'warning', text: safeT('systemStatus.statuses.delayed', {}, 'Retrasado') };
+    return { status: 'offline', text: safeT('systemStatus.statuses.disconnected', {}, 'Desconectado') };
   };
 
   const getConnectionIcon = () => {
@@ -96,20 +109,20 @@ function SystemStatus({ data }: SystemStatusProps) {
   };
 
   const formatLastUpdate = () => {
-    if (!data?.timestamp) return 'Nunca';
+    if (!data?.timestamp) return safeT('systemStatus.statuses.never', {}, 'Nunca');
     
     const lastUpdate = new Date(data.timestamp);
     const now = new Date();
     const diffMinutes = Math.floor((now.getTime() - lastUpdate.getTime()) / (1000 * 60));
     
-    if (diffMinutes < 1) return 'Hace menos de 1 minuto';
-    if (diffMinutes < 60) return `Hace ${diffMinutes} minuto${diffMinutes !== 1 ? 's' : ''}`;
+    if (diffMinutes < 1) return safeT('systemStatus.timeFormats.lessThanMinute', {}, 'Hace menos de 1 minuto');
+    if (diffMinutes < 60) return safeT('systemStatus.timeFormats.minutesAgo', { count: diffMinutes }, `Hace ${diffMinutes} minuto${diffMinutes !== 1 ? 's' : ''}`);
     
     const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `Hace ${diffHours} hora${diffHours !== 1 ? 's' : ''}`;
+    if (diffHours < 24) return safeT('systemStatus.timeFormats.hoursAgo', { count: diffHours }, `Hace ${diffHours} hora${diffHours !== 1 ? 's' : ''}`);
     
     const diffDays = Math.floor(diffHours / 24);
-    return `Hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`;
+    return safeT('systemStatus.timeFormats.daysAgo', { count: diffDays }, `Hace ${diffDays} día${diffDays !== 1 ? 's' : ''}`);
   };
 
   const getSignalIcon = (signalStrength?: number) => {
@@ -123,12 +136,12 @@ function SystemStatus({ data }: SystemStatusProps) {
   };
 
   const getSignalQuality = (signalStrength?: number): string => {
-    if (!signalStrength) return 'Sin señal';
+    if (!signalStrength) return safeT('systemStatus.signalQuality.noSignal', {}, 'Sin señal');
     
-    if (signalStrength > -50) return 'Excelente';
-    if (signalStrength > -70) return 'Buena';
-    if (signalStrength > -80) return 'Débil';
-    return 'Muy débil';
+    if (signalStrength > -50) return safeT('systemStatus.signalQuality.excellent', {}, 'Excelente');
+    if (signalStrength > -70) return safeT('systemStatus.signalQuality.good', {}, 'Buena');
+    if (signalStrength > -80) return safeT('systemStatus.signalQuality.weak', {}, 'Débil');
+    return safeT('systemStatus.signalQuality.veryWeak', {}, 'Muy débil');
   };
 
   const formatHeapMemory = (bytes?: number): string => {
@@ -171,7 +184,7 @@ function SystemStatus({ data }: SystemStatusProps) {
     <Card>
       <CardContent>
         <Typography variant="h5" component="h2" gutterBottom>
-          Estado del Sistema
+          {safeT('systemStatus.title', {}, 'Estado del Sistema')}
         </Typography>
 
         <List>
@@ -181,13 +194,13 @@ function SystemStatus({ data }: SystemStatusProps) {
               {getConnectionIcon()}
             </ListItemIcon>
             <ListItemText 
-              primary="Conectividad" 
+              primary={safeT('systemStatus.connectivity', {}, 'Conectividad')} 
               secondary={connectionStatus.text}
             />
             <ListItemSecondaryAction>
               <Chip 
-                label={connectionStatus.status === 'online' ? 'Activo' : 
-                       connectionStatus.status === 'warning' ? 'Retrasado' : 'Inactivo'}
+                label={connectionStatus.status === 'online' ? safeT('systemStatus.statuses.active', {}, 'Activo') : 
+                       connectionStatus.status === 'warning' ? safeT('systemStatus.statuses.delayed', {}, 'Retrasado') : safeT('systemStatus.statuses.inactive', {}, 'Inactivo')}
                 color={connectionStatus.status === 'online' ? 'success' : 
                        connectionStatus.status === 'warning' ? 'warning' : 'error'}
                 size="small"
@@ -202,7 +215,7 @@ function SystemStatus({ data }: SystemStatusProps) {
                 {getBatteryIcon(data.battery_voltage)}
               </ListItemIcon>
               <ListItemText 
-                primary="Batería" 
+                primary={safeT('systemStatus.battery', {}, 'Batería')} 
                 secondary={
                   <Box sx={{ mt: 1 }}>
                     <LinearProgress 
@@ -226,7 +239,7 @@ function SystemStatus({ data }: SystemStatusProps) {
               <Schedule color={connectionStatus.status === 'online' ? 'success' : 'error'} />
             </ListItemIcon>
             <ListItemText 
-              primary="Última actualización" 
+              primary={safeT('systemStatus.lastUpdate', {}, 'Última actualización')} 
               secondary={formatLastUpdate()}
             />
           </ListItem>
@@ -237,7 +250,7 @@ function SystemStatus({ data }: SystemStatusProps) {
               <LocationOn color="primary" />
             </ListItemIcon>
             <ListItemText 
-              primary="ID de Estación" 
+              primary={safeT('systemStatus.stationId', {}, 'ID de Estación')} 
               secondary={data?.station_id || 'N/A'}
             />
           </ListItem>
@@ -249,7 +262,7 @@ function SystemStatus({ data }: SystemStatusProps) {
                 {getSignalIcon(data.signal_strength)}
               </ListItemIcon>
               <ListItemText 
-                primary="Señal WiFi" 
+                primary={safeT('systemStatus.wifiSignal', {}, 'Señal WiFi')} 
                 secondary={`${data.signal_strength} dBm (${getSignalQuality(data.signal_strength)})`}
               />
             </ListItem>
@@ -262,7 +275,7 @@ function SystemStatus({ data }: SystemStatusProps) {
                 <Memory color="primary" />
               </ListItemIcon>
               <ListItemText 
-                primary="Memoria libre" 
+                primary={safeT('systemStatus.freeMemory', {}, 'Memoria libre')} 
                 secondary={formatHeapMemory(data.free_heap)}
               />
             </ListItem>
@@ -275,7 +288,7 @@ function SystemStatus({ data }: SystemStatusProps) {
                 <Schedule color="primary" />
               </ListItemIcon>
               <ListItemText 
-                primary="Tiempo funcionamiento" 
+                primary={safeT('systemStatus.uptime', {}, 'Tiempo funcionamiento')} 
                 secondary={formatUptime(data.uptime)}
               />
             </ListItem>
@@ -285,14 +298,19 @@ function SystemStatus({ data }: SystemStatusProps) {
         {/* Información adicional */}
         <Box sx={{ mt: 2, p: 2, backgroundColor: 'background.default', borderRadius: 1 }}>
           <Typography variant="subtitle2" gutterBottom>
-            Resumen del sistema:
+            {safeT('systemStatus.systemSummary', {}, 'Resumen del sistema:')}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            • Sensores activos: {data ? `${getActiveSensorsCount().active}/${getActiveSensorsCount().total}` : '0/7'}<br />
-            • Frecuencia de medición: 1 minuto<br />
-            • Uptime estimado: {connectionStatus.status === 'online' ? '99.5%' : 'N/A'}<br />
-            {data?.signal_strength && `• Señal WiFi: ${data.signal_strength} dBm`}<br />
-            {data?.free_heap && `• Memoria libre: ${formatHeapMemory(data.free_heap)}`}
+            • {safeT('systemStatus.summary.activeSensors', { 
+              active: data ? getActiveSensorsCount().active : 0, 
+              total: getActiveSensorsCount().total 
+            }, `Sensores activos: ${data ? getActiveSensorsCount().active : 0}/${getActiveSensorsCount().total}`)}<br />
+            • {safeT('systemStatus.summary.measurementFrequency', {}, 'Frecuencia de medición: 1 minuto')}<br />
+            • {safeT('systemStatus.summary.estimatedUptime', { 
+              uptime: connectionStatus.status === 'online' ? '99.5%' : 'N/A' 
+            }, `Uptime estimado: ${connectionStatus.status === 'online' ? '99.5%' : 'N/A'}`)}<br />
+            {data?.signal_strength && `• ${safeT('systemStatus.summary.wifiSignal', { signal: data.signal_strength }, `Señal WiFi: ${data.signal_strength} dBm`)}`}<br />
+            {data?.free_heap && `• ${safeT('systemStatus.summary.freeMemory', { memory: formatHeapMemory(data.free_heap) }, `Memoria libre: ${formatHeapMemory(data.free_heap)}`)}`}
           </Typography>
         </Box>
       </CardContent>
