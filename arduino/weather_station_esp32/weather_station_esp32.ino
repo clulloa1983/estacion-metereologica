@@ -510,7 +510,7 @@ void readAndSendData() {
   
   // Create JSON document
   StaticJsonDocument<512> doc;
-  doc["station_id"] = station_id;
+  // Note: station_id is not included in JSON payload as it's already in the MQTT topic
   doc["timestamp"] = getTimestamp();
 
   // ==================== DHT22 ====================

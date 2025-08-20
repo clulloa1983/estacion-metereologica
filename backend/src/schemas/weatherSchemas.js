@@ -9,14 +9,37 @@ const weatherDataSchema = Joi.object({
       Joi.string().pattern(/^\d+$/)
     )
     .optional(),
+  // Core temperature and humidity (required)
   temperature: Joi.number().min(-50).max(60).precision(2).required(),
   humidity: Joi.number().min(0).max(100).precision(2).required(),
+  
+  // BMP180 sensors
   pressure: Joi.number().min(800).max(1200).precision(2).optional(),
+  bmp_temperature: Joi.number().min(-50).max(60).precision(2).optional(),
+  altitude: Joi.number().min(-500).max(10000).precision(2).optional(),
+  
+  // Rain sensors (MH-RD)
+  rain_analog: Joi.number().min(0).max(4095).optional(),
+  rain_percentage: Joi.number().min(0).max(100).optional(),
+  rain_digital: Joi.number().valid(0, 1).optional(),
+  rain_detected: Joi.boolean().optional(),
+  rainfall: Joi.number().min(0).max(1000000).precision(2).optional(),
+  
+  // Air quality sensors
+  co_level: Joi.number().min(0).precision(2).optional(),
+  co_raw: Joi.number().min(0).max(4095).optional(),
+  air_quality_digital: Joi.number().valid(0, 1).optional(),
+  dust_pm25: Joi.number().min(0).precision(2).optional(),
+  
+  // Light sensor
+  light_level: Joi.number().min(0).precision(2).optional(),
+  
+  // Wind sensors (future)
   wind_speed: Joi.number().min(0).max(200).precision(2).optional(),
   wind_direction: Joi.number().min(0).max(360).precision(2).optional(),
-  rainfall: Joi.number().min(0).max(1000).precision(2).optional(),
   uv_index: Joi.number().min(0).max(15).precision(2).optional(),
-  light_level: Joi.number().min(0).precision(2).optional(),
+  
+  // System information
   battery_voltage: Joi.number().min(0).max(5).precision(3).optional(),
   signal_strength: Joi.number().min(-100).max(0).optional(),
   uptime: Joi.number().min(0).optional(),

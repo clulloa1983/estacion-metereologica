@@ -96,8 +96,11 @@ class MQTTService {
 
   async handleWeatherData(stationId, data) {
     try {
+      // Remove station_id from data as it's redundant (already in topic)
+      const { station_id, ...dataWithoutStationId } = data;
+      
       // Validar estructura de datos de sensores
-      const validation = validateMQTTData(data, weatherDataSchema);
+      const validation = validateMQTTData(dataWithoutStationId, weatherDataSchema);
       
       if (!validation.isValid) {
         logger.error(`Invalid weather data from station ${stationId}:`, validation.errors);
