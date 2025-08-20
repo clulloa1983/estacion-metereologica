@@ -387,7 +387,7 @@ export default function ConnectivityConfigSection({
           <Divider sx={{ my: 2 }} />
 
           {/* Current Configuration Summary */}
-          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+          <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
               {t('dashboard:remoteConfig.connectivityConfig.currentConfiguration.title')}
             </Typography>

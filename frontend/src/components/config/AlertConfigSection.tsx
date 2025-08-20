@@ -377,7 +377,7 @@ export default function AlertConfigSection({
 
                       {/* Current Range Display */}
                       <Grid item xs={12}>
-                        <Box sx={{ p: 1, bgcolor: 'grey.50', borderRadius: 1 }}>
+                        <Box sx={{ p: 1, bgcolor: 'action.hover', borderRadius: 1 }}>
                           <Typography variant="caption" color="text.secondary">
                             {t('dashboard:remoteConfig.alertConfig.currentAlertRange')}
                             {threshold.minValue !== undefined && ` ${t('dashboard:remoteConfig.alertConfig.below')} ${threshold.minValue}${threshold.unit}`}

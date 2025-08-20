@@ -347,7 +347,7 @@ export default function PowerConfigSection({
           <Divider sx={{ my: 2 }} />
 
           {/* Power Consumption Summary */}
-          <Box sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+          <Box sx={{ p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
             <Typography variant="subtitle2" gutterBottom>
               {t('dashboard:remoteConfig.powerConfig.powerSummary.title')}
             </Typography>
