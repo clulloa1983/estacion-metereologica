@@ -116,8 +116,11 @@ const HistoricalCharts = memo(function HistoricalCharts({ stationId }: Historica
   }, [fetchData]);
 
   const prepareChartData = useCallback((parameter: string, label: string, color: string) => {
-    const labels = data.map(d => parseTimestamp(d.timestamp));
-    const values = data.map(d => (d as any)[parameter] || 0);
+    // Filtrar solo los datos que tienen el parámetro solicitado
+    const filteredData = data.filter(d => (d as any)[parameter] !== undefined && (d as any)[parameter] !== null);
+    
+    const labels = filteredData.map(d => parseTimestamp(d.timestamp));
+    const values = filteredData.map(d => (d as any)[parameter]);
 
     return {
       labels,
