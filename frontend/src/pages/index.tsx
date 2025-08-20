@@ -122,7 +122,7 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{ mb: 2 }}>
+      <AppBar position="sticky" sx={{ mb: 2, top: 0, zIndex: 1100 }}>
         <Toolbar sx={{ minHeight: { xs: '56px', sm: '64px' } }}>
           <Typography 
             variant="h6" 
