@@ -23,7 +23,8 @@
       "Bash(docker ps:*)",
       "Bash(powershell:*)",
       "Bash(openssl:*)",
-      "Bash(docker restart:*)"
+      "Bash(docker restart:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []

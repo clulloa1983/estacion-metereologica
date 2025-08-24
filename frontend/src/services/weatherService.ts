@@ -143,9 +143,7 @@ class WeatherService {
     console.log('Headers:', this.getHeaders());
     
     try {
-      const response = await fetch(url, {
-        headers: this.getHeaders()
-      });
+      const response = await this.fetchWithFallback(url);
       
       console.log('Response status:', response.status);
       console.log('Response ok:', response.ok);
@@ -166,9 +164,7 @@ class WeatherService {
 
   async getSummary(stationId: string, timeRange: string = '24h') {
     const params = new URLSearchParams({ timeRange });
-    const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}/summary?${params}`, {
-      headers: this.getHeaders()
-    });
+    const response = await this.fetchWithFallback(`${API_BASE_URL}/weather/data/${stationId}/summary?${params}`);
     if (!response.ok) {
       throw new Error('Failed to fetch summary');
     }
@@ -177,9 +173,7 @@ class WeatherService {
   }
 
   async getStations() {
-    const response = await fetch(`${API_BASE_URL}/weather/stations`, {
-      headers: this.getHeaders()
-    });
+    const response = await this.fetchWithFallback(`${API_BASE_URL}/weather/stations`);
     if (!response.ok) {
       throw new Error('Failed to fetch stations');
     }
@@ -213,9 +207,8 @@ class WeatherService {
   }
 
   async acknowledgeAlert(alertId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/alerts/${alertId}/acknowledge`, {
-      method: 'PUT',
-      headers: this.getHeaders()
+    const response = await this.fetchWithFallback(`${API_BASE_URL}/alerts/${alertId}/acknowledge`, {
+      method: 'PUT'
     });
     if (!response.ok) {
       throw new Error('Failed to acknowledge alert');
@@ -223,9 +216,7 @@ class WeatherService {
   }
 
   async getAlertSummary(stationId: string) {
-    const response = await fetch(`${API_BASE_URL}/alerts/summary/${stationId}`, {
-      headers: this.getHeaders()
-    });
+    const response = await this.fetchWithFallback(`${API_BASE_URL}/alerts/summary/${stationId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch alert summary');
     }
@@ -235,9 +226,7 @@ class WeatherService {
 
   async exportData(stationId: string, format: 'csv' | 'json' = 'csv', timeRange: string = '24h') {
     const params = new URLSearchParams({ format, timeRange });
-    const response = await fetch(`${API_BASE_URL}/weather/export/${stationId}?${params}`, {
-      headers: this.getHeaders()
-    });
+    const response = await this.fetchWithFallback(`${API_BASE_URL}/weather/export/${stationId}?${params}`);
     if (!response.ok) {
       throw new Error('Failed to export data');
     }
