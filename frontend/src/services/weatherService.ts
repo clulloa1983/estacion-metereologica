@@ -3,16 +3,51 @@ const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'dev-device-key-12345';
 
 export interface WeatherDataPoint {
   station_id: string;
-  temperature: number;
-  humidity: number;
-  pressure: number;
-  wind_speed: number;
-  wind_direction: number;
-  rainfall: number;
+  // Core temperature and humidity
+  temperature?: number;
+  humidity?: number;
+  
+  // BMP180 sensors  
+  pressure?: number;
+  bmp_temperature?: number;
+  altitude?: number;
+  
+  // Rain sensors (MH-RD)
+  rain_analog?: number;
+  rain_percentage?: number;
+  rain_digital?: number;
+  rain_detected?: boolean;
+  rainfall?: number;
+  
+  // DFRobots pluviometer
+  pluvio_rainfall?: number;
+  pluvio_accumulated?: number;
+  pluvio_pulses?: number;
+  
+  // Air quality sensors
+  co_level?: number;
+  co_raw?: number;
+  air_quality_digital?: number;
+  dust_pm25?: number;
+  
+  // Light sensor
+  light_level?: number;
+  
+  // Wind sensors
+  wind_speed?: number;
+  wind_direction?: number;
+  uv_index?: number;
+  
+  // Legacy fields (kept for compatibility)
   pm25?: number;
   pm10?: number;
-  uv_index?: number;
+  
+  // System information
   battery_voltage?: number;
+  signal_strength?: number;
+  uptime?: number;
+  free_heap?: number;
+  status?: 'online' | 'offline' | 'low_battery' | 'error' | 'going_to_sleep';
   timestamp: string;
 }
 

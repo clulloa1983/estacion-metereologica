@@ -18,23 +18,62 @@ import {
   WaterOutlined,
   BatteryFull,
   WbSunny,
-  Landscape
+  Landscape,
+  Co2,
+  LightMode,
+  SignalWifi4Bar,
+  Memory,
+  Timer,
+  Cloud
 } from '@mui/icons-material';
 
 interface WeatherData {
   station_id: string;
-  temperature: number;
-  humidity: number;
-  pressure: number;
-  wind_speed: number;
-  wind_direction: number;
-  rainfall: number;
+  // Core temperature and humidity
+  temperature?: number;
+  humidity?: number;
+  
+  // BMP180 sensors  
+  pressure?: number;
+  bmp_temperature?: number;
+  altitude?: number;
+  
+  // Rain sensors (MH-RD)
+  rain_analog?: number;
+  rain_percentage?: number;
+  rain_digital?: number;
+  rain_detected?: boolean;
+  rainfall?: number;
+  
+  // DFRobots pluviometer
+  pluvio_rainfall?: number;
+  pluvio_accumulated?: number;
+  pluvio_pulses?: number;
+  
+  // Air quality sensors
+  co_level?: number;
+  co_raw?: number;
+  air_quality_digital?: number;
+  dust_pm25?: number;
+  
+  // Light sensor
+  light_level?: number;
+  
+  // Wind sensors
+  wind_speed?: number;
+  wind_direction?: number;
+  uv_index?: number;
+  
+  // Legacy fields (kept for compatibility)
   pm25?: number;
   pm10?: number;
-  uv_index?: number;
+  
+  // System information
   battery_voltage?: number;
-  altitude?: number;
-  bmp_temperature?: number;
+  signal_strength?: number;
+  uptime?: number;
+  free_heap?: number;
+  status?: 'online' | 'offline' | 'low_battery' | 'error' | 'going_to_sleep';
   timestamp: string;
 }
 
@@ -289,7 +328,20 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
             />
           </Grid>
           
-          {/* PM2.5 (opcional) */}
+          {/* Dust PM2.5 from DSM501A sensor */}
+          {data?.dust_pm25 !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title={t('currentMeasurements.dustPm25', 'PM2.5')}
+                value={data.dust_pm25}
+                unit="μg/m³"
+                icon={<Air />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+
+          {/* PM2.5 (legacy - opcional) */}
           {data?.pm25 !== undefined && (
             <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <MeasurementCard
@@ -349,6 +401,97 @@ const CurrentMeasurements = memo(function CurrentMeasurements({ data, loading }:
                 value={data.battery_voltage}
                 unit="V"
                 icon={<BatteryFull />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+
+          {/* CO Level (Carbon Monoxide) */}
+          {data?.co_level !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title={t('currentMeasurements.coLevel', 'CO')}
+                value={data.co_level}
+                unit="ppm"
+                icon={<Co2 />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+
+          {/* Light Level */}
+          {data?.light_level !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title={t('currentMeasurements.lightLevel', 'Luz')}
+                value={data.light_level}
+                unit="lux"
+                icon={<LightMode />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+
+          {/* Rain Percentage (MH-RD sensor) */}
+          {data?.rain_percentage !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title={t('currentMeasurements.rainPercentage', 'Lluvia %')}
+                value={data.rain_percentage}
+                unit="%"
+                icon={<WaterDrop />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+
+          {/* Pluviometer Accumulated */}
+          {data?.pluvio_accumulated !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title={t('currentMeasurements.pluvioAccumulated', 'Lluvia Acum.')}
+                value={data.pluvio_accumulated}
+                unit="mm"
+                icon={<Cloud />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+
+          {/* Signal Strength */}
+          {data?.signal_strength !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title={t('currentMeasurements.signalStrength', 'Señal WiFi')}
+                value={data.signal_strength}
+                unit="dBm"
+                icon={<SignalWifi4Bar />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+
+          {/* Free Heap Memory */}
+          {data?.free_heap !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title={t('currentMeasurements.freeHeap', 'Memoria')}
+                value={data.free_heap / 1024}
+                unit="KB"
+                icon={<Memory />}
+                loading={loading}
+              />
+            </Grid>
+          )}
+
+          {/* Uptime */}
+          {data?.uptime !== undefined && (
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <MeasurementCard
+                title={t('currentMeasurements.uptime', 'Tiempo Activo')}
+                value={data.uptime / 3600}
+                unit="h"
+                icon={<Timer />}
                 loading={loading}
               />
             </Grid>
