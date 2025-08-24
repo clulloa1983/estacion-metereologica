@@ -55,31 +55,23 @@ const Joi = require('joi');
  */
 
 // Schemas de validación
-const trainModelSchema = {
-  body: Joi.object({
-    timeRange: Joi.string().valid('1d', '3d', '7d', '14d', '30d').default('7d')
-  })
-};
+const trainModelSchema = Joi.object({
+  timeRange: Joi.string().valid('1d', '3d', '7d', '14d', '30d').default('7d')
+});
 
-const toggleMLAlertsSchema = {
-  body: Joi.object({
-    enabled: Joi.boolean().required()
-  }).required()
-};
+const toggleMLAlertsSchema = Joi.object({
+  enabled: Joi.boolean().required()
+}).required();
 
-const getRecentAlertsSchema = {
-  query: Joi.object({
-    limit: Joi.number().integer().min(1).max(100).default(20),
-    severity: Joi.string().valid('LOW', 'MEDIUM', 'HIGH', 'CRITICAL'),
-    sensor: Joi.string().valid('temperature', 'humidity', 'pressure', 'wind_speed', 'pm25', 'co_level')
-  })
-};
+const getRecentAlertsSchema = Joi.object({
+  limit: Joi.number().integer().min(1).max(100).default(20),
+  severity: Joi.string().valid('LOW', 'MEDIUM', 'HIGH', 'CRITICAL'),
+  sensor: Joi.string().valid('temperature', 'humidity', 'pressure', 'wind_speed', 'pm25', 'co_level')
+});
 
-const getMetricsSchema = {
-  query: Joi.object({
-    timeRange: Joi.string().valid('1h', '6h', '12h', '24h', '7d', '30d').default('24h')
-  })
-};
+const getMetricsSchema = Joi.object({
+  timeRange: Joi.string().valid('1h', '6h', '12h', '24h', '7d', '30d').default('24h')
+});
 
 /**
  * @swagger
@@ -116,7 +108,7 @@ const getMetricsSchema = {
  *       500:
  *         description: Internal server error
  */
-router.post('/train/:stationId', validate(trainModelSchema), mlAlertsController.trainModel);
+router.post('/train/:stationId', validate(trainModelSchema, 'body'), mlAlertsController.trainModel);
 
 /**
  * @swagger
@@ -211,7 +203,7 @@ router.post('/reset/:stationId', mlAlertsController.resetModel);
  *       500:
  *         description: Internal server error
  */
-router.put('/toggle', validate(toggleMLAlertsSchema), mlAlertsController.toggleMLAlerts);
+router.put('/toggle', validate(toggleMLAlertsSchema, 'body'), mlAlertsController.toggleMLAlerts);
 
 /**
  * @swagger
@@ -325,7 +317,7 @@ router.get('/config', mlAlertsController.getConfig);
  *       500:
  *         description: Internal server error
  */
-router.get('/recent/:stationId', validate(getRecentAlertsSchema), mlAlertsController.getRecentMLAlerts);
+router.get('/recent/:stationId', validate(getRecentAlertsSchema, 'query'), mlAlertsController.getRecentMLAlerts);
 
 /**
  * @swagger
@@ -382,6 +374,6 @@ router.get('/recent/:stationId', validate(getRecentAlertsSchema), mlAlertsContro
  *       500:
  *         description: Internal server error
  */
-router.get('/metrics/:stationId', validate(getMetricsSchema), mlAlertsController.getMLMetrics);
+router.get('/metrics/:stationId', validate(getMetricsSchema, 'query'), mlAlertsController.getMLMetrics);
 
 module.exports = router;
