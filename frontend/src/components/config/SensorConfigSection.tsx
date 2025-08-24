@@ -127,9 +127,9 @@ export default function SensorConfigSection({
     'dht22': { enabled: true, calibrationOffset: 0 },
     'bmp085': { enabled: true, calibrationOffset: 0 },
     'rain_sensor': { enabled: true, calibrationOffset: 0 },
-    'mq7': { enabled: true, calibrationOffset: 0 },
-    'mq135': { enabled: true, calibrationOffset: 0 },
-    'dsm501a': { enabled: true, calibrationOffset: 0 },
+    'mq7': { enabled: false, calibrationOffset: 0 },
+    'mq135': { enabled: false, calibrationOffset: 0 },
+    'dsm501a': { enabled: false, calibrationOffset: 0 },
     'bh1750': { enabled: true, calibrationOffset: 0 }
   });
 
