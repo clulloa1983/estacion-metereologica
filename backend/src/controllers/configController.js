@@ -81,7 +81,7 @@ const getAvailableCommands = async (req, res) => {
           parameters: {
             sensor: {
               type: 'string',
-              enum: ['dht22', 'bmp085', 'rain', 'mq7', 'mq135', 'dsm501a', 'bh1750'],
+              enum: ['dht22', 'bmp085', 'mh_rd', 'pluviometer', 'rain', 'mq7', 'mq135', 'dsm501a', 'bh1750'],
               description: 'Sensor identifier'
             },
             enabled: {

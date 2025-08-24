@@ -152,7 +152,7 @@ const configCommandSchema = Joi.object({
     {
       is: 'toggle_sensor',
       then: Joi.object({
-        sensor: Joi.string().valid('dht22', 'bmp085', 'rain', 'mq7', 'mq135', 'dsm501a', 'bh1750').required(),
+        sensor: Joi.string().valid('dht22', 'bmp085', 'mh_rd', 'pluviometer', 'rain', 'mq7', 'mq135', 'dsm501a', 'bh1750').required(),
         enabled: Joi.boolean().required()
       }).required()
     },

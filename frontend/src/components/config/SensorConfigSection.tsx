@@ -82,12 +82,20 @@ export default function SensorConfigSection({
       maxOffset: 50
     },
     {
-      name: 'rain_sensor',
-      translationKey: 'rainSensor',
+      name: 'mh_rd',
+      translationKey: 'mhrdRainSensor',
       icon: <WaterDrop />,
       unit: 'mm',
       minOffset: -5,
       maxOffset: 5
+    },
+    {
+      name: 'pluviometer',
+      translationKey: 'pluviometer',
+      icon: <WaterDrop />,
+      unit: 'mm',
+      minOffset: -2,
+      maxOffset: 2
     },
     {
       name: 'mq7',
@@ -126,7 +134,8 @@ export default function SensorConfigSection({
   const [sensorStates, setSensorStates] = useState<{[key: string]: {enabled: boolean, calibrationOffset: number}}>({
     'dht22': { enabled: true, calibrationOffset: 0 },
     'bmp085': { enabled: true, calibrationOffset: 0 },
-    'rain_sensor': { enabled: true, calibrationOffset: 0 },
+    'mh_rd': { enabled: true, calibrationOffset: 0 },
+    'pluviometer': { enabled: true, calibrationOffset: 0 },
     'mq7': { enabled: false, calibrationOffset: 0 },
     'mq135': { enabled: false, calibrationOffset: 0 },
     'dsm501a': { enabled: false, calibrationOffset: 0 },

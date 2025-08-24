@@ -55,7 +55,7 @@ const { configRateLimit } = require('../middleware/rateLimiter');
  *               value:
  *                 command: toggle_sensor
  *                 parameters:
- *                   sensor: dht22
+ *                   sensor: mh_rd
  *                   enabled: true
  *             calibration:
  *               summary: Set sensor calibration

@@ -178,7 +178,8 @@
         "sensors": {
           "temperatureHumidity": "Temperatura y Humedad",
           "pressure": "Presión",
-          "rainSensor": "Sensor de Lluvia",
+          "mhrdRainSensor": "Sensor MH-RD (Lluvia Digital/Analógica)",
+          "pluviometer": "Pluviómetro DFRobots (Pulsos)",
           "coSensor": "Sensor de CO",
           "airQuality": "Calidad del Aire",
           "pm25Dust": "Polvo PM2.5",

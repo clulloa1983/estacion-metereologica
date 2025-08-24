@@ -26,7 +26,8 @@
       "Bash(docker restart:*)",
       "Bash(bash:*)",
       "Bash(npm test:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(start http://localhost:3001)"
     ],
     "deny": [],
     "ask": []
