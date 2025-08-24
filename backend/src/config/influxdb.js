@@ -38,6 +38,16 @@ const writeAlert = (alertData) => {
     .booleanField('acknowledged', alertData.acknowledged || false)
     .timestamp(new Date(alertData.timestamp));
 
+  // Add ML-specific data if present
+  if (alertData.ml_data) {
+    point.stringField('ml_data', JSON.stringify(alertData.ml_data));
+  }
+
+  // Add value if present
+  if (alertData.value !== undefined) {
+    point.floatField('value', alertData.value);
+  }
+
   writeApi.writePoint(point);
 };
 
@@ -69,6 +79,9 @@ const queryWeatherData = async (query) => {
   });
 };
 
+// Alias for backwards compatibility
+const queryInfluxDB = queryWeatherData;
+
 module.exports = {
   influxDB,
   writeApi,
@@ -77,6 +90,7 @@ module.exports = {
   writeAlert,
   flushWrites,
   queryWeatherData,
+  queryInfluxDB,
   bucket,
   org
 };

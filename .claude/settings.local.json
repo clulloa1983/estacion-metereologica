@@ -24,7 +24,8 @@
       "Bash(powershell:*)",
       "Bash(openssl:*)",
       "Bash(docker restart:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(npm test:*)"
     ],
     "deny": [],
     "ask": []

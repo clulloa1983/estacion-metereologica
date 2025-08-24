@@ -17,6 +17,7 @@ const alertRoutes = require('./routes/alertRoutes');
 const authRoutes = require('./routes/authRoutes');
 const monitoringRoutes = require('./routes/monitoringRoutes');
 const configRoutes = require('./routes/configRoutes');
+const mlAlertsRoutes = require('./routes/mlAlerts');
 const { rateLimiter } = require('./middleware/rateLimiter');
 const { requestLogger, addUserContext, errorLogger } = require('./middleware/requestLogger');
 const { specs, swaggerUi, swaggerOptions } = require('./config/swagger');
@@ -80,6 +81,7 @@ app.use('/api/weather', weatherRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/config', configRoutes);
+app.use('/api/ml-alerts', mlAlertsRoutes);
 
 /**
  * @swagger
