@@ -12,6 +12,7 @@
 #define DHT_PIN 4         // GPIO4 - DHT22 sensor
 #define RAIN_DIGITAL_PIN 2        // GPIO2 - MH-RD rain sensor (digital)
 #define RAIN_ANALOG_PIN 34        // GPIO34 - MH-RD rain sensor (analog)
+#define PLUVIOMETRO_PIN 2         // GPIO2 - DFRobots pluviometer (pulse-based)
 #define MQ7_PIN 36        // GPIO36 (ADC1_CH0) - MQ7 CO sensor
 #define MQ135_PIN 12      // GPIO12 - MQ135 air quality (digital)
 #define DSM501A_PIN 13    // GPIO13 - DSM501A dust sensor
@@ -54,8 +55,9 @@ struct CalibrationFactors {
 struct SensorFlags {
   bool dht22_available = true;
   bool bmp180_available = true;
-  bool bh1750_available = false;
+  bool bh1750_available = true;   // Enable BH1750 light sensor
   bool mh_rd_available = true;
+  bool pluviometro_available = true;  // Enable DFRobots pluviometer
   bool mq7_available = false;
   bool mq135_available = false;
   bool dsm501a_available = false;
@@ -85,10 +87,17 @@ struct ConfigBackup {
 
 // Global variables
 volatile int rain_pulses = 0;
+volatile int pluvio_pulses = 0;  // Pulse counter for DFRobots pluviometer
 unsigned long last_reading = 0;
 unsigned long reading_interval = 60000; // 1 minute (changeable via MQTT)
 unsigned long last_wifi_check = 0;
 int wifi_check_interval = 30000; // 30 seconds
+
+// DFRobots pluviometer configuration
+const float RESOLUCION_MM = 0.3;             // Resolution: 0.3mm per pulse
+unsigned long ultimoResetLluvia = 0;         // For periodic rainfall reset
+const unsigned long INTERVALO_RESET_LLUVIA = 3600000; // Reset every hour (3600000 ms)
+float lluviaAcumulada = 0.0;                 // Total accumulated rainfall
 
 // Configuration backup for rollback
 ConfigBackup config_backup;
@@ -116,6 +125,7 @@ SensorFlags sensors;
 
 // Function declarations
 void IRAM_ATTR rainPulseISR();
+void IRAM_ATTR pluvioPulseISR();  // ISR for pluviometer pulses
 void loadConfigurationSimple();
 void backupConfiguration();
 void restoreConfiguration();
@@ -123,15 +133,17 @@ bool validateCommand(StaticJsonDocument<256>& cmdDoc);
 bool validateParameter(String param, float value, float min, float max);
 void applyCalibrationSafely(String sensor, float value);
 void logCommandExecution(String command, bool success);
+void checkRainReset();  // Function to reset accumulated rainfall
 
 void setup() {
   Serial.begin(115200);
   Serial.println("=== Estación Meteorológica ESP32 ===");
   
-  // Initialize I2C for BMP180 - FIRST, before anything else
-  Wire.begin();
+  // Initialize I2C for BMP180 and BH1750 - FIRST, before anything else
+  Wire.begin(SDA_PIN, SCL_PIN);
   delay(100); // Give I2C time to initialize
   
+  // Initialize BMP180
   if (!bmp.begin()) {
     Serial.println("ERROR: No se pudo encontrar el sensor BMP180!");
     sensors.bmp180_available = false;
@@ -148,6 +160,15 @@ void setup() {
     Serial.println("BMP180 inicializado");
   }
   
+  // Initialize BH1750 light sensor
+  if (lightMeter.begin()) {
+    sensors.bh1750_available = true;
+    Serial.println("BH1750 light sensor inicializado");
+  } else {
+    Serial.println("ERROR: No se pudo encontrar el sensor BH1750");
+    sensors.bh1750_available = false;
+  }
+  
   // Initialize DHT22
   dht.begin();
   delay(2000); // DHT22 needs time to initialize 
@@ -158,15 +179,22 @@ void setup() {
   sensors.mh_rd_available = true;
   Serial.println("Sensor de lluvia MH-RD inicializado");
   
-  // Setup interrupt for rain sensor
+  // Setup interrupts for rain sensors
   attachInterrupt(digitalPinToInterrupt(RAIN_DIGITAL_PIN), rainPulseISR, FALLING);
+  
+  // Setup interrupt for DFRobots pluviometer (shared pin with MH-RD digital)
+  // Note: Both sensors use the same pin, so we'll handle both in the ISR
+  attachInterrupt(digitalPinToInterrupt(PLUVIOMETRO_PIN), pluvioPulseISR, FALLING);
 
-  // Set sensor availability flags
+  // Set sensor availability flags (some updated from initialization results above)
   sensors.dht22_available = true;
-  sensors.bh1750_available = false;
+  sensors.pluviometro_available = true;  // DFRobots pluviometer enabled
   sensors.mq7_available = false;
   sensors.mq135_available = false;
   sensors.dsm501a_available = false;
+  
+  // Initialize rainfall tracking
+  ultimoResetLluvia = millis();
   
   Serial.println("====================================");
 
@@ -192,6 +220,12 @@ void setup() {
   starttime = millis();
 
   Serial.println("ESP32 Weather Station Ready!");
+  Serial.println("Sensors initialized:");
+  Serial.printf("- DHT22: %s\n", sensors.dht22_available ? "OK" : "FAILED");
+  Serial.printf("- BMP180: %s\n", sensors.bmp180_available ? "OK" : "FAILED");
+  Serial.printf("- BH1750: %s\n", sensors.bh1750_available ? "OK" : "FAILED");
+  Serial.printf("- MH-RD Rain: %s\n", sensors.mh_rd_available ? "OK" : "FAILED");
+  Serial.printf("- DFRobots Pluviometer: %s\n", sensors.pluviometro_available ? "OK" : "FAILED");
   printAvailableSensors();
 }
 
@@ -266,7 +300,8 @@ void printAvailableSensors() {
   if (sensors.dht22_available) Serial.println("🌡️ DHT22 - Temperature & Humidity");
   if (sensors.bmp180_available) Serial.println("🧭 BMP180 - Pressure");
   if (sensors.bh1750_available) Serial.println("💡 BH1750 - Light");
-  if (sensors.mh_rd_available) Serial.println("🌧️ MH-RD - Rain");
+  if (sensors.mh_rd_available) Serial.println("🌧️ MH-RD - Rain Sensor (Analog/Digital)");
+  if (sensors.pluviometro_available) Serial.println("☔ DFRobots - Pluviometer (Pulse-based)");
   if (sensors.mq7_available) Serial.println("🫁 MQ7 - Carbon Monoxide");
   if (sensors.mq135_available) Serial.println("🏭 MQ135 - Air Quality");
   if (sensors.dsm501a_available) Serial.println("🌫️ DSM501A - Dust Particles");
@@ -558,12 +593,18 @@ void readAndSendData() {
     doc["altitude"] = round(altitud * 100.0) / 100.0;
   }
 
-  // Read BH1750 (Light)
+  // ==================== BH1750 LIGHT SENSOR ====================
   if (sensors.bh1750_available) {
     float lux = lightMeter.readLightLevel();
+    Serial.println("💡 BH1750 Light Sensor:");
     if (lux >= 0) {
       lux = calibrateLight(lux);
       doc["light_level"] = round(lux * 100.0) / 100.0;
+      Serial.print("   Light Level: ");
+      Serial.print(lux);
+      Serial.println(" lux");
+    } else {
+      Serial.println("   ❌ Error reading BH1750");
     }
   }
 
@@ -610,6 +651,40 @@ void readAndSendData() {
     rain_pulses = 0; // Reset counter
   }
 
+  // ==================== PLUVIÓMETRO DFROBOTS ====================
+  if (sensors.pluviometro_available) {
+    // Check for new pulses from DFRobots pluviometer
+    float lluvia_detectada = 0;
+    if (pluvio_pulses > 0) {
+      // Disable interrupts temporarily
+      noInterrupts();
+      int pulsosActuales = pluvio_pulses;
+      pluvio_pulses = 0;
+      interrupts();
+      
+      // Calculate detected rainfall
+      lluvia_detectada = pulsosActuales * RESOLUCION_MM;
+      lluviaAcumulada += lluvia_detectada;
+      
+      Serial.println("☔ DFRobots Pluviometer:");
+      Serial.print("   🌧️ Rainfall detected: ");
+      Serial.print(lluvia_detectada);
+      Serial.println(" mm");
+      Serial.print("   📊 Accumulated rainfall: ");
+      Serial.print(lluviaAcumulada);
+      Serial.println(" mm");
+      Serial.print("   📏 Number of pulses: ");
+      Serial.println(pulsosActuales);
+    } else {
+      Serial.println("☔ DFRobots Pluviometer: No rainfall detected");
+    }
+    
+    // Add DFRobots pluviometer data to JSON
+    doc["pluvio_rainfall"] = round(lluvia_detectada * 100.0) / 100.0;
+    doc["pluvio_accumulated"] = round(lluviaAcumulada * 100.0) / 100.0;
+    doc["pluvio_pulses"] = pluvio_pulses;
+  }
+
   // Read MQ7 (Carbon Monoxide) - ESP32 has 12-bit ADC (0-4095)
   if (sensors.mq7_available) {
     int mq7_raw = analogRead(MQ7_PIN);
@@ -631,6 +706,9 @@ void readAndSendData() {
     if (concentration < 0) concentration = 0;
     doc["dust_pm25"] = round(concentration * 100.0) / 100.0;
   }
+
+  // Check for periodic rainfall reset
+  checkRainReset();
 
   // Add system info
   doc["uptime"] = millis() / 1000;
@@ -692,6 +770,7 @@ void sendStatusUpdate(const char* status) {
   sensorStatus["bmp180"] = sensors.bmp180_available;
   sensorStatus["bh1750"] = sensors.bh1750_available;
   sensorStatus["mh_rd"] = sensors.mh_rd_available;
+  sensorStatus["pluviometer"] = sensors.pluviometro_available;
   sensorStatus["mq7"] = sensors.mq7_available;
   sensorStatus["mq135"] = sensors.mq135_available;
   sensorStatus["dsm501a"] = sensors.dsm501a_available;
@@ -808,6 +887,8 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         sensors.bh1750_available = enabled;
       } else if (sensor == "rain" || sensor == "mh_rd") {
         sensors.mh_rd_available = enabled;
+      } else if (sensor == "pluviometer" || sensor == "dfrobots") {
+        sensors.pluviometro_available = enabled;
       } else if (sensor == "mq7" || sensor == "co") {
         sensors.mq7_available = enabled;
       } else if (sensor == "mq135" || sensor == "air_quality") {
@@ -970,9 +1051,28 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   logCommandExecution(command, command_success);
 }
 
-// Interrupt service routine for rain sensor
+// Interrupt service routine for rain sensor (MH-RD)
 void IRAM_ATTR rainPulseISR() {
   rain_pulses++;
+}
+
+// Interrupt service routine for DFRobots pluviometer
+void IRAM_ATTR pluvioPulseISR() {
+  pluvio_pulses++;
+}
+
+// Function to check and reset accumulated rainfall periodically
+void checkRainReset() {
+  // Reset accumulated rainfall periodically (every hour)
+  if (millis() - ultimoResetLluvia >= INTERVALO_RESET_LLUVIA) {
+    if (lluviaAcumulada > 0) {
+      Serial.print("🔄 Automatic reset - Accumulated rainfall last hour: ");
+      Serial.print(lluviaAcumulada);
+      Serial.println(" mm");
+    }
+    lluviaAcumulada = 0.0;
+    ultimoResetLluvia = millis();
+  }
 }
 
 // Deep Sleep Functions
