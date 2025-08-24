@@ -4,19 +4,38 @@ import { WeatherDataPoint, Alert } from './weatherService';
 class SocketService {
   private socket: Socket | null = null;
   private listeners: Map<string, Function[]> = new Map();
+  private currentServerUrl: string = '';
+  private isRetrying: boolean = false;
 
-  connect(serverUrl: string = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5002') {
+  connect(serverUrl?: string) {
+    // Try HTTPS first (through nginx), fallback to direct backend
+    if (!serverUrl) {
+      const baseApiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://localhost/api';
+      if (baseApiUrl.includes('https://localhost')) {
+        // Using nginx proxy - try WebSocket through nginx first
+        serverUrl = 'https://localhost';
+      } else {
+        // Direct backend access
+        serverUrl = baseApiUrl.replace('/api', '');
+      }
+    }
     if (this.socket?.connected) {
       return;
     }
 
+    this.currentServerUrl = serverUrl;
+    console.log('Attempting WebSocket connection to:', serverUrl);
+
     this.socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
+      timeout: 5000,
+      forceNew: true
     });
 
     this.socket.on('connect', () => {
-      console.log('Connected to weather station server');
+      console.log('Connected to weather station server:', serverUrl);
+      this.isRetrying = false;
       this.emit('connection', { status: 'connected' });
     });
 
@@ -38,9 +57,31 @@ class SocketService {
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      console.error('Socket connection error to', serverUrl, ':', error);
+      this.tryFallbackConnection();
+    });
+
+    this.socket.on('error', (error) => {
+      console.error('Socket error:', error);
       this.emit('connection', { status: 'error', error });
     });
+  }
+
+  private tryFallbackConnection() {
+    if (this.isRetrying) return;
+    this.isRetrying = true;
+
+    // If we were trying nginx proxy (https://localhost), try direct backend
+    if (this.currentServerUrl === 'https://localhost') {
+      console.log('WebSocket via nginx failed, trying direct backend connection...');
+      this.disconnect();
+      setTimeout(() => {
+        this.connect('http://localhost:5002');
+      }, 1000);
+    } else {
+      console.log('WebSocket connection failed, giving up after fallback attempt');
+      this.emit('connection', { status: 'error', error: 'WebSocket connection failed' });
+    }
   }
 
   disconnect() {
