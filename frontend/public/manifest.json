@@ -1,15 +1,47 @@
 {
   "name": "Weather Station Dashboard",
   "short_name": "WeatherStation",
-  "description": "IoT Weather Station monitoring dashboard with real-time data visualization",
+  "description": "Advanced IoT Weather Station with offline support, push notifications, and device sensor integration",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1976d2",
   "theme_color": "#1976d2",
   "orientation": "portrait-primary",
-  "categories": ["productivity", "utilities"],
+  "categories": ["productivity", "utilities", "weather"],
   "lang": "en",
   "scope": "/",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View real-time weather data",
+      "url": "/",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Alerts",
+      "short_name": "Alerts", 
+      "description": "Check weather alerts",
+      "url": "/?tab=alerts",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Configuration",
+      "short_name": "Config",
+      "description": "Remote station configuration", 
+      "url": "/?tab=config",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
