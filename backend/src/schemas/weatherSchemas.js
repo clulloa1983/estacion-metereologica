@@ -25,6 +25,11 @@ const weatherDataSchema = Joi.object({
   rain_detected: Joi.boolean().optional(),
   rainfall: Joi.number().min(0).max(1000000).precision(2).optional(),
   
+  // DFRobots pluviometer
+  pluvio_rainfall: Joi.number().min(0).max(1000000).precision(2).optional(),
+  pluvio_accumulated: Joi.number().min(0).max(1000000).precision(2).optional(),
+  pluvio_pulses: Joi.number().min(0).max(1000000).optional(),
+  
   // Air quality sensors
   co_level: Joi.number().min(0).precision(2).optional(),
   co_raw: Joi.number().min(0).max(4095).optional(),
