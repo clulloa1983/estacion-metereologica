@@ -22,7 +22,8 @@
       "Bash(./scripts/backup-simple.sh:*)",
       "Bash(docker ps:*)",
       "Bash(powershell:*)",
-      "Bash(openssl:*)"
+      "Bash(openssl:*)",
+      "Bash(docker restart:*)"
     ],
     "deny": [],
     "ask": []

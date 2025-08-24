@@ -1,5 +1,6 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api';
-const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'dev-device-key-12345';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost/api';
+const API_BASE_URL_FALLBACK = process.env.NEXT_PUBLIC_API_URL_FALLBACK || 'http://localhost:5002/api';
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'weather-station-device-key-esp32-2024-dev';
 
 export interface WeatherDataPoint {
   station_id: string;
@@ -68,10 +69,50 @@ class WeatherService {
     };
   }
 
+  private async fetchWithFallback(url: string, options: RequestInit = {}): Promise<Response> {
+    // Try primary URL first (HTTPS via nginx)
+    try {
+      console.log('Trying primary URL:', url);
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...this.getHeaders(),
+          ...options.headers
+        }
+      });
+      
+      if (response.ok || response.status === 404) {
+        return response;
+      }
+      
+      // If not ok, throw to try fallback
+      throw new Error(`Primary URL failed with status: ${response.status}`);
+    } catch (primaryError) {
+      console.warn('Primary URL failed, trying fallback:', primaryError);
+      
+      // Try fallback URL (direct backend)
+      const fallbackUrl = url.replace(API_BASE_URL, API_BASE_URL_FALLBACK);
+      console.log('Trying fallback URL:', fallbackUrl);
+      
+      const response = await fetch(fallbackUrl, {
+        ...options,
+        headers: {
+          ...this.getHeaders(),
+          ...options.headers
+        }
+      });
+      
+      if (!response.ok && response.status !== 404) {
+        const errorText = await response.text();
+        throw new Error(`Both primary and fallback URLs failed. Status: ${response.status}, Error: ${errorText}`);
+      }
+      
+      return response;
+    }
+  }
+
   async getLatestData(stationId: string): Promise<WeatherDataPoint | null> {
-    const response = await fetch(`${API_BASE_URL}/weather/data/${stationId}/latest`, {
-      headers: this.getHeaders()
-    });
+    const response = await this.fetchWithFallback(`${API_BASE_URL}/weather/data/${stationId}/latest`);
     if (response.status === 404) {
       // No recent data available for this station
       return null;
@@ -155,14 +196,20 @@ class WeatherService {
       ? `${API_BASE_URL}/alerts/${stationId}?${params}`
       : `${API_BASE_URL}/alerts?${params}`;
       
-    const response = await fetch(url, {
-      headers: this.getHeaders()
-    });
-    if (!response.ok) {
-      throw new Error('Failed to fetch alerts');
+    try {
+      const response = await this.fetchWithFallback(url);
+      if (!response.ok) {
+        console.warn(`Failed to fetch alerts: ${response.status} ${response.statusText}`);
+        // Return empty array instead of throwing for alerts
+        return [];
+      }
+      const result = await response.json();
+      return result.alerts || result.data || [];
+    } catch (error) {
+      console.error('Error fetching alerts:', error);
+      // Return empty array instead of throwing to prevent UI crashes
+      return [];
     }
-    const result = await response.json();
-    return result.alerts || result.data || [];
   }
 
   async acknowledgeAlert(alertId: string): Promise<void> {
