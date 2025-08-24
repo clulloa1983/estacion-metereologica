@@ -20,7 +20,9 @@
       "Bash(docker logs:*)",
       "Bash(./scripts/backup-manager.sh:*)",
       "Bash(./scripts/backup-simple.sh:*)",
-      "Bash(docker ps:*)"
+      "Bash(docker ps:*)",
+      "Bash(powershell:*)",
+      "Bash(openssl:*)"
     ],
     "deny": [],
     "ask": []

@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const weatherController = require('../controllers/weatherController');
 const { validateWeatherData, validateQuery, validateParams } = require('../middleware/validation');
-const { verifyApiKey, optionalAuth, requireRole } = require('../middleware/auth');
+const { verifyApiKey, optionalAuth, verifyToken, requireRole } = require('../middleware/auth');
+const { deviceRateLimit, generalRateLimit } = require('../middleware/rateLimiter');
 
 /**
  * @swagger
@@ -42,7 +43,7 @@ const { verifyApiKey, optionalAuth, requireRole } = require('../middleware/auth'
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.post('/data', verifyApiKey, validateWeatherData, weatherController.receiveWeatherData);
+router.post('/data', deviceRateLimit, verifyApiKey, validateWeatherData, weatherController.receiveWeatherData);
 
 /**
  * @swagger
@@ -203,7 +204,7 @@ router.get('/data/:stationId/latest', optionalAuth, validateParams, weatherContr
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.get('/data/:stationId/summary', optionalAuth, validateParams, validateQuery, weatherController.getSummary);
+router.get('/data/:stationId/summary', verifyToken, requireRole('user'), validateParams, validateQuery, weatherController.getSummary);
 
 /**
  * @swagger
@@ -287,6 +288,6 @@ router.get('/stations', optionalAuth, weatherController.getStations);
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.get('/export/:stationId', optionalAuth, requireRole('user'), validateParams, validateQuery, weatherController.exportData);
+router.get('/export/:stationId', verifyToken, requireRole('user'), validateParams, validateQuery, weatherController.exportData);
 
 module.exports = router;

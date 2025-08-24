@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const configController = require('../controllers/configController');
 const { validateConfigCommand, validateParams } = require('../middleware/validation');
-const { verifyApiKey, optionalAuth, requireRole } = require('../middleware/auth');
+const { verifyApiKey, optionalAuth, verifyToken, requireRole } = require('../middleware/auth');
+const { configRateLimit } = require('../middleware/rateLimiter');
 
 /**
  * @swagger
@@ -107,7 +108,7 @@ const { verifyApiKey, optionalAuth, requireRole } = require('../middleware/auth'
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.post('/command/:stationId', optionalAuth, requireRole('user'), validateParams, validateConfigCommand, configController.sendCommand);
+router.post('/command/:stationId', configRateLimit, verifyToken, requireRole('user'), validateParams, validateConfigCommand, configController.sendCommand);
 
 /**
  * @swagger

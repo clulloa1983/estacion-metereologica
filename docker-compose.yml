@@ -73,11 +73,14 @@ services:
     restart: unless-stopped
     ports:
       - "1883:1883"
+      - "8883:8883"  # TLS port
       - "9001:9001"
+      - "9002:9002"  # WebSocket TLS
     volumes:
       - ./docker/mosquitto/config:/mosquitto/config
       - ./docker/mosquitto/data:/mosquitto/data
       - ./docker/mosquitto/log:/mosquitto/log
+      - ./docker/mosquitto/ssl:/mosquitto/ssl:ro  # SSL certificates
     networks:
       - weather-network
     healthcheck:
@@ -86,6 +89,30 @@ services:
       timeout: 10s
       retries: 5
       start_period: 10s
+
+  nginx:
+    image: nginx:alpine
+    container_name: weather_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - weather-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+      - influxdb
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
   backup-service:
     image: alpine:latest
