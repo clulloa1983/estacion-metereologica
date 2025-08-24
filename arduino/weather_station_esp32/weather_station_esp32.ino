@@ -10,12 +10,13 @@
 
 // Pin definitions for ESP32 DevKit V1
 #define DHT_PIN 4         // GPIO4 - DHT22 sensor
-#define RAIN_DIGITAL_PIN 2        // GPIO2 - MH-RD rain sensor (digital)
+#define RAIN_DIGITAL_PIN 12       // GPIO12 - MH-RD rain sensor (digital) - FIXED: moved from GPIO2
 #define RAIN_ANALOG_PIN 34        // GPIO34 - MH-RD rain sensor (analog)
+#define RAIN_VCC_PIN 13           // GPIO13 - MH-RD rain sensor power supply
 #define PLUVIOMETRO_PIN 2         // GPIO2 - DFRobots pluviometer (pulse-based)
 #define MQ7_PIN 36        // GPIO36 (ADC1_CH0) - MQ7 CO sensor
-#define MQ135_PIN 12      // GPIO12 - MQ135 air quality (digital)
-#define DSM501A_PIN 13    // GPIO13 - DSM501A dust sensor
+#define MQ135_PIN 15      // GPIO15 - MQ135 air quality (digital) - FIXED: moved from GPIO12
+#define DSM501A_PIN 16    // GPIO16 - DSM501A dust sensor - FIXED: moved from GPIO13
 #define SDA_PIN 21        // GPIO21 - I2C SDA for BMP180 and BH1750
 #define SCL_PIN 22        // GPIO22 - I2C SCL for BMP180 and BH1750
 
@@ -99,6 +100,10 @@ unsigned long ultimoResetLluvia = 0;         // For periodic rainfall reset
 const unsigned long INTERVALO_RESET_LLUVIA = 3600000; // Reset every hour (3600000 ms)
 float lluviaAcumulada = 0.0;                 // Total accumulated rainfall
 
+// MH-RD rain sensor configuration
+const int MHRD_THRESHOLD_DRY = 3000;         // ADC value for dry condition (adjustable)
+const int MHRD_THRESHOLD_WET = 1000;         // ADC value for very wet condition (adjustable)
+
 // Configuration backup for rollback
 ConfigBackup config_backup;
 
@@ -174,10 +179,21 @@ void setup() {
   delay(2000); // DHT22 needs time to initialize 
   Serial.println("DHT22 inicializado");
   
-  // Configure rain sensor
+  // Configure MH-RD rain sensor
   pinMode(RAIN_DIGITAL_PIN, INPUT);
+  pinMode(RAIN_ANALOG_PIN, INPUT);
+  
+  // Configure MH-RD power supply
+  pinMode(RAIN_VCC_PIN, OUTPUT);
+  digitalWrite(RAIN_VCC_PIN, HIGH);  // Enable power supply
+  delay(100);  // Time to stabilize
+  
   sensors.mh_rd_available = true;
   Serial.println("Sensor de lluvia MH-RD inicializado");
+  Serial.println("   Conexiones:");
+  Serial.println("   VCC -> GPIO13 (3.3V), GND -> GND");
+  Serial.println("   AO (Analógico) -> GPIO34, DO (Digital) -> GPIO12");
+  Serial.printf("   Umbral SECO: >%d, Umbral HÚMEDO: <%d\n", MHRD_THRESHOLD_DRY, MHRD_THRESHOLD_WET);
   
   // Setup interrupts for rain sensors
   attachInterrupt(digitalPinToInterrupt(RAIN_DIGITAL_PIN), rainPulseISR, FALLING);
@@ -224,8 +240,8 @@ void setup() {
   Serial.printf("- DHT22: %s\n", sensors.dht22_available ? "OK" : "FAILED");
   Serial.printf("- BMP180: %s\n", sensors.bmp180_available ? "OK" : "FAILED");
   Serial.printf("- BH1750: %s\n", sensors.bh1750_available ? "OK" : "FAILED");
-  Serial.printf("- MH-RD Rain: %s\n", sensors.mh_rd_available ? "OK" : "FAILED");
-  Serial.printf("- DFRobots Pluviometer: %s\n", sensors.pluviometro_available ? "OK" : "FAILED");
+  Serial.printf("- MH-RD Rain (GPIO12/34/13): %s\n", sensors.mh_rd_available ? "OK" : "FAILED");
+  Serial.printf("- DFRobots Pluviometer (GPIO2): %s\n", sensors.pluviometro_available ? "OK" : "FAILED");
   printAvailableSensors();
 }
 
@@ -300,8 +316,8 @@ void printAvailableSensors() {
   if (sensors.dht22_available) Serial.println("🌡️ DHT22 - Temperature & Humidity");
   if (sensors.bmp180_available) Serial.println("🧭 BMP180 - Pressure");
   if (sensors.bh1750_available) Serial.println("💡 BH1750 - Light");
-  if (sensors.mh_rd_available) Serial.println("🌧️ MH-RD - Rain Sensor (Analog/Digital)");
-  if (sensors.pluviometro_available) Serial.println("☔ DFRobots - Pluviometer (Pulse-based)");
+  if (sensors.mh_rd_available) Serial.println("🌧️ MH-RD - Rain Sensor (GPIO12/34/13 - Digital/Analog/VCC)");
+  if (sensors.pluviometro_available) Serial.println("☔ DFRobots - Pluviometer (GPIO2 - Pulse-based)");
   if (sensors.mq7_available) Serial.println("🫁 MQ7 - Carbon Monoxide");
   if (sensors.mq135_available) Serial.println("🏭 MQ135 - Air Quality");
   if (sensors.dsm501a_available) Serial.println("🌫️ DSM501A - Dust Particles");
@@ -608,40 +624,53 @@ void readAndSendData() {
     }
   }
 
-  // ==================== SENSOR LLUVIA ====================
+  // ==================== SENSOR MH-RD LLUVIA ====================
   if (sensors.mh_rd_available) {
     int lluvia_analog = analogRead(RAIN_ANALOG_PIN);
     int lluvia_digital = digitalRead(RAIN_DIGITAL_PIN);
     
-    // Convertir lectura analógica a porcentaje (0-100%)
-    int lluvia_porcentaje = map(lluvia_analog, 0, 4095, 0, 100);
-    
-    // Determinar estado de lluvia
+    // Determine rain status using thresholds (like test_i2c_sensors.ino)
     String estado_lluvia;
-    if (lluvia_porcentaje < 20) {
-      estado_lluvia = "Lluvia INTENSA";
-    } else if (lluvia_porcentaje < 40) {
-      estado_lluvia = "Lluvia MODERADA";
-    } else if (lluvia_porcentaje < 60) {
-      estado_lluvia = "Lluvia LIGERA";
+    if (lluvia_analog > MHRD_THRESHOLD_DRY) {
+      estado_lluvia = "SECO";
+    } else if (lluvia_analog < MHRD_THRESHOLD_WET) {
+      estado_lluvia = "MUY_HUMEDO";
     } else {
-      estado_lluvia = "SIN LLUVIA";
+      estado_lluvia = "HUMEDO";
     }
     
-    Serial.println("🌧️  SENSOR LLUVIA:");
-    Serial.print("   Valor analógico: ");
-    Serial.println(lluvia_analog);
-    Serial.print("   Intensidad: ");
-    Serial.print(lluvia_porcentaje);
-    Serial.println("%");
-    Serial.print("   Estado: ");
-    Serial.println(estado_lluvia);
-    Serial.print("   Digital: ");
-    Serial.println(lluvia_digital == LOW ? "DETECTA LLUVIA" : "SIN LLUVIA");
+    // Calculate humidity percentage (inverse of ADC value)
+    float humidityPercentage = map(lluvia_analog, 4095, 0, 0, 100);
+    if (humidityPercentage > 100) humidityPercentage = 100;
+    if (humidityPercentage < 0) humidityPercentage = 0;
     
-    // Add to JSON
+    Serial.println("🌧️  SENSOR MH-RD:");
+    Serial.print("   💧 Estado Digital: ");
+    Serial.println(lluvia_digital == HIGH ? "SECO" : "LLUVIA");
+    Serial.print("   📊 Valor Analógico: ");
+    Serial.print(lluvia_analog);
+    Serial.print(" (0-4095) - ");
+    Serial.print(humidityPercentage, 1);
+    Serial.println("% humedad");
+    Serial.print("   🌦️ Estado: ");
+    Serial.println(estado_lluvia);
+    
+    // Check for discrepancy between digital and analog readings
+    if ((lluvia_digital == LOW && estado_lluvia == "SECO") || 
+        (lluvia_digital == HIGH && estado_lluvia != "SECO")) {
+      Serial.println("   ⚠️ Posible discrepancia entre lecturas digital/analógica");
+    }
+    
+    // Add to JSON - using new field names for clarity
+    doc["mhrd_analog"] = lluvia_analog;
+    doc["mhrd_humidity_percent"] = round(humidityPercentage * 100.0) / 100.0;
+    doc["mhrd_digital"] = lluvia_digital;
+    doc["mhrd_status"] = estado_lluvia;
+    doc["mhrd_rain_detected"] = (lluvia_digital == LOW || estado_lluvia != "SECO");
+    
+    // Keep legacy fields for compatibility
     doc["rain_analog"] = lluvia_analog;
-    doc["rain_percentage"] = lluvia_porcentaje;
+    doc["rain_percentage"] = round(humidityPercentage * 100.0) / 100.0;
     doc["rain_digital"] = lluvia_digital;
     doc["rain_detected"] = (lluvia_digital == LOW);
     
