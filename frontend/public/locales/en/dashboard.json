@@ -391,5 +391,74 @@
         "confirm": "Confirm"
       }
     }
+  },
+  "ml_alerts": {
+    "title": "Intelligent ML Alerts",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "loading": "Loading ML Alerts...",
+    "error": "Error",
+    "refreshData": "Refresh data",
+    "modelStatus": {
+      "title": "Model Status",
+      "trained": "Trained",
+      "notTrained": "Not Trained",
+      "trainingData": "Training Data",
+      "points": "points",
+      "confidence": "Confidence"
+    },
+    "alerts": {
+      "title": "Alerts",
+      "total": "Total"
+    },
+    "actions": {
+      "title": "Actions",
+      "trainModel": "Train Model",
+      "training": "Training...",
+      "resetModel": "Reset Model"
+    },
+    "sensorStatistics": {
+      "title": "Sensor Statistics",
+      "sensor": "Sensor",
+      "dataPoints": "Data Points",
+      "anomalies": "Anomalies",
+      "currentMean": "Current Mean",
+      "stdDev": "Std Dev",
+      "lastAnomaly": "Last Anomaly",
+      "never": "Never"
+    },
+    "recentAlerts": {
+      "title": "Recent ML Alerts",
+      "timeRange": "Time Range",
+      "severity": "Severity",
+      "applyFilters": "Apply Filters",
+      "noAlerts": "No ML alerts found for the selected criteria",
+      "table": {
+        "time": "Time",
+        "sensor": "Sensor",
+        "severity": "Severity",
+        "anomalyType": "Anomaly Type",
+        "value": "Value",
+        "confidence": "Confidence",
+        "message": "Message"
+      }
+    },
+    "timeRanges": {
+      "1h": "1 Hour",
+      "6h": "6 Hours",
+      "12h": "12 Hours",
+      "24h": "24 Hours",
+      "7d": "7 Days"
+    },
+    "severityLevels": {
+      "all": "All",
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
+    "anomalyTypes": {
+      "unknown": "Unknown"
+    }
   }
 }

@@ -257,7 +257,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
         <CardContent>
           <Box display="flex" alignItems="center" gap={2}>
             <CircularProgress size={24} />
-            <Typography>Loading ML Alerts...</Typography>
+            <Typography>{t('ml_alerts.loading')}</Typography>
           </Box>
         </CardContent>
       </Card>
@@ -268,7 +268,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
     <Box>
       {error && (
         <Alert severity="error" sx={{ mb: 2 }}>
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{t('ml_alerts.error')}</AlertTitle>
           {error}
         </Alert>
       )}
@@ -280,7 +280,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
             <Box display="flex" alignItems="center" gap={2}>
               <SmartToyIcon color="primary" />
               <Typography variant="h6">
-                {t('ml_alerts.title', 'Intelligent ML Alerts')}
+                {t('ml_alerts.title')}
               </Typography>
             </Box>
             <Box display="flex" alignItems="center" gap={1}>
@@ -292,9 +292,9 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
                     color="primary"
                   />
                 }
-                label={mlEnabled ? 'Enabled' : 'Disabled'}
+                label={mlEnabled ? t('ml_alerts.enabled') : t('ml_alerts.disabled')}
               />
-              <Tooltip title="Refresh data">
+              <Tooltip title={t('ml_alerts.refreshData')}>
                 <IconButton onClick={loadData} size="small">
                   <RefreshIcon />
                 </IconButton>
@@ -307,21 +307,21 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
             <Grid item xs={12} md={4}>
               <Box p={2} bgcolor="background.paper" borderRadius={1} border="1px solid" borderColor="divider">
                 <Typography variant="subtitle2" gutterBottom>
-                  Model Status
+                  {t('ml_alerts.modelStatus.title')}
                 </Typography>
                 <Stack spacing={1}>
                   <Box display="flex" alignItems="center" gap={1}>
                     <Chip 
                       size="small"
-                      label={statistics?.is_trained ? 'Trained' : 'Not Trained'}
+                      label={statistics?.is_trained ? t('ml_alerts.modelStatus.trained') : t('ml_alerts.modelStatus.notTrained')}
                       color={statistics?.is_trained ? 'success' : 'warning'}
                     />
                   </Box>
                   <Typography variant="body2" color="textSecondary">
-                    Training Data: {statistics?.training_data_points || 0} points
+                    {t('ml_alerts.modelStatus.trainingData')}: {statistics?.training_data_points || 0} {t('ml_alerts.modelStatus.points')}
                   </Typography>
                   <Typography variant="body2" color="textSecondary">
-                    Confidence: {((statistics?.confidence_threshold || 0) * 100).toFixed(1)}%
+                    {t('ml_alerts.modelStatus.confidence')}: {((statistics?.confidence_threshold || 0) * 100).toFixed(1)}%
                   </Typography>
                 </Stack>
               </Box>
@@ -331,7 +331,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
             <Grid item xs={12} md={4}>
               <Box p={2} bgcolor="background.paper" borderRadius={1} border="1px solid" borderColor="divider">
                 <Typography variant="subtitle2" gutterBottom>
-                  Alerts ({timeRange})
+                  {t('ml_alerts.alerts.title')} ({timeRange})
                 </Typography>
                 <Stack spacing={1}>
                   <Typography variant="h4" color="primary">
@@ -357,7 +357,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
             <Grid item xs={12} md={4}>
               <Box p={2} bgcolor="background.paper" borderRadius={1} border="1px solid" borderColor="divider">
                 <Typography variant="subtitle2" gutterBottom>
-                  Actions
+                  {t('ml_alerts.actions.title')}
                 </Typography>
                 <Stack spacing={1}>
                   <Button
@@ -367,7 +367,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
                     disabled={training || !mlEnabled}
                     startIcon={training ? <CircularProgress size={16} /> : <PsychologyIcon />}
                   >
-                    {training ? 'Training...' : 'Train Model'}
+                    {training ? t('ml_alerts.actions.training') : t('ml_alerts.actions.trainModel')}
                   </Button>
                   <Button
                     size="small"
@@ -376,7 +376,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
                     disabled={!mlEnabled}
                     startIcon={<RefreshIcon />}
                   >
-                    Reset Model
+                    {t('ml_alerts.actions.resetModel')}
                   </Button>
                 </Stack>
               </Box>
@@ -391,7 +391,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Box display="flex" alignItems="center" gap={2}>
               <AnalyticsIcon />
-              <Typography variant="h6">Sensor Statistics</Typography>
+              <Typography variant="h6">{t('ml_alerts.sensorStatistics.title')}</Typography>
             </Box>
           </AccordionSummary>
           <AccordionDetails>
@@ -399,12 +399,12 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Sensor</TableCell>
-                    <TableCell>Data Points</TableCell>
-                    <TableCell>Anomalies</TableCell>
-                    <TableCell>Current Mean</TableCell>
-                    <TableCell>Std Dev</TableCell>
-                    <TableCell>Last Anomaly</TableCell>
+                    <TableCell>{t('ml_alerts.sensorStatistics.sensor')}</TableCell>
+                    <TableCell>{t('ml_alerts.sensorStatistics.dataPoints')}</TableCell>
+                    <TableCell>{t('ml_alerts.sensorStatistics.anomalies')}</TableCell>
+                    <TableCell>{t('ml_alerts.sensorStatistics.currentMean')}</TableCell>
+                    <TableCell>{t('ml_alerts.sensorStatistics.stdDev')}</TableCell>
+                    <TableCell>{t('ml_alerts.sensorStatistics.lastAnomaly')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -429,7 +429,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
                         <Typography variant="body2" color="textSecondary">
                           {stats.last_anomaly 
                             ? formatTimestamp(stats.last_anomaly)
-                            : 'Never'
+                            : t('ml_alerts.sensorStatistics.never')
                           }
                         </Typography>
                       </TableCell>
@@ -447,7 +447,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Box display="flex" alignItems="center" gap={2}>
             <TimelineIcon />
-            <Typography variant="h6">Recent ML Alerts</Typography>
+            <Typography variant="h6">{t('ml_alerts.recentAlerts.title')}</Typography>
             <Chip size="small" label={recentAlerts.length} />
           </Box>
         </AccordionSummary>
@@ -455,32 +455,32 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
           {/* Filtros */}
           <Box display="flex" gap={2} mb={2} alignItems="center">
             <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>Time Range</InputLabel>
+              <InputLabel>{t('ml_alerts.recentAlerts.timeRange')}</InputLabel>
               <Select
                 value={timeRange}
-                label="Time Range"
+                label={t('ml_alerts.recentAlerts.timeRange')}
                 onChange={(e) => setTimeRange(e.target.value)}
               >
-                <MenuItem value="1h">1 Hour</MenuItem>
-                <MenuItem value="6h">6 Hours</MenuItem>
-                <MenuItem value="12h">12 Hours</MenuItem>
-                <MenuItem value="24h">24 Hours</MenuItem>
-                <MenuItem value="7d">7 Days</MenuItem>
+                <MenuItem value="1h">{t('ml_alerts.timeRanges.1h')}</MenuItem>
+                <MenuItem value="6h">{t('ml_alerts.timeRanges.6h')}</MenuItem>
+                <MenuItem value="12h">{t('ml_alerts.timeRanges.12h')}</MenuItem>
+                <MenuItem value="24h">{t('ml_alerts.timeRanges.24h')}</MenuItem>
+                <MenuItem value="7d">{t('ml_alerts.timeRanges.7d')}</MenuItem>
               </Select>
             </FormControl>
 
             <FormControl size="small" sx={{ minWidth: 120 }}>
-              <InputLabel>Severity</InputLabel>
+              <InputLabel>{t('ml_alerts.recentAlerts.severity')}</InputLabel>
               <Select
                 value={severityFilter}
-                label="Severity"
+                label={t('ml_alerts.recentAlerts.severity')}
                 onChange={(e) => setSeverityFilter(e.target.value)}
               >
-                <MenuItem value="">All</MenuItem>
-                <MenuItem value="LOW">Low</MenuItem>
-                <MenuItem value="MEDIUM">Medium</MenuItem>
-                <MenuItem value="HIGH">High</MenuItem>
-                <MenuItem value="CRITICAL">Critical</MenuItem>
+                <MenuItem value="">{t('ml_alerts.severityLevels.all')}</MenuItem>
+                <MenuItem value="LOW">{t('ml_alerts.severityLevels.low')}</MenuItem>
+                <MenuItem value="MEDIUM">{t('ml_alerts.severityLevels.medium')}</MenuItem>
+                <MenuItem value="HIGH">{t('ml_alerts.severityLevels.high')}</MenuItem>
+                <MenuItem value="CRITICAL">{t('ml_alerts.severityLevels.critical')}</MenuItem>
               </Select>
             </FormControl>
 
@@ -490,27 +490,27 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
               onClick={loadData}
               startIcon={<RefreshIcon />}
             >
-              Apply Filters
+              {t('ml_alerts.recentAlerts.applyFilters')}
             </Button>
           </Box>
 
           {/* Lista de Alertas */}
           {recentAlerts.length === 0 ? (
             <Typography color="textSecondary" align="center" py={3}>
-              No ML alerts found for the selected criteria
+              {t('ml_alerts.recentAlerts.noAlerts')}
             </Typography>
           ) : (
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Time</TableCell>
-                    <TableCell>Sensor</TableCell>
-                    <TableCell>Severity</TableCell>
-                    <TableCell>Anomaly Type</TableCell>
-                    <TableCell>Value</TableCell>
-                    <TableCell>Confidence</TableCell>
-                    <TableCell>Message</TableCell>
+                    <TableCell>{t('ml_alerts.recentAlerts.table.time')}</TableCell>
+                    <TableCell>{t('ml_alerts.recentAlerts.table.sensor')}</TableCell>
+                    <TableCell>{t('ml_alerts.recentAlerts.table.severity')}</TableCell>
+                    <TableCell>{t('ml_alerts.recentAlerts.table.anomalyType')}</TableCell>
+                    <TableCell>{t('ml_alerts.recentAlerts.table.value')}</TableCell>
+                    <TableCell>{t('ml_alerts.recentAlerts.table.confidence')}</TableCell>
+                    <TableCell>{t('ml_alerts.recentAlerts.table.message')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -537,7 +537,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
                         <Box display="flex" alignItems="center" gap={1}>
                           {getAnomalyTypeIcon(alert.ml_data?.anomaly_type || '')}
                           <Typography variant="body2">
-                            {alert.ml_data?.anomaly_type.replace(/[,_]/g, ' ') || 'Unknown'}
+                            {alert.ml_data?.anomaly_type.replace(/[,_]/g, ' ') || t('ml_alerts.anomalyTypes.unknown')}
                           </Typography>
                         </Box>
                       </TableCell>

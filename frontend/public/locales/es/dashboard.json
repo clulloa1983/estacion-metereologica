@@ -391,5 +391,74 @@
         "confirm": "Confirmar"
       }
     }
+  },
+  "ml_alerts": {
+    "title": "Alertas ML Inteligentes",
+    "enabled": "Habilitado",
+    "disabled": "Deshabilitado",
+    "loading": "Cargando Alertas ML...",
+    "error": "Error",
+    "refreshData": "Actualizar datos",
+    "modelStatus": {
+      "title": "Estado del Modelo",
+      "trained": "Entrenado",
+      "notTrained": "No Entrenado",
+      "trainingData": "Datos de Entrenamiento",
+      "points": "puntos",
+      "confidence": "Confianza"
+    },
+    "alerts": {
+      "title": "Alertas",
+      "total": "Total"
+    },
+    "actions": {
+      "title": "Acciones",
+      "trainModel": "Entrenar Modelo",
+      "training": "Entrenando...",
+      "resetModel": "Restablecer Modelo"
+    },
+    "sensorStatistics": {
+      "title": "Estadísticas de Sensores",
+      "sensor": "Sensor",
+      "dataPoints": "Puntos de Datos",
+      "anomalies": "Anomalías",
+      "currentMean": "Media Actual",
+      "stdDev": "Desviación Estándar",
+      "lastAnomaly": "Última Anomalía",
+      "never": "Nunca"
+    },
+    "recentAlerts": {
+      "title": "Alertas ML Recientes",
+      "timeRange": "Rango de Tiempo",
+      "severity": "Gravedad",
+      "applyFilters": "Aplicar Filtros",
+      "noAlerts": "No se encontraron alertas ML para los criterios seleccionados",
+      "table": {
+        "time": "Hora",
+        "sensor": "Sensor",
+        "severity": "Gravedad",
+        "anomalyType": "Tipo de Anomalía",
+        "value": "Valor",
+        "confidence": "Confianza",
+        "message": "Mensaje"
+      }
+    },
+    "timeRanges": {
+      "1h": "1 Hora",
+      "6h": "6 Horas",
+      "12h": "12 Horas",
+      "24h": "24 Horas",
+      "7d": "7 Días"
+    },
+    "severityLevels": {
+      "all": "Todas",
+      "low": "Baja",
+      "medium": "Media",
+      "high": "Alta",
+      "critical": "Crítica"
+    },
+    "anomalyTypes": {
+      "unknown": "Desconocido"
+    }
   }
 }
