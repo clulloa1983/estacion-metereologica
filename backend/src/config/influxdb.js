@@ -43,9 +43,9 @@ const writeAlert = (alertData) => {
     point.stringField('ml_data', JSON.stringify(alertData.ml_data));
   }
 
-  // Add value if present
-  if (alertData.value !== undefined) {
-    point.floatField('value', alertData.value);
+  // Add alert_value as float to avoid type collision with other fields
+  if (alertData.value !== undefined && typeof alertData.value === 'number') {
+    point.floatField('alert_value', alertData.value);
   }
 
   writeApi.writePoint(point);
