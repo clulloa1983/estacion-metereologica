@@ -69,7 +69,14 @@ class WeatherService {
     };
   }
 
-  private async fetchWithFallback(url: string, options: RequestInit = {}): Promise<Response> {
+  private async sleep(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  private async fetchWithFallback(url: string, options: RequestInit = {}, retryCount = 0): Promise<Response> {
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+    
     // Try primary URL first (HTTPS via nginx)
     try {
       console.log('Trying primary URL:', url);
@@ -80,6 +87,16 @@ class WeatherService {
           ...options.headers
         }
       });
+      
+      // Handle rate limiting with retry
+      if (response.status === 429 && retryCount < maxRetries) {
+        const retryAfter = response.headers.get('Retry-After');
+        const delay = retryAfter ? parseInt(retryAfter) * 1000 : baseDelay * Math.pow(2, retryCount);
+        
+        console.warn(`Rate limited on primary URL. Retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+        await this.sleep(delay);
+        return this.fetchWithFallback(url, options, retryCount + 1);
+      }
       
       if (response.ok || response.status === 404) {
         return response;
@@ -94,20 +111,45 @@ class WeatherService {
       const fallbackUrl = url.replace(API_BASE_URL, API_BASE_URL_FALLBACK);
       console.log('Trying fallback URL:', fallbackUrl);
       
-      const response = await fetch(fallbackUrl, {
-        ...options,
-        headers: {
-          ...this.getHeaders(),
-          ...options.headers
+      try {
+        const response = await fetch(fallbackUrl, {
+          ...options,
+          headers: {
+            ...this.getHeaders(),
+            ...options.headers
+          }
+        });
+        
+        // Handle rate limiting with retry on fallback
+        if (response.status === 429 && retryCount < maxRetries) {
+          const retryAfter = response.headers.get('Retry-After');
+          const delay = retryAfter ? parseInt(retryAfter) * 1000 : baseDelay * Math.pow(2, retryCount);
+          
+          console.warn(`Rate limited on fallback URL. Retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+          await this.sleep(delay);
+          return this.fetchWithFallback(url, options, retryCount + 1);
         }
-      });
-      
-      if (!response.ok && response.status !== 404) {
-        const errorText = await response.text();
-        throw new Error(`Both primary and fallback URLs failed. Status: ${response.status}, Error: ${errorText}`);
+        
+        if (!response.ok && response.status !== 404) {
+          const errorText = await response.text();
+          
+          // If we've exhausted retries and still getting rate limited, throw a more helpful error
+          if (response.status === 429) {
+            const retryAfter = response.headers.get('Retry-After') || '300';
+            throw new Error(`Rate limit exceeded. Please wait ${retryAfter} seconds before making more requests. Try refreshing the page later.`);
+          }
+          
+          throw new Error(`Both primary and fallback URLs failed. Status: ${response.status}, Error: ${errorText}`);
+        }
+        
+        return response;
+      } catch (fallbackError) {
+        // If fallback also fails, throw the original error with better context
+        if (fallbackError.message.includes('Rate limit exceeded')) {
+          throw fallbackError;
+        }
+        throw new Error(`Both primary and fallback URLs failed. Primary: ${primaryError.message}, Fallback: ${fallbackError.message}`);
       }
-      
-      return response;
     }
   }
 

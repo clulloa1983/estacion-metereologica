@@ -11,6 +11,7 @@ import SystemStatus from '../components/SystemStatus';
 import AlertsPanel from '../components/AlertsPanel';
 import RemoteConfigPanel from '../components/RemoteConfigPanel';
 import MLAlertsPanel from '../components/MLAlertsPanel';
+import ErrorBoundary from '../components/ErrorBoundary';
 import { LanguageSelector } from '../components/LanguageSelector';
 import { weatherService } from '../services/weatherService';
 import { socketService } from '../services/socketService';
@@ -208,7 +209,9 @@ export default function Dashboard() {
           
           {/* Panel de Alertas Inteligentes ML */}
           <Grid size={{ xs: 12 }}>
-            <MLAlertsPanel stationId={stationId} />
+            <ErrorBoundary componentName="ML Alerts Panel">
+              <MLAlertsPanel stationId={stationId} />
+            </ErrorBoundary>
           </Grid>
           
           {/* Panel de Configuración Remota */}

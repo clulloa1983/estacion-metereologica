@@ -204,13 +204,14 @@ class MLAlertsController {
       }
 
       if (sensor) {
-        filters.push(`contains(value: "${sensor}", set: r.alert_type)`);
+        filters.push(`strings.containsStr(v: r.alert_type, substr: "${sensor}")`);
       }
 
       // Filtrar solo alertas ML
-      filters.push('contains(value: "ml_", set: r.alert_type)');
+      filters.push('strings.hasPrefix(v: r.alert_type, prefix: "ml_")');
 
       const query = `
+        import "strings"
         from(bucket: "${process.env.INFLUXDB_BUCKET}")
           |> range(start: -7d)
           |> filter(fn: (r) => ${filters.join(' and ')})
@@ -266,11 +267,12 @@ class MLAlertsController {
 
       // Obtener estadísticas de alertas ML
       const query = `
+        import "strings"
         from(bucket: "${process.env.INFLUXDB_BUCKET}")
           |> range(start: -${timeRange})
           |> filter(fn: (r) => r._measurement == "alerts")
           |> filter(fn: (r) => r.station_id == "${stationId}")
-          |> filter(fn: (r) => contains(value: "ml_", set: r.alert_type))
+          |> filter(fn: (r) => strings.hasPrefix(v: r.alert_type, prefix: "ml_"))
           |> group(columns: ["severity"])
           |> count(column: "_time")
       `;

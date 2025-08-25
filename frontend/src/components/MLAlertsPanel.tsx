@@ -119,8 +119,16 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
   // API Base URL
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5002/api';
 
-  // Función para hacer requests a la API
-  const apiRequest = useCallback(async (endpoint: string, options?: RequestInit) => {
+  // Helper function for exponential backoff delays
+  const sleep = (ms: number): Promise<void> => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  };
+
+  // Función para hacer requests a la API con retry logic
+  const apiRequest = useCallback(async (endpoint: string, options?: RequestInit, retryCount = 0): Promise<any> => {
+    const maxRetries = 3;
+    const baseDelay = 1000; // 1 second
+
     try {
       const response = await fetch(`${API_BASE_URL}/ml-alerts${endpoint}`, {
         headers: {
@@ -130,14 +138,49 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
         ...options
       });
 
+      // Handle rate limiting with retry
+      if (response.status === 429 && retryCount < maxRetries) {
+        const retryAfter = response.headers.get('Retry-After');
+        const delay = retryAfter ? parseInt(retryAfter) * 1000 : baseDelay * Math.pow(2, retryCount);
+        
+        console.warn(`ML-Alerts API rate limited. Retrying in ${delay}ms (attempt ${retryCount + 1}/${maxRetries})`);
+        await sleep(delay);
+        return apiRequest(endpoint, options, retryCount + 1);
+      }
+
       if (!response.ok) {
+        // If we've exhausted retries and still getting rate limited, throw a helpful error
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After') || '300';
+          throw new Error(`Rate limit exceeded. Please wait ${retryAfter} seconds before refreshing.`);
+        }
+        // Handle server errors (500-599)
+        if (response.status >= 500) {
+          throw new Error('ML alerts service temporarily unavailable');
+        }
+        // Handle client errors (400-499)
+        if (response.status >= 400) {
+          throw new Error(`ML alerts request failed: ${response.status}`);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       return await response.json();
     } catch (error) {
-      console.error('API request error:', error);
-      throw error;
+      console.error('ML-Alerts API request error:', error);
+      
+      // Re-throw rate limit errors with user-friendly message
+      if (error instanceof Error && error.message.includes('Rate limit exceeded')) {
+        throw error;
+      }
+      
+      // Re-throw server unavailable errors  
+      if (error instanceof Error && error.message.includes('ML alerts service temporarily unavailable')) {
+        throw error;
+      }
+      
+      // For other errors, provide generic message
+      throw new Error('Failed to connect to ML-Alerts service. Please try again later.');
     }
   }, [API_BASE_URL]);
 
@@ -147,20 +190,98 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
     setError(null);
 
     try {
-      const [configRes, statsRes, metricsRes, alertsRes] = await Promise.all([
+      // Try to load data with individual error handling for each endpoint
+      const results = await Promise.allSettled([
         apiRequest('/config'),
         apiRequest(`/statistics/${stationId}`),
         apiRequest(`/metrics/${stationId}?timeRange=${timeRange}`),
         apiRequest(`/recent/${stationId}?limit=${alertLimit}${severityFilter ? `&severity=${severityFilter}` : ''}`)
       ]);
 
-      setMlEnabled(configRes.data.ml_enabled);
-      setStatistics(statsRes.data);
-      setMetrics(metricsRes.data);
-      setRecentAlerts(alertsRes.data);
+      // Process config result
+      if (results[0].status === 'fulfilled') {
+        setMlEnabled(results[0].value.data.ml_enabled);
+      } else {
+        console.warn('Failed to load ML config:', results[0].reason);
+        setMlEnabled(false); // Default to disabled if config fails
+      }
+
+      // Process statistics result
+      if (results[1].status === 'fulfilled') {
+        setStatistics(results[1].value.data);
+      } else {
+        console.warn('Failed to load ML statistics:', results[1].reason);
+        setStatistics({
+          ml_enabled: false,
+          is_trained: false,
+          training_data_points: 0,
+          confidence_threshold: 0.95,
+          sensors_monitored: []
+        });
+      }
+
+      // Process metrics result
+      if (results[2].status === 'fulfilled') {
+        setMetrics(results[2].value.data);
+      } else {
+        console.warn('Failed to load ML metrics:', results[2].reason);
+        setMetrics({
+          total_ml_alerts: 0,
+          alerts_by_severity: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 },
+          time_range: timeRange,
+          model_statistics: {
+            ml_enabled: false,
+            is_trained: false,
+            training_data_points: 0,
+            confidence_threshold: 0.95,
+            sensors_monitored: []
+          }
+        });
+      }
+
+      // Process recent alerts result
+      if (results[3].status === 'fulfilled') {
+        setRecentAlerts(results[3].value.data);
+      } else {
+        console.warn('Failed to load recent ML alerts:', results[3].reason);
+        setRecentAlerts([]);
+      }
+
+      // If all requests failed, show error
+      const allFailed = results.every(result => result.status === 'rejected');
+      if (allFailed) {
+        const firstError = results.find(r => r.status === 'rejected')?.reason;
+        const errorMessage = firstError instanceof Error ? firstError.message : 'ML alerts service temporarily unavailable';
+        setError(errorMessage);
+      }
+
     } catch (error) {
-      setError('Error loading ML alerts data');
+      const errorMessage = error instanceof Error ? error.message : 'Error loading ML alerts data';
+      setError(errorMessage);
       console.error('Error loading ML data:', error);
+      
+      // Set defaults for all states
+      setMlEnabled(false);
+      setStatistics({
+        ml_enabled: false,
+        is_trained: false,
+        training_data_points: 0,
+        confidence_threshold: 0.95,
+        sensors_monitored: []
+      });
+      setMetrics({
+        total_ml_alerts: 0,
+        alerts_by_severity: { LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 0 },
+        time_range: timeRange,
+        model_statistics: {
+          ml_enabled: false,
+          is_trained: false,
+          training_data_points: 0,
+          confidence_threshold: 0.95,
+          sensors_monitored: []
+        }
+      });
+      setRecentAlerts([]);
     } finally {
       setLoading(false);
     }
@@ -183,7 +304,8 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
         setError(result.message || 'Error training ML model');
       }
     } catch (error) {
-      setError('Failed to train ML model');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to train ML model';
+      setError(errorMessage);
       console.error('Training error:', error);
     } finally {
       setTraining(false);
@@ -264,12 +386,52 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
     );
   }
 
+  // If service is completely unavailable, show a helpful message
+  if (error && error.includes('ML alerts service temporarily unavailable')) {
+    return (
+      <Card>
+        <CardContent>
+          <Box display="flex" alignItems="center" gap={2} mb={2}>
+            <SmartToyIcon color="disabled" />
+            <Typography variant="h6" color="text.secondary">
+              ML Alerts Service (Under Development)
+            </Typography>
+          </Box>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <AlertTitle>Service Status</AlertTitle>
+            The Machine Learning alerts service is currently under development. 
+            Regular alerts and monitoring are still fully functional. This feature will be available in a future update.
+          </Alert>
+          <Box display="flex" alignItems="center" gap={1}>
+            <Button 
+              variant="outlined" 
+              onClick={loadData}
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
+            >
+              Retry Connection
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Box>
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          <AlertTitle>{t('ml_alerts.error')}</AlertTitle>
+      {error && !error.includes('ML alerts service temporarily unavailable') && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <AlertTitle>Partial Service Issue</AlertTitle>
           {error}
+          <Button 
+            size="small" 
+            onClick={loadData} 
+            disabled={loading}
+            sx={{ mt: 1 }}
+            startIcon={loading ? <CircularProgress size={16} /> : <RefreshIcon />}
+          >
+            Retry
+          </Button>
         </Alert>
       )}
 
