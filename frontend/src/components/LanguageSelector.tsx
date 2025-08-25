@@ -66,6 +66,7 @@ export function LanguageSelector({ variant = 'select' }: LanguageSelectorProps) 
               const nextLang = languages.find(lang => lang.code !== router.locale) || languages[0];
               handleLanguageChange(nextLang.code);
             }}
+            sx={{ color: 'inherit' }}
           >
             <LanguageIcon />
           </IconButton>
