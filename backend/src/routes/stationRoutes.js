@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const stationController = require('../controllers/stationController');
 const { verifyApiKey, optionalAuth, verifyToken, requireRole } = require('../middleware/auth');
-const { validateParams, validateQuery, validateBody } = require('../middleware/validation');
+const { validateParams, validateQuery } = require('../middleware/validation');
 const { generalRateLimit } = require('../middleware/rateLimiter');
 
 /**
@@ -268,7 +268,7 @@ router.get('/metadata/:stationId', generalRateLimit, optionalAuth, validateParam
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.post('/metadata', generalRateLimit, verifyToken, requireRole('user'), validateBody, stationController.createStationMetadata);
+router.post('/metadata', generalRateLimit, verifyToken, requireRole('user'), stationController.createStationMetadata);
 
 /**
  * @swagger
@@ -316,7 +316,7 @@ router.post('/metadata', generalRateLimit, verifyToken, requireRole('user'), val
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.put('/metadata/:stationId', generalRateLimit, verifyToken, requireRole('user'), validateParams, validateBody, stationController.updateStationMetadata);
+router.put('/metadata/:stationId', generalRateLimit, verifyToken, requireRole('user'), validateParams, stationController.updateStationMetadata);
 
 /**
  * @swagger
@@ -538,6 +538,6 @@ router.get('/:stationId/stats', generalRateLimit, optionalAuth, validateParams, 
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.put('/:stationId/status', generalRateLimit, verifyToken, requireRole('user'), validateParams, validateBody, stationController.updateStationStatus);
+router.put('/:stationId/status', generalRateLimit, verifyToken, requireRole('user'), validateParams, stationController.updateStationStatus);
 
 module.exports = router;

@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { body, param, query } = require('express-validator');
 const aiPredictionController = require('../controllers/aiPredictionController');
-const authMiddleware = require('../middleware/authMiddleware');
-const rateLimitMiddleware = require('../middleware/rateLimitMiddleware');
+const { optionalAuth, verifyToken, requireRole } = require('../middleware/auth');
+const { aiPrediction } = require('../middleware/rateLimiter');
+const { validateParams, validateQuery } = require('../middleware/validation');
 
 // Apply authentication and rate limiting to all AI prediction routes
-router.use(authMiddleware.optionalAuth); // Some endpoints may work without auth for demo purposes
-router.use(rateLimitMiddleware.aiPrediction); // Special rate limit for AI operations
+router.use(optionalAuth); // Some endpoints may work without auth for demo purposes
+router.use(aiPrediction); // Special rate limit for AI operations
 
 /**
  * Validation middleware for station ID

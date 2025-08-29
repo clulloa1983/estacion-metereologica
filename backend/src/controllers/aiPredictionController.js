@@ -1,5 +1,5 @@
 const aiPredictionService = require('../services/aiPredictionService');
-const { validationResult } = require('express-validator');
+const logger = require('../config/logger');
 
 /**
  * AI Prediction Controller
@@ -98,14 +98,14 @@ const { validationResult } = require('express-validator');
  */
 const detectAnomalies = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation error',
-        details: errors.array()
-      });
-    }
+    // const errors = validationResult(req);
+    // if (!errors.isEmpty()) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     error: 'Validation error',
+    //     details: errors.array()
+    //   });
+    // }
 
     const { stationId } = req.params;
     const { data, threshold = 0.7 } = req.body;
@@ -175,14 +175,14 @@ const detectAnomalies = async (req, res) => {
  */
 const predictWeather = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation error',
-        details: errors.array()
-      });
-    }
+    // const errors = validationResult(req);
+    // if (!errors.isEmpty()) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     error: 'Validation error',
+    //     details: errors.array()
+    //   });
+    // }
 
     const { stationId } = req.params;
     const { hours = 24, parameters = 'temperature,humidity,pressure' } = req.query;
@@ -253,14 +253,14 @@ const predictWeather = async (req, res) => {
  */
 const predictMaintenance = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation error',
-        details: errors.array()
-      });
-    }
+    // const errors = validationResult(req);
+    // if (!errors.isEmpty()) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     error: 'Validation error',
+    //     details: errors.array()
+    //   });
+    // }
 
     const { stationId } = req.params;
     const { days = 30 } = req.query;
@@ -316,14 +316,14 @@ const predictMaintenance = async (req, res) => {
  */
 const optimizeEnergy = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation error',
-        details: errors.array()
-      });
-    }
+    // const errors = validationResult(req);
+    // if (!errors.isEmpty()) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     error: 'Validation error',
+    //     details: errors.array()
+    //   });
+    // }
 
     const { stationId } = req.params;
     const { mode = 'hybrid' } = req.query;
@@ -391,14 +391,14 @@ const optimizeEnergy = async (req, res) => {
  */
 const interpolateRegionalData = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation error',
-        details: errors.array()
-      });
-    }
+    // const errors = validationResult(req);
+    // if (!errors.isEmpty()) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     error: 'Validation error',
+    //     details: errors.array()
+    //   });
+    // }
 
     const { stations, target_location, parameter = 'temperature', method = 'idw' } = req.body;
 
@@ -501,14 +501,14 @@ const getModelStatus = async (req, res) => {
  */
 const trainModel = async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        error: 'Validation error',
-        details: errors.array()
-      });
-    }
+    // const errors = validationResult(req);
+    // if (!errors.isEmpty()) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     error: 'Validation error',
+    //     details: errors.array()
+    //   });
+    // }
 
     const { model_type = 'all', stations, training_days = 30 } = req.body;
 

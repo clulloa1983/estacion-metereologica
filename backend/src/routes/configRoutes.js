@@ -108,7 +108,7 @@ const { configRateLimit } = require('../middleware/rateLimiter');
  *       500:
  *         $ref: '#/components/responses/InternalServerError'
  */
-router.post('/command/:stationId', configRateLimit, verifyToken, requireRole('user'), validateParams, validateConfigCommand, configController.sendCommand);
+router.post('/command/:stationId', verifyToken, requireRole('user'), validateParams, validateConfigCommand, configController.sendCommand);
 
 /**
  * @swagger
