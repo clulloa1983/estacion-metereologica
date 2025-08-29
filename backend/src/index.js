@@ -18,6 +18,9 @@ const authRoutes = require('./routes/authRoutes');
 const monitoringRoutes = require('./routes/monitoringRoutes');
 const configRoutes = require('./routes/configRoutes');
 const mlAlertsRoutes = require('./routes/mlAlerts');
+const stationRoutes = require('./routes/stationRoutes');
+const aiPredictionRoutes = require('./routes/aiPredictionRoutes');
+const exportRoutes = require('./routes/exportRoutes');
 const { rateLimiter } = require('./middleware/rateLimiter');
 const { requestLogger, addUserContext, errorLogger } = require('./middleware/requestLogger');
 const { specs, swaggerUi, swaggerOptions } = require('./config/swagger');
@@ -82,6 +85,9 @@ app.use('/api/alerts', alertRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/config', configRoutes);
 app.use('/api/ml-alerts', mlAlertsRoutes);
+app.use('/api/stations', stationRoutes);
+app.use('/api/ai', aiPredictionRoutes);
+app.use('/api/export', exportRoutes);
 
 /**
  * @swagger

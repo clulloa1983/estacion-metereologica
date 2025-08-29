@@ -141,12 +141,115 @@
     "latitude": "Latitud",
     "longitude": "Longitud",
     "clickMarkerInfo": "Haz clic en el marcador para ver información detallada de la estación",
+    "multiStation": {
+      "title": "Mapa Multi-Estación",
+      "instructions": "Haz clic en las estaciones para seleccionar/deseleccionar. Los marcadores muestran métricas en tiempo real."
+    },
+    "metric": "Métrica",
+    "showMetrics": "Mostrar métricas",
+    "showInactive": "Mostrar inactivas",
+    "showAll": "Mostrar todas",
+    "centerOnStations": "Centrar en estaciones",
+    "noStationsVisible": "No hay estaciones visibles con los filtros actuales",
     "popup": {
       "weatherStation": "Estación Meteorológica",
       "currentConditions": "Condiciones Actuales:",
       "stationId": "ID",
-      "noData": "N/A"
+      "noData": "N/A",
+      "clickToSelect": "Clic para seleccionar",
+      "selected": "Seleccionada"
     }
+  },
+  "stations": {
+    "selector": {
+      "title": "Selector de Estaciones",
+      "label": "Seleccionar estaciones",
+      "selected": "{{count}} de {{total}} estaciones seleccionadas (máx. {{max}})"
+    },
+    "loading": "Cargando estaciones...",
+    "refresh": "Actualizar estaciones",
+    "viewMode": {
+      "list": "Vista de lista",
+      "grid": "Vista de cuadrícula",
+      "map": "Vista de mapa"
+    },
+    "showInactive": "Mostrar inactivas",
+    "selectAll": "Seleccionar todas",
+    "clearAll": "Limpiar selección",
+    "statistics": "Estadísticas",
+    "station": "Estación",
+    "status": "Estado",
+    "current": "Actual",
+    "total": "Total",
+    "active": "Activas",
+    "selected": "Seleccionadas",
+    "withData": "Con datos",
+    "sensors": "Sensores",
+    "neverSeen": "Nunca visto",
+    "select": "Seleccionar",
+    "deselect": "Deseleccionar",
+    "viewCharts": "Ver gráficos",
+    "settings": "Configuración",
+    "comparison": {
+      "title": "Comparación de Estaciones",
+      "subtitle": "Comparando {{count}} estaciones",
+      "noStationsSelected": "Selecciona estaciones para comparar datos",
+      "tableView": "Vista de tabla",
+      "cardsView": "Vista de tarjetas"
+    }
+  },
+  "stationStatus": {
+    "active": "Activa",
+    "inactive": "Inactiva",
+    "maintenance": "Mantenimiento",
+    "error": "Error"
+  },
+  "weather": {
+    "metric": "Métrica",
+    "temperature": "Temperatura",
+    "humidity": "Humedad",
+    "pressure": "Presión",
+    "windSpeed": "Velocidad del viento",
+    "windDirection": "Dirección del viento",
+    "rainfall": "Precipitación",
+    "lightIntensity": "Intensidad de luz",
+    "coLevel": "Nivel de CO",
+    "airQuality": "Calidad del aire",
+    "pm25": "PM2.5",
+    "noCurrentData": "Sin datos actuales",
+    "additionalMetrics": "Métricas adicionales"
+  },
+  "statistics": {
+    "show": "Mostrar estadísticas",
+    "average": "Promedio",
+    "min": "Mínimo",
+    "max": "Máximo",
+    "range": "Rango",
+    "trend": "Tendencia",
+    "uptime": "Tiempo activo",
+    "dataPoints": "Puntos de datos"
+  },
+  "trend": {
+    "up": "Tendencia ascendente",
+    "down": "Tendencia descendente",
+    "flat": "Tendencia estable",
+    "unknown": "Tendencia desconocida"
+  },
+  "timeRange": {
+    "1hour": "1 hora",
+    "6hours": "6 horas",
+    "24hours": "24 horas",
+    "7days": "7 días",
+    "30days": "30 días"
+  },
+  "common": {
+    "refresh": "Actualizar",
+    "loading": "Cargando...",
+    "error": "Error",
+    "noData": "Sin datos",
+    "showMore": "Mostrar más",
+    "showLess": "Mostrar menos",
+    "timeRange": "Rango de tiempo"
   },
   "remoteConfig": {
     "title": "Configuración Remota",

@@ -31,6 +31,17 @@ const unsigned long INTERVALO_RESET_LLUVIA = 3600000; // Reset cada hora (360000
 const int MHRD_THRESHOLD_DRY = 3000;         // Valor ADC para condición seca (ajustable)
 const int MHRD_THRESHOLD_WET = 1000;         // Valor ADC para condición muy húmeda (ajustable)
 
+// Configuración del sensor de viento ZTS-3000
+#define WIND_SPEED_PIN 35                    // GPIO analógico para velocidad del viento (ADC1_CH7)
+#define WIND_DIRECTION_PIN 32                // GPIO analógico para dirección del viento (opcional)
+#define WIND_VCC_PIN 25                      // GPIO para alimentar el sensor (opcional, 5V)
+const float WIND_MAX_SPEED = 30.0;           // Velocidad máxima del sensor (m/s)
+const float WIND_MAX_VOLTAGE = 5.0;          // Voltaje máximo de salida (V)
+const int WIND_ADC_MAX = 4095;               // Resolución ADC 12-bit
+const int WIND_SAMPLES = 10;                 // Número de muestras para promediar
+const float WIND_CALIBRATION_OFFSET = 0.0;   // Offset de calibración
+const float WIND_CALIBRATION_FACTOR = 1.0;   // Factor de calibración
+
 // Variables para almacenar lecturas
 float temperature = 0;
 float pressure = 0;
@@ -47,6 +58,13 @@ int mhrdDigitalValue = 0;                    // Lectura digital (0 = lluvia, 1 =
 int mhrdAnalogValue = 0;                     // Lectura analógica (0-4095)
 String mhrdStatus = "SECO";                  // Estado interpretado del sensor
 
+// Variables para el sensor de viento ZTS-3000
+float windSpeed = 0.0;                       // Velocidad del viento en m/s
+float windDirection = 0.0;                   // Dirección del viento en grados (opcional)
+int windSpeedRaw = 0;                        // Valor ADC crudo de velocidad
+int windDirectionRaw = 0;                    // Valor ADC crudo de dirección
+String windSpeedCategory = "CALMA";          // Categoría de viento según escala Beaufort
+
 // Función de interrupción para contar pulsos del pluviómetro
 void IRAM_ATTR contarPulso() {
   contadorPulsos++;
@@ -54,9 +72,9 @@ void IRAM_ATTR contarPulso() {
 
 void setup() {
   Serial.begin(115200);
-  Serial.println("=== Test de Sensores I2C + Sensores de Lluvia ===");
-  Serial.println("BMP180 + GY-30 (BH1750) + DHT22 + Pluviómetro DFRobots + Sensor MH-RD");
-  Serial.println("=================================================");
+  Serial.println("=== Test de Sensores I2C + Sensores de Lluvia + Sensor de Viento ===");
+  Serial.println("BMP180 + GY-30 (BH1750) + DHT22 + Pluviómetro + Sensor MH-RD + ZTS-3000");
+  Serial.println("=====================================================================");
   
   // Configurar pines I2C
   Wire.begin(SDA_PIN, SCL_PIN);
@@ -118,6 +136,25 @@ void setup() {
   Serial.println("   AO (Analógico) -> GPIO34, DO (Digital) -> GPIO12");
   Serial.printf("   Umbral SECO: >%d, Umbral HÚMEDO: <%d\n", MHRD_THRESHOLD_DRY, MHRD_THRESHOLD_WET);
   
+  // Inicializar Sensor de Viento ZTS-3000
+  Serial.println("\n7. Inicializando Sensor de Viento ZTS-3000...");
+  pinMode(WIND_SPEED_PIN, INPUT);
+  pinMode(WIND_DIRECTION_PIN, INPUT);
+  
+  // Configurar alimentación del sensor (opcional - requiere 5V)
+  pinMode(WIND_VCC_PIN, OUTPUT);
+  digitalWrite(WIND_VCC_PIN, HIGH);  // Activar alimentación (usar convertidor 3.3V->5V si es necesario)
+  delay(500);  // Tiempo para estabilizar el sensor
+  
+  Serial.println("✅ Sensor de Viento ZTS-3000 inicializado correctamente");
+  Serial.println("   Conexiones:");
+  Serial.println("   ROJO -> VCC (5V recomendado, usar convertidor desde GPIO25)");
+  Serial.println("   NEGRO -> GND");
+  Serial.println("   AZUL -> GPIO35 (Velocidad - señal 0-5V)");
+  Serial.println("   AMARILLO -> GPIO32 (Dirección - opcional)");
+  Serial.printf("   Rango: 0-%.1f m/s, Resolución: 0.1 m/s\n", WIND_MAX_SPEED);
+  Serial.println("   Nota: Señal 0-5V, usar divisor resistivo si es necesario");
+  
   // Inicializar timestamp para reset de lluvia
   ultimoResetLluvia = millis();
   
@@ -145,6 +182,9 @@ void loop() {
   
   // Leer Sensor MH-RD
   readMHRDSensor();
+  
+  // Leer Sensor de Viento ZTS-3000
+  readWindSensor();
   
   // Verificar reset periódico de lluvia acumulada
   checkRainReset();
@@ -321,6 +361,95 @@ void readMHRDSensor() {
   }
 }
 
+void readWindSensor() {
+  // Tomar múltiples lecturas para promediar y reducir ruido
+  long totalSpeedReading = 0;
+  long totalDirectionReading = 0;
+  
+  for (int i = 0; i < WIND_SAMPLES; i++) {
+    totalSpeedReading += analogRead(WIND_SPEED_PIN);
+    totalDirectionReading += analogRead(WIND_DIRECTION_PIN);
+    delay(10); // Pequeña pausa entre lecturas
+  }
+  
+  // Calcular promedio
+  windSpeedRaw = totalSpeedReading / WIND_SAMPLES;
+  windDirectionRaw = totalDirectionReading / WIND_SAMPLES;
+  
+  // Convertir valor ADC a voltaje (0-3.3V en ESP32, pero sensor da 0-5V)
+  // Si usas divisor resistivo 5V->3.3V, ajustar el factor
+  float voltage = (windSpeedRaw * 3.3) / WIND_ADC_MAX;
+  
+  // Si el sensor da directamente 0-5V y usas divisor resistivo 2:3
+  // voltage = voltage * (5.0 / 3.3); // Descomentar si usas divisor resistivo
+  
+  // Convertir voltaje a velocidad del viento
+  // Fórmula: velocidad = (voltaje / voltaje_max) * velocidad_max
+  windSpeed = ((voltage / WIND_MAX_VOLTAGE) * WIND_MAX_SPEED) * WIND_CALIBRATION_FACTOR + WIND_CALIBRATION_OFFSET;
+  
+  // Asegurar que la velocidad no sea negativa
+  if (windSpeed < 0) {
+    windSpeed = 0;
+  }
+  
+  // Convertir dirección si está conectada (0-360 grados)
+  if (windDirectionRaw > 100) { // Solo si hay señal válida
+    windDirection = (windDirectionRaw * 360.0) / WIND_ADC_MAX;
+  } else {
+    windDirection = 0; // Sin señal de dirección
+  }
+  
+  // Clasificar viento según escala Beaufort simplificada
+  if (windSpeed == 0) {
+    windSpeedCategory = "CALMA";
+  } else if (windSpeed < 2) {
+    windSpeedCategory = "AIRE_LIGERO";
+  } else if (windSpeed < 6) {
+    windSpeedCategory = "BRISA_LIGERA";
+  } else if (windSpeed < 12) {
+    windSpeedCategory = "BRISA_MODERADA";
+  } else if (windSpeed < 20) {
+    windSpeedCategory = "BRISA_FUERTE";
+  } else if (windSpeed < 25) {
+    windSpeedCategory = "VIENTO_FUERTE";
+  } else {
+    windSpeedCategory = "TEMPORAL";
+  }
+  
+  // Mostrar lecturas
+  Serial.println("Sensor de Viento ZTS-3000:");
+  Serial.print("  💨 Velocidad: ");
+  Serial.print(windSpeed, 1);
+  Serial.println(" m/s");
+  Serial.print("  📊 Valor ADC: ");
+  Serial.print(windSpeedRaw);
+  Serial.print(" (Voltaje: ");
+  Serial.print(voltage, 2);
+  Serial.println("V)");
+  Serial.print("  🧭 Dirección: ");
+  if (windDirectionRaw > 100) {
+    Serial.print(windDirection, 0);
+    Serial.println(" grados");
+  } else {
+    Serial.println("No conectada");
+  }
+  Serial.print("  🌪️ Categoría: ");
+  Serial.println(windSpeedCategory);
+  
+  // Conversión a km/h para referencia
+  float windSpeedKmh = windSpeed * 3.6;
+  Serial.print("  🏃 Velocidad: ");
+  Serial.print(windSpeedKmh, 1);
+  Serial.println(" km/h");
+  
+  // Advertencias para velocidades altas
+  if (windSpeed > 15) {
+    Serial.println("  ⚠️ ADVERTENCIA: Viento fuerte detectado");
+  } else if (windSpeed > 25) {
+    Serial.println("  🚨 ALERTA: Condiciones de temporal");
+  }
+}
+
 void checkRainReset() {
   // Reset periódico de lluvia acumulada (cada hora)
   if (millis() - ultimoResetLluvia >= INTERVALO_RESET_LLUVIA) {
@@ -354,6 +483,13 @@ void displayReadings() {
   Serial.printf("│ MH-RD Digital: %-8s           │\n", mhrdDigitalValue == HIGH ? "SECO" : "LLUVIA");
   Serial.printf("│ MH-RD Analog:  %4d (%5.1f%%)        │\n", mhrdAnalogValue, humidityPercentage);
   Serial.printf("│ MH-RD Estado:  %-11s        │\n", mhrdStatus.c_str());
+  Serial.printf("│ Viento Vel.:   %6.1f m/s            │\n", windSpeed);
+  Serial.printf("│ Viento Cat.:   %-12s       │\n", windSpeedCategory.c_str());
+  if (windDirectionRaw > 100) {
+    Serial.printf("│ Viento Dir.:   %6.0f°              │\n", windDirection);
+  } else {
+    Serial.println("│ Viento Dir.:   No conectada          │");
+  }
   Serial.println("└─────────────────────────────────────────┘");
   
   // Información adicional del pluviómetro
@@ -386,4 +522,34 @@ void displayReadings() {
       Serial.println("   ⚠️ Discrepancia entre sensores");
     }
   }
+  
+  // Información adicional del viento
+  Serial.println("\n💨 ANÁLISIS DE VIENTO:");
+  Serial.printf("   Velocidad: %.1f m/s (%.1f km/h)\n", windSpeed, windSpeed * 3.6);
+  Serial.printf("   Categoría: %s\n", windSpeedCategory.c_str());
+  if (windDirectionRaw > 100) {
+    String windDirectionName = getWindDirectionName(windDirection);
+    Serial.printf("   Dirección: %.0f° (%s)\n", windDirection, windDirectionName.c_str());
+  }
+  
+  // Análisis de condiciones meteorológicas combinadas
+  if (windSpeed > 10 && (pluviometroDetected || mhrdDetected)) {
+    Serial.println("\n🌪️ CONDICIONES METEOROLÓGICAS:");
+    Serial.println("   ⚠️ TORMENTA: Viento fuerte + lluvia detectada");
+  } else if (windSpeed > 15) {
+    Serial.println("\n🌪️ CONDICIONES METEOROLÓGICAS:");
+    Serial.println("   ⚠️ VIENTO FUERTE: Posibles condiciones adversas");
+  }
+}
+
+String getWindDirectionName(float degrees) {
+  if (degrees >= 337.5 || degrees < 22.5) return "Norte";
+  if (degrees >= 22.5 && degrees < 67.5) return "Nordeste";
+  if (degrees >= 67.5 && degrees < 112.5) return "Este";
+  if (degrees >= 112.5 && degrees < 157.5) return "Sudeste";
+  if (degrees >= 157.5 && degrees < 202.5) return "Sur";
+  if (degrees >= 202.5 && degrees < 247.5) return "Sudoeste";
+  if (degrees >= 247.5 && degrees < 292.5) return "Oeste";
+  if (degrees >= 292.5 && degrees < 337.5) return "Noroeste";
+  return "Desconocido";
 }

@@ -1,3 +1,5 @@
+import { StationMetadata, WeatherData } from '../types/stationTypes';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://localhost/api';
 const API_BASE_URL_FALLBACK = process.env.NEXT_PUBLIC_API_URL_FALLBACK || 'http://localhost:5002/api';
 const API_KEY = process.env.NEXT_PUBLIC_API_KEY || 'weather-station-device-key-esp32-2024-dev';
@@ -214,13 +216,83 @@ class WeatherService {
     return result.summary || result;
   }
 
-  async getStations() {
+  async getStations(): Promise<string[]> {
     const response = await this.fetchWithFallback(`${API_BASE_URL}/weather/stations`);
     if (!response.ok) {
       throw new Error('Failed to fetch stations');
     }
     const result = await response.json();
     return result.stations || [];
+  }
+
+  /**
+   * Get stations with complete metadata (uses new stations API)
+   */
+  async getStationsWithMetadata(): Promise<StationMetadata[]> {
+    const response = await this.fetchWithFallback(`${API_BASE_URL}/stations/metadata`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch stations with metadata');
+    }
+    const result = await response.json();
+    return result.stations || [];
+  }
+
+  /**
+   * Get multiple stations data in parallel
+   */
+  async getMultipleStationsLatestData(stationIds: string[]): Promise<{ [stationId: string]: WeatherDataPoint | null }> {
+    try {
+      const promises = stationIds.map(async (stationId) => {
+        try {
+          const data = await this.getLatestData(stationId);
+          return { stationId, data };
+        } catch (error) {
+          console.warn(`Failed to get data for station ${stationId}:`, error);
+          return { stationId, data: null };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      
+      return results.reduce((acc, result) => {
+        acc[result.stationId] = result.data;
+        return acc;
+      }, {} as { [stationId: string]: WeatherDataPoint | null });
+    } catch (error) {
+      console.error('Error fetching multiple stations data:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get historical data for multiple stations
+   */
+  async getMultipleStationsHistoricalData(
+    stationIds: string[], 
+    timeRange: string = '24h', 
+    parameters?: string[]
+  ): Promise<{ [stationId: string]: WeatherDataPoint[] }> {
+    try {
+      const promises = stationIds.map(async (stationId) => {
+        try {
+          const data = await this.getHistoricalData(stationId, timeRange, parameters);
+          return { stationId, data };
+        } catch (error) {
+          console.warn(`Failed to get historical data for station ${stationId}:`, error);
+          return { stationId, data: [] };
+        }
+      });
+
+      const results = await Promise.all(promises);
+      
+      return results.reduce((acc, result) => {
+        acc[result.stationId] = result.data;
+        return acc;
+      }, {} as { [stationId: string]: WeatherDataPoint[] });
+    } catch (error) {
+      console.error('Error fetching multiple stations historical data:', error);
+      throw error;
+    }
   }
 
   async getAlerts(stationId?: string, acknowledged?: boolean): Promise<Alert[]> {

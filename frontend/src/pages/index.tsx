@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Grid, Box, Typography, AppBar, Toolbar, Chip, Alert } from '@mui/material';
-import { Wifi, WifiOff } from '@mui/icons-material';
+import { Container, Box, Typography, AppBar, Toolbar, Chip, Alert, Fab } from '@mui/material';
+import { Wifi, WifiOff, Dashboard as DashboardIcon } from '@mui/icons-material';
 import { useTranslation } from 'next-i18next';
 import { GetStaticProps } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
+import { useRouter } from 'next/router';
+import Grid from '@mui/material/Grid2';
 import CurrentMeasurements from '../components/CurrentMeasurements';
 import HistoricalCharts from '../components/HistoricalCharts';
 import WeatherMap from '../components/WeatherMap';
@@ -34,6 +36,7 @@ interface WeatherData {
 
 export default function Dashboard() {
   const { t } = useTranslation(['common', 'dashboard']);
+  const router = useRouter();
   const [currentData, setCurrentData] = useState<WeatherData | null>(null);
   const [stationId] = useState('ESP32_STATION_001'); // Podrías hacer esto configurable
   const [loading, setLoading] = useState(true);
@@ -220,6 +223,20 @@ export default function Dashboard() {
           </Grid>
         </Grid>
       </Container>
+
+      {/* Floating Action Button to go to multi-station view */}
+      <Fab
+        color="secondary"
+        aria-label="multi station"
+        onClick={() => router.push('/multi-station')}
+        sx={{
+          position: 'fixed',
+          bottom: 24,
+          right: 24
+        }}
+      >
+        <DashboardIcon />
+      </Fab>
     </Box>
   );
 }

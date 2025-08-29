@@ -29,6 +29,13 @@ const deviceRateLimiter = new RateLimiterMemory({
   duration: 3600, // 1 hour
 });
 
+// AI/ML prediction rate limiting (resource intensive operations)
+const aiPredictionRateLimiter = new RateLimiterMemory({
+  keyGenerator: (req) => req.ip,
+  points: 30, // 30 AI operations per hour
+  duration: 3600, // 1 hour
+});
+
 // Generic rate limiter middleware factory
 const createRateLimiterMiddleware = (limiter, limiterName = 'general') => {
   return async (req, res, next) => {
@@ -89,6 +96,7 @@ module.exports = {
   generalRateLimit: createRateLimiterMiddleware(generalRateLimiter, 'general'),
   authRateLimit: createRateLimiterMiddleware(authRateLimiter, 'authentication'),
   configRateLimit: createRateLimiterMiddleware(configRateLimiter, 'configuration'),
+  aiPrediction: createRateLimiterMiddleware(aiPredictionRateLimiter, 'AI prediction'),
   deviceRateLimit: deviceRateLimiterMiddleware,
   
   // Legacy compatibility
