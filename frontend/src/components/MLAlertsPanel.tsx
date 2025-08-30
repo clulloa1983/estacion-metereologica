@@ -705,7 +705,7 @@ const MLAlertsPanel: React.FC<MLAlertsPanelProps> = ({ stationId }) => {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">
-                          {alert.value.toFixed(2)}
+                          {alert.value ? alert.value.toFixed(2) : 'N/A'}
                         </Typography>
                       </TableCell>
                       <TableCell>

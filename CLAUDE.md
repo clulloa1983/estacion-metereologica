@@ -410,8 +410,12 @@ If ports are in use:
 - ✅ MQTT command integration tests (`tests/integration/mqttCommands.test.js`)
 - ✅ Frontend configuration service tests (`src/services/__tests__/configService.test.ts`)
 - ✅ Configuration panel component tests (`src/components/__tests__/RemoteConfigPanel.test.tsx`)
+- ✅ ML alerts service tests (`src/services/__tests__/mlAlertsService.test.ts`)
+- ✅ Notification service tests (`src/services/__tests__/notificationService.test.ts`)
+- ✅ PWA manager component tests (`src/components/__tests__/PWAManager.test.tsx`)
 - ✅ Command validation and error handling coverage
 - ✅ Mock external dependencies (MQTT, InfluxDB, Redis)
+- ✅ Coverage targets: 80%+ backend, 80%+ frontend with detailed reporting
 
 ## Remote Configuration System
 
@@ -814,6 +818,34 @@ The frontend supports multiple languages with dynamic switching:
 - **Manifest**: `frontend/public/manifest.json`
 - **Generation**: `frontend/scripts/generate-icons.js` for icon creation
 
+## 🔄 Recent Development Status & Current Features
+
+### Latest Development Activity (Recent Commits)
+- **3d8f81b**: Express-validator dependency removed and routes cleaned up for better performance
+- **7f16e84**: Multi-station dashboard and AI prediction services added with ML capabilities
+- **a41ec3d**: Code structure refactored for improved readability and maintainability
+- **3474aa9**: Language selector with color inheritance implemented for better UX
+- **d60451c**: MLAlertsPanel enhanced with retry logic and error handling
+- **4b904bb**: Intelligent ML alerts feature with localization support added
+
+### Currently Active Features
+- ✅ **Multi-Station Dashboard**: Comparative analytics across multiple weather stations
+- ✅ **ML/AI Predictions**: Machine learning models for weather forecasting and trend analysis
+- ✅ **Intelligent Alerts**: ML-powered alert system with severity classification
+- ✅ **PWA Capabilities**: Progressive Web App with offline support and native installation
+- ✅ **Data Export**: Multiple formats (CSV, Excel, JSON) with comprehensive data export
+- ✅ **Nginx Proxy**: SSL/TLS support with reverse proxy configuration
+- ✅ **Automated Backup**: Daily scheduled backups with retention policies
+- ✅ **Error Recovery**: Robust error boundaries and offline service handling
+- ✅ **Real-time Updates**: WebSocket integration for live data streaming
+- ✅ **Enhanced Rain Detection**: Dual rain sensors (MH-RD + DFRobots pluviómetro)
+
+### Modified Files Status
+- **Frontend Components**: MLAlertsPanel.tsx and index.tsx updated with latest features
+- **README Files**: Backend and frontend documentation updated across project
+- **Arduino Configuration**: GPIO pin assignments optimized for sensor compatibility
+- **Sensor Documentation**: arduino/sensores-microcontroladores.md removed (consolidated)
+
 ### Development & Production Considerations
 **Production-Ready Features:**
 - ✅ Authentication system (JWT + bcryptjs) implemented and configurable
@@ -824,11 +856,17 @@ The frontend supports multiple languages with dynamic switching:
 - ✅ Docker health checks for all services
 - ✅ Comprehensive logging with Winston
 - ✅ API documentation with Swagger/OpenAPI
-- ✅ Testing framework with coverage reporting
+- ✅ Testing framework with coverage reporting (80%+ targets)
 - ✅ Internationalization (i18n) with English/Spanish support
 - ✅ PWA capabilities for mobile and offline usage
 - ✅ User documentation and configuration guides
 - ✅ Advanced remote configuration system
+- ✅ ML/AI services for intelligent predictions and alerts
+- ✅ Multi-station support with comparative analytics
+- ✅ Nginx proxy with SSL/TLS support
+- ✅ Automated backup service with retention policies
+- ✅ Data export in multiple formats (CSV, Excel, JSON)
+- ✅ Error boundaries and offline service for robust UX
 
 **Deployment Considerations:**
 - 🔒 SSL/TLS certificates for production endpoints

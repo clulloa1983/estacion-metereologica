@@ -20,6 +20,11 @@ Sistema completo y modular para monitoreo meteorológico basado en **Arduino/ESP
 - **Testing**: Jest para backend y frontend con cobertura completa.
 - **Documentación**: Swagger/OpenAPI automática.
 - **Monitoreo**: Logging estructurado con Winston + health checks.
+- **IA y Machine Learning**: Predicciones meteorológicas y alertas inteligentes.
+- **Multi-estación**: Soporte completo para múltiples estaciones meteorológicas.
+- **PWA Completo**: Aplicación web progresiva con offline y notificaciones.
+- **Nginx + SSL**: Proxy reverso con certificados SSL/TLS.
+- **Backup Automatizado**: Sistema de respaldo programado con retención.
 
 ---
 
@@ -27,16 +32,20 @@ Sistema completo y modular para monitoreo meteorológico basado en **Arduino/ESP
 
 ```mermaid
 flowchart TD
-    ESP32["📡 ESP32 DevKit V1<br/>8 Sensores + WiFiManager"] -->|MQTT| MQTTBroker["🔗 Mosquitto<br/>Broker + WebSocket"]
-    MQTTBroker -->|MQTT| Backend["💻 Backend API<br/>Node.js/Express + JWT"]
-    Backend -->|REST/WebSocket| Frontend["📊 Frontend Dashboard<br/>React/Next.js + TypeScript"]
+    ESP32["📡 ESP32 DevKit V1<br/>8 Sensores + WiFiManager<br/>DFRobots Pluviómetro"] -->|MQTT| MQTTBroker["🔗 Mosquitto<br/>Broker + WebSocket + SSL"]
+    MQTTBroker -->|MQTT| Backend["💻 Backend API<br/>Node.js/Express + JWT<br/>IA/ML Services"]
+    Backend -->|REST/WebSocket| Frontend["📊 Frontend Dashboard<br/>React/Next.js + TypeScript<br/>PWA + Multi-Station"]
     Backend -->|InfluxDB Client| InfluxDB["🗄️ InfluxDB 2.7<br/>Time Series"]
     Backend -->|Redis Client| Redis["🔴 Redis 7<br/>Cache + Sessions"]
     Frontend -->|Socket.IO| Backend
     InfluxDB -->|Grafana Query| Grafana["📈 Grafana<br/>Visualización"]
-    Backend -->|Alert Service| AlertSystem["🚨 Sistema Alertas"]
-    Frontend -->|Config Panel| ConfigSystem["⚙️ Configuración Remota"]
+    Backend -->|ML Alert Service| MLSystem["🤖 Sistema IA/ML<br/>Predicciones + Alertas"]
+    Backend -->|Advanced Alerts| AlertSystem["🚨 Sistema Alertas<br/>Multi-nivel"]
+    Frontend -->|Config Panel| ConfigSystem["⚙️ Configuración Remota<br/>Backup/Rollback"]
     ConfigSystem -->|MQTT Commands| ESP32
+    Nginx["🌐 Nginx Proxy<br/>SSL/TLS + Load Balancer"] -->|Reverse Proxy| Backend
+    Nginx -->|Static Files| Frontend
+    BackupService["💾 Backup Service<br/>Automated + Scheduled"] -->|Backup| InfluxDB
 ```
 
 ---
@@ -59,11 +68,12 @@ flowchart TD
 
 ## 🛠️ Stack Tecnológico
 
-- **Firmware**: ESP32 DevKit V1, Arduino Framework, WiFiManager, PubSubClient, Deep Sleep.
-- **Backend**: Node.js 18+, Express 4.18, MQTT.js, InfluxDB Client, Winston, Redis, Socket.IO, JWT, Joi, Swagger.
-- **Frontend**: React 19, Next.js 15, TypeScript 5.9, Material-UI 7.3.1, Chart.js, Leaflet, Socket.IO Client, Day.js.
-- **Infraestructura**: InfluxDB 2.7, Redis 7, Mosquitto MQTT, Grafana, Docker Compose.
-- **Testing**: Jest, React Testing Library, Supertest.
+- **Firmware**: ESP32 DevKit V1, Arduino Framework, WiFiManager, PubSubClient, Deep Sleep, DFRobots Pluviómetro.
+- **Backend**: Node.js 18+, Express 4.18, MQTT.js, InfluxDB Client, Winston, Redis, Socket.IO, JWT, Joi, Swagger, ML-Matrix, Simple-Statistics.
+- **Frontend**: React 19, Next.js 15, TypeScript 5.9, Material-UI 7.3.1, Chart.js, Leaflet, Socket.IO Client, Day.js, PWA, i18n.
+- **Infraestructura**: InfluxDB 2.7, Redis 7, Mosquitto MQTT, Grafana, Nginx, Docker Compose, Backup Service.
+- **IA/ML**: Predicción meteorológica, alertas inteligentes, análisis de tendencias.
+- **Testing**: Jest, React Testing Library, Supertest, Coverage Reports.
 
 ---
 
@@ -87,9 +97,11 @@ cd estacion-metereologica
 docker-compose up -d
 docker-compose ps
 ```
-- **InfluxDB**: http://localhost:8086
+- **InfluxDB**: http://localhost:8086 (admin/weather123)
 - **Grafana**: http://localhost:3000 (admin/grafana123)
-- **MQTT Broker**: localhost:1883
+- **MQTT Broker**: localhost:1883 (WebSocket: 9001)
+- **Nginx**: http://localhost:80, https://localhost:443
+- **Backup Service**: Automated daily backups at 2 AM
 
 ### 2️⃣ Backend
 
@@ -149,10 +161,13 @@ npm run dev
 
 ## 🖥️ Dashboard y Visualización
 
-- **Frontend**: http://localhost:3001 (Dashboard principal con configuración remota)
+- **Frontend Principal**: http://localhost:3001 (Dashboard con IA y configuración remota)
+- **Multi-Station Dashboard**: http://localhost:3001/multi-station (Múltiples estaciones)
+- **PWA**: Instalable como aplicación nativa con soporte offline
 - **Grafana**: http://localhost:3000 (Dashboards preconfigurados)
 - **InfluxDB**: http://localhost:8086 (admin/weather123)
 - **API Docs**: http://localhost:5002/api-docs (Swagger/OpenAPI)
+- **Nginx**: http://localhost (Proxy con SSL/TLS)
 
 ---
 
@@ -170,8 +185,11 @@ npm run dev
 
 - **Agregar sensores**: Añadir en firmware, backend y frontend.
 - **Configuración remota**: Nuevos comandos en `configController.js` y ESP32.
-- **Alertas**: Editar reglas en `backend/src/services/alertService.js`.
+- **Alertas**: Editar reglas en `backend/src/services/alertService.js` y `mlAlertService.js`.
+- **Multi-estación**: Gestión en `stationService.js` y dashboard `/multi-station`.
+- **IA/ML**: Modelos de predicción en `aiPredictionService.js`.
 - **Visualización**: Crear nuevos paneles en Grafana o componentes en React.
+- **PWA**: Configuración offline en `PWAManager.tsx` y `next.config.js`.
 - **Testing**: Añadir tests unitarios e integración para nuevas funcionalidades.
 
 ---
@@ -180,13 +198,27 @@ npm run dev
 
 ```plaintext
 estacion-metereologica/
-├── arduino/
-├── backend/
-├── frontend/
-├── docker/
-├── docker-compose.yml
-├── CLAUDE.md
-└── README.md
+├── arduino/                    # ESP32 firmware con sensores avanzados
+│   └── weather_station_esp32/  # Código principal + ADVANCED_COMMANDS.md
+├── backend/                    # API Node.js con IA/ML
+│   ├── src/services/          # MQTT, IA, Alertas, Multi-estación
+│   ├── src/controllers/       # REST endpoints + ML controllers
+│   └── tests/                 # Tests unitarios e integración
+├── frontend/                   # Dashboard React/Next.js PWA
+│   ├── src/components/        # UI components + Multi-station
+│   ├── src/services/          # API clients + IA services
+│   ├── src/pages/            # Dashboard + Multi-station page
+│   └── public/locales/        # i18n (ES/EN)
+├── docker/                     # Configuración servicios
+│   ├── nginx/                 # Proxy reverso + SSL
+│   ├── grafana/              # Dashboards + datasources
+│   └── mosquitto/            # MQTT broker config
+├── docs/                      # Documentación técnica
+├── scripts/                   # Backup automatizado
+├── backups/                   # Respaldos programados
+├── docker-compose.yml         # Orquestación completa
+├── CLAUDE.md                  # Guía técnica completa
+└── README.md                  # Este archivo
 ```
 
 ---
@@ -267,6 +299,10 @@ El dashboard incluye un panel interactivo de configuración (`RemoteConfigPanel.
 - **Puertos ocupados**: Next.js autoasigna, Grafana usa 3000.
 - **Sin datos en dashboard**: Verifica servicios Docker, logs backend, conexión MQTT.
 - **ESP32 sin WiFi**: Resetear WiFiManager, revisar AP y configuración MQTT.
+- **PWA no instala**: Verificar HTTPS, manifest.json y service worker.
+- **Multi-station sin datos**: Verificar stationService y endpoints `/api/stations`.
+- **IA/ML no funciona**: Revisar servicios ML y dependencias (ml-matrix, simple-statistics).
+- **Backup falla**: Verificar permisos Docker y directorio `/backups`.
 
 ---
 
@@ -288,12 +324,14 @@ MIT License — ver archivo [LICENSE](LICENSE).
 
 ## 📊 Estado del Sistema
 
-- **Backend**: Node.js/Express 4.18.2, JWT, Winston
-- **Frontend**: React 19/Next.js 15.4, TypeScript 5.9, Material-UI 7.3.1
+- **Backend**: Node.js/Express 4.18.2, JWT, Winston, IA/ML Services, Multi-Station
+- **Frontend**: React 19/Next.js 15.4, TypeScript 5.9, Material-UI 7.3.1, PWA, i18n
 - **Base de Datos**: InfluxDB 2.7, Redis 7
-- **Hardware**: ESP32 DevKit V1 + 8 sensores
-- **Infraestructura**: Docker Compose, health checks
+- **Hardware**: ESP32 DevKit V1 + 8 sensores + DFRobots pluviómetro
+- **Infraestructura**: Docker Compose, Nginx, SSL, Backup Service, Health Checks
+- **IA/ML**: Predicciones meteorológicas, alertas inteligentes, análisis avanzado
+- **Multi-Station**: Dashboard comparativo, gestión centralizada
 
 ---
 
-**⚡ Plataforma IoT Meteorológica — Inteligente, Modular y Escalable ⚡**
+**⚡ Plataforma IoT Meteorológica Empresarial — IA/ML, Multi-Estación, PWA y Escalabilidad Completa ⚡**

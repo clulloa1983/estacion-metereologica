@@ -5,7 +5,7 @@ import { useTranslation } from 'next-i18next';
 import { GetStaticProps } from 'next';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
 import { useRouter } from 'next/router';
-import Grid from '@mui/material/Grid2';
+import { Grid } from '@mui/material';
 import CurrentMeasurements from '../components/CurrentMeasurements';
 import HistoricalCharts from '../components/HistoricalCharts';
 import WeatherMap from '../components/WeatherMap';

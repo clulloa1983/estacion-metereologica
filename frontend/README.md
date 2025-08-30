@@ -61,35 +61,76 @@
 frontend/
 ├── src/
 │   ├── components/          # 🧩 Componentes reutilizables
-│   │   ├── AlertsPanel.tsx           # Panel de alertas con filtros
-│   │   ├── CurrentMeasurements.tsx   # Cards de mediciones actuales
-│   │   ├── HistoricalCharts.tsx      # Gráficos de tendencias
-│   │   ├── LanguageSelector.tsx      # Selector de idioma
-│   │   ├── RemoteConfigPanel.tsx     # Panel de configuración remota
-│   │   ├── SystemStatus.tsx          # Estado del sistema
-│   │   ├── ThemeToggle.tsx           # Cambio de tema
-│   │   ├── WeatherMap.tsx            # Mapa meteorológico
-│   │   ├── WeatherMapClient.tsx      # Cliente de mapa (CSR)
-│   │   ├── config/                   # Secciones de configuración
+│   │   ├── AlertsPanel.tsx                     # Panel de alertas con filtros
+│   │   ├── AdvancedAnalyticsDashboard.tsx      # Dashboard analítico avanzado
+│   │   ├── CurrentMeasurements.tsx             # Cards de mediciones actuales
+│   │   ├── ErrorBoundary.tsx                   # Manejo de errores global
+│   │   ├── HistoricalCharts.tsx                # Gráficos de tendencias
+│   │   ├── LanguageSelector.tsx                # Selector de idioma
+│   │   ├── MLAlertsPanel.tsx                   # Panel de alertas ML/AI
+│   │   ├── MultiStationMap.tsx                 # Mapa multi-estación (SSR)
+│   │   ├── MultiStationMapClient.tsx           # Cliente mapa multi-estación
+│   │   ├── PWAManager.tsx                      # Gestión de PWA
+│   │   ├── RemoteConfigPanel.tsx               # Panel de configuración remota
+│   │   ├── StationCard.tsx                     # Card individual de estación
+│   │   ├── StationComparison.tsx               # Comparación entre estaciones
+│   │   ├── StationSelector.tsx                 # Selector de estaciones
+│   │   ├── SystemStatus.tsx                    # Estado del sistema
+│   │   ├── ThemeToggle.tsx                     # Cambio de tema
+│   │   ├── WeatherMap.tsx                      # Mapa meteorológico individual
+│   │   ├── WeatherMapClient.tsx                # Cliente de mapa (CSR)
+│   │   ├── config/                             # Secciones de configuración
 │   │   │   ├── AlertConfigSection.tsx
 │   │   │   ├── ConnectivityConfigSection.tsx
 │   │   │   ├── PowerConfigSection.tsx
 │   │   │   └── SensorConfigSection.tsx
-│   │   └── __tests__/               # Tests de componentes
+│   │   └── __tests__/                         # Tests de componentes
+│   │       ├── AlertsPanel.test.tsx
+│   │       ├── CurrentMeasurements.test.tsx
+│   │       ├── PWAManager.test.tsx
+│   │       └── RemoteConfigPanel.test.tsx
 │   ├── pages/               # 📄 Páginas Next.js
-│   │   ├── _app.tsx                 # App wrapper con providers
-│   │   ├── _document.tsx            # Document personalizado
-│   │   └── index.tsx                # Dashboard principal
+│   │   ├── _app.tsx                           # App wrapper con providers
+│   │   ├── _document.tsx                      # Document personalizado
+│   │   ├── index.tsx                          # Dashboard principal
+│   │   └── multi-station.tsx                  # Dashboard multi-estación
 │   ├── contexts/            # 🎯 Contextos React
-│   │   └── ThemeContext.tsx         # Contexto de tema
+│   │   └── ThemeContext.tsx                   # Contexto de tema
 │   ├── services/            # 🔌 Servicios API/WebSocket
-│   │   ├── configService.ts         # API de configuración remota
-│   │   ├── socketService.ts         # WebSocket cliente
-│   │   ├── weatherService.ts        # API de datos meteorológicos
-│   │   └── __tests__/               # Tests de servicios
+│   │   ├── aiPredictionService.ts             # Servicios de predicción IA
+│   │   ├── configService.ts                   # API de configuración remota
+│   │   ├── deviceSensorService.ts             # Servicios de sensores
+│   │   ├── mlAlertsService.ts                 # Alertas de machine learning
+│   │   ├── notificationService.ts             # Sistema de notificaciones
+│   │   ├── offlineService.ts                  # Gestión offline/cache
+│   │   ├── socketService.ts                   # WebSocket cliente
+│   │   ├── stationService.ts                  # API de estaciones
+│   │   ├── weatherService.ts                  # API de datos meteorológicos
+│   │   └── __tests__/                         # Tests de servicios
+│   │       ├── configService.test.ts
+│   │       ├── mlAlertsService.test.ts
+│   │       ├── notificationService.test.ts
+│   │       └── weatherService.test.ts
+│   ├── hooks/               # 🎣 Custom Hooks
+│   │   └── useMultiStationData.ts             # Hook para datos multi-estación
+│   ├── types/               # 🏷️ Definiciones TypeScript
+│   │   └── stationTypes.ts                    # Tipos de estaciones
+│   ├── contexts/            # 🎯 Contextos React
+│   │   └── ThemeContext.tsx                   # Contexto de tema
 │   ├── styles/              # 🎨 Estilos globales
 │   └── utils/               # 🛠️ Utilidades
 ├── public/                  # 🌄 Assets estáticos
+│   ├── icons/                                 # Iconos PWA multi-resolución
+│   ├── locales/                               # Archivos de traducción
+│   │   ├── es/                                # Español (por defecto)
+│   │   │   ├── common.json
+│   │   │   └── dashboard.json
+│   │   └── en/                                # Inglés
+│   │       ├── common.json
+│   │       └── dashboard.json
+│   ├── manifest.json                          # Manifiesto PWA
+│   ├── sw.js                                  # Service Worker
+│   └── browserconfig.xml                      # Configuración navegador
 ├── jest.config.js           # ⚙️ Configuración Jest
 ├── next.config.js           # ⚡ Configuración Next.js (PWA + i18n)
 ├── next-i18next.config.js   # 🌍 Configuración i18n
@@ -165,7 +206,17 @@ npm run dev
 - **HistoricalCharts**: Gráficos avanzados con Chart.js, rangos configurables y zoom
 - **WeatherMap**: Mapa interactivo Leaflet con ubicación y datos en popup
 - **AlertsPanel**: Panel de alertas con severidad visual, filtros y gestión
+- **MLAlertsPanel**: Panel avanzado de alertas con machine learning y predicciones IA
 - **SystemStatus**: Estado de conectividad, batería y métricas del sistema
+- **AdvancedAnalyticsDashboard**: Dashboard analítico con métricas avanzadas y tendencias
+
+### Multi-Station Dashboard
+- **MultiStationMap**: Mapa interactivo con múltiples estaciones meteorológicas
+- **MultiStationMapClient**: Cliente de mapa multi-estación optimizado para CSR
+- **StationSelector**: Selector dinámico de estaciones con búsqueda y filtros
+- **StationCard**: Card individual con información resumida de cada estación
+- **StationComparison**: Comparación visual entre múltiples estaciones
+- **useMultiStationData**: Hook personalizado para gestión de datos multi-estación
 
 ### Configuración y Control
 - **RemoteConfigPanel**: Panel completo de configuración remota para ESP32
@@ -174,9 +225,15 @@ npm run dev
   - **PowerConfigSection**: Gestión de energía y modo sleep
   - **ConnectivityConfigSection**: Configuración WiFi y conectividad
 
+### PWA y Gestión Avanzada
+- **PWAManager**: Gestión completa de Progressive Web App con instalación offline
+- **ErrorBoundary**: Manejo global de errores con recuperación automática
+- **NotificationService**: Sistema de notificaciones push y en navegador
+- **OfflineService**: Gestión inteligente de cache y funcionamiento offline
+
 ### UI y UX
 - **ThemeToggle**: Cambio de tema oscuro/claro con animación
-- **LanguageSelector**: Selector de idioma con soporte i18n
+- **LanguageSelector**: Selector de idioma con soporte i18n (ES/EN)
 - **WeatherMapClient**: Cliente de mapa optimizado para CSR (evita SSR)
 
 ---
@@ -313,26 +370,29 @@ npm run test:ci           # Para CI/CD
 ## 📈 Funcionalidades Implementadas vs. Roadmap
 
 ### ✅ Implementado
-- ✅ **PWA**: Progressive Web App con soporte offline
-- ✅ **Multi-idioma**: Internacionalización con react-i18next
+- ✅ **PWA**: Progressive Web App con soporte offline y gestión completa
+- ✅ **Multi-idioma**: Internacionalización con react-i18next (ES/EN)
 - ✅ **Configuración Remota**: Control completo del ESP32 vía MQTT
 - ✅ **Tema Dinámico**: Modo oscuro/claro persistente
 - ✅ **WebSocket**: Actualizaciones en tiempo real
 - ✅ **Testing**: Cobertura completa de componentes y servicios
 - ✅ **TypeScript**: Tipado estricto en toda la aplicación
 - ✅ **Material-UI 7.3.1**: Sistema de diseño moderno
+- ✅ **Multi-estación**: Dashboard completo para múltiples estaciones
+- ✅ **IA y Predicción**: Servicios de machine learning integrados
+- ✅ **Notificaciones**: Sistema completo de notificaciones implementado
+- ✅ **Gestión Offline**: Cache inteligente y sincronización de datos
 
 ### 🚧 En Desarrollo
-- 🔔 **Notificaciones Push**: Sistema de notificaciones web
 - 📊 **Exportación Avanzada**: Múltiples formatos (PDF, Excel)
-- 📱 **Modo Offline**: Cache inteligente de datos
-- 🤖 **Predicción ML**: Modelos de predicción meteorológica
+- 🧠 **ML Avanzado**: Modelos de predicción meteorológica mejorados
+- 📈 **Analytics Detallados**: Métricas de uso y performance avanzadas
 
 ### 🔮 Futuro
-- 🌐 **Multi-estación**: Dashboard para múltiples estaciones
 - 📍 **Geolocalización**: Detección automática de ubicación
 - 🎛️ **Panel Admin**: Gestión avanzada de usuarios y estaciones
-- 📈 **Analytics**: Métricas de uso y performance
+- 🔮 **IA Predictiva**: Modelos de aprendizaje automático avanzados
+- 🌍 **Integración Externa**: APIs meteorológicas externas
 
 ---
 
@@ -355,6 +415,9 @@ MIT License – Ver `LICENSE` para detalles.
 - 🔧 **Configuración Backend**: `../backend/README.md`
 - 🐳 **Docker Services**: `../docker-compose.yml`
 - ⚙️ **Variables de Entorno**: `.env.example`
+- 🌐 **Multi-Station**: Dashboard operacional en `/multi-station`
+- 🤖 **IA Services**: Documentación de servicios ML integrados
+- 🔔 **PWA Manager**: Guía de configuración offline y notificaciones
 
 ### 🛠️ Herramientas de Desarrollo
 - **Grafana**: [http://localhost:3000](http://localhost:3000) (admin/grafana123)
@@ -373,4 +436,4 @@ MIT License – Ver `LICENSE` para detalles.
 - **Infraestructura**: Docker Compose con todos los servicios configurados
 - **Testing**: Cobertura completa con Jest y Testing Library
 
-**⚡ Listo para producción con arquitectura robusta y escalable ⚡**
+**⚡ Sistema completamente operacional con funcionalidades avanzadas de IA, multi-estación y PWA ⚡**
